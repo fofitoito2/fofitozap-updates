@@ -22,10 +22,11 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Onest', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1 };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Onest', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1 };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
+  if ((CFG.v || 0) < 6) { CFG.motion = false; CFG.blur = Math.min(+CFG.blur || 0, 14); CFG.v = 6; try { LS && LS.setItem('concord.cfg', JSON.stringify(CFG)); } catch (e) {} }
   function save() { try { LS && LS.setItem('concord.cfg', JSON.stringify(CFG)); } catch (e) {} }
   var INFO = { mats: { aura: true, acrylic: true, mica: false, solid: true }, ver: CC.ver };
 
@@ -133,8 +134,10 @@
   }
 
   /* ---------- fontes (FontFace com os bytes: não depende de baixar nada) ---------- */
-  function loadFonts() {
+  var FONTS_LOADED = {};
+  function loadFonts(all) {
     Object.keys(CC.fonts || {}).forEach(function (fam) {
+      if (FONTS_LOADED[fam] || (!all && fam !== CFG.font)) return; FONTS_LOADED[fam] = 1;
       Object.keys(CC.fonts[fam]).forEach(function (wt) {
         try {
           var bin = atob(CC.fonts[fam][wt]), buf = new Uint8Array(bin.length);
@@ -204,7 +207,7 @@
     if (!PANEL) buildPanel();
     var on = force == null ? !PANEL.classList.contains('on') : force;
     PANEL.classList.toggle('on', on);
-    if (on) paintPanel();
+    if (on) { loadFonts(true); paintPanel(); }
   }
   function buildPanel() {
     PANEL = document.createElement('div'); PANEL.id = 'cc-panel';
@@ -398,7 +401,7 @@
         walk(c);
       });
     })(root);
-    return '<!-- Concord ' + INFO.ver + ' | ' + location.pathname.replace(/\d{6,}/g, '#') + ' | ' + new Date().toISOString() + ' | tela ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + ' -->\n' + root.outerHTML;
+    return '<!-- Concord ' + INFO.ver + ' | ' + location.pathname.replace(/\d{6,}/g, '#') + ' | ' + new Date().toISOString() + ' | tela ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + ' | diag ' + JSON.stringify(diag()) + ' -->\n' + root.outerHTML;
   }
   function screenKind() {
     if (document.querySelector('[class*="standardSidebarView_"]')) return 'configuracoes';
@@ -462,7 +465,7 @@
   var WREQ = null, STORES = {};
   function wreq() {
     if (WREQ) return WREQ;
-    var ch = window.webpackChunkdiscord_app; if (!ch || !ch.push) return null;
+    var ch = window.webpackChunkdiscord_app; if (!ch || !ch.push || ch.push === Array.prototype.push) return null;
     try { ch.push([[Symbol('concord')], {}, function (r) { WREQ = r; }]); ch.pop(); } catch (e) {}
     return WREQ;
   }
@@ -717,13 +720,31 @@
     document.addEventListener('pointerdown', function () { if (BOOST.ctx && BOOST.ctx.state === 'suspended') BOOST.ctx.resume().catch(function () {}); }, true);
   })();
 
+  /* ---------- esconder Nitro, Loja, Missões, presente e baixar app ---------- */
+  function cleanAds() {
+    var hide = function (el) { if (el && !el.dataset.ccHid) { el.dataset.ccHid = '1'; el.style.setProperty('display', 'none', 'important'); } };
+    if (!CFG.clean) { document.querySelectorAll('[data-cc-hid]').forEach(function (el) { el.style.removeProperty('display'); delete el.dataset.ccHid; }); return; }
+    document.querySelectorAll('a[href="/store"], a[href="/shop"], a[href^="/quest-home"]').forEach(function (a) { hide(a.closest('li') || a.closest('.channel__972a0')); });
+    var dl = document.querySelector('[data-list-item-id="guildsnav___app-download-button"]'); if (dl) hide(dl.closest('.listItem__650eb'));
+    document.querySelectorAll('.trinketsIcon__5287f').forEach(function (t) { hide(t.closest('.container__5287f')); });
+    document.querySelectorAll('.app-launcher-entrypoint').forEach(hide);
+  }
+
+  /* ---------- diagnóstico (vai junto no esqueleto da tela, para eu ver o que falhou) ---------- */
+  function diag() {
+    var ch = window.webpackChunkdiscord_app, d = { chunk: typeof ch, pronto: !!(ch && ch.push && ch.push !== Array.prototype.push), wreq: !!WREQ, cache: WREQ && WREQ.c ? Object.keys(WREQ.c).length : -1, achados: {}, audios: BOOST.els.length, amplificados: BOOST.els.filter(function (e) { return e.__cc; }).length, boost: CFG.boost, home: CFG.home, inicio: !!(HOME && HOME.el) };
+    Object.keys(SHAPES).forEach(function (k) { d.achados[k] = !!STORES[k]; });
+    return d;
+  }
+  window.__ccDiag = diag;
+
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { aura(); mountWin(); tagMine(); homeTick(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
+    setTimeout(function () { pend = false; place(); if (document.body) { aura(); mountWin(); tagMine(); homeTick(); cleanAds(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
   function ready() {
@@ -731,6 +752,7 @@
     new MutationObserver(badge).observe(document.querySelector('title') || document.head, { childList: true, subtree: true, characterData: true });
     if (window.ccInfo) window.ccInfo().then(function (i) { if (i) { INFO.ver = i.ver; INFO.mats = i.mats || INFO.mats; INFO.update = i.update; if (!INFO.mats[CFG.mat]) { CFG.mat = 'aura'; save(); } applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); } }).catch(function () {});
     win('state'); restoreZoom();
+    setTimeout(function () { homeTick(); if (window.ccDump) window.ccDump('diagnostico', '<!-- ' + JSON.stringify(diag()) + ' -->').catch(function () {}); }, 30000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
   window.addEventListener('resize', function () { win('state'); });
