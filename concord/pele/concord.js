@@ -425,7 +425,7 @@
   CCNotification.requestPermission = function (cb) { if (cb) cb('granted'); return Promise.resolve('granted'); };
   CCNotification.maxActions = 0;
   try { window.Notification = CCNotification; } catch (e) {}
-  window.__ccNotifClick = function (id) { var n = NOTIFS[id]; if (n) n._fire('click'); };
+  window.__ccNotifClick = function (id) { if (String(id).indexOf('ra-') === 0) { if (typeof raShow === 'function' && RA.call) raShow(); return; } var n = NOTIFS[id]; if (n) n._fire('click'); };
 
   /* ---------- número de não lidas no ícone da barra de tarefas ---------- */
   var lastBadge = -1;
@@ -2161,9 +2161,431 @@
       var nm = t.querySelector('.experimentOverlayTitle__2f4f7, .overlayTitleText__2f4f7'); if (nm) { nomeStyle(nm, pp.nome); nm.classList.add('cc-nm'); }
     }
   }
-  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); pintarNomes(false); pintarPlacas(); pintarTiles(); popTick(false); }
+  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); pintarNomes(false); pintarPlacas(); pintarTiles(); popTick(false); raBtns(); }
   window.addEventListener('resize', function () { popPlace(); if (PF.draft) pfPreview(); });
 
+  /* ---------- chamada ReApps no Concord: voz, vídeo, tela e assistir junto, direto entre os aparelhos ----------
+     Mesma tela e mesmo servidor do FofitoZap. Os recados passam pelo Concord (ccRtcSend / window.__ccRtc). */
+  var RI = {
+    mic: sv('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/>'),
+    micoff: sv('<path d="M3 3l18 18"/><path d="M15 9.3V6a3 3 0 0 0-5.7-1.3M9 9v3a3 3 0 0 0 4.9 2.3"/><path d="M18.5 11.5a6.5 6.5 0 0 1-1 3.4M5.5 11.5a6.5 6.5 0 0 0 10.2 5.3M12 18v3"/>'),
+    video: sv('<rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="M16 10.5l6-3.5v10l-6-3.5"/>'),
+    vidoff: sv('<path d="M3 3l18 18"/><path d="M10 6h4a2 2 0 0 1 2 2v2.5l6-3.5v10.5M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2"/>'),
+    call: sv('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>'),
+    screen: sv('<rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 21h8M12 17v4"/>'),
+    tv: sv('<rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M8 2.5l4 3.5 4-3.5"/><path d="M10.5 10v5.5l4.5-2.75z"/>'),
+    shrink: sv('<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>'), grow: sv('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>'),
+    back: sv('<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>'), fwd: sv('<path d="M13 17l5-5-5-5M6 17l5-5-5-5"/>'),
+    play: sv('<path d="M7 4l13 8-13 8z"/>'), pause: sv('<path d="M8 4v16M16 4v16"/>'), flip: sv('<path d="M4 7h11l-3-3M20 17H9l3 3"/>'),
+    file: sv('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>'),
+    reapps: sv('<path d="M5 12a7 7 0 0 1 12-4.9M19 12a7 7 0 0 1-12 4.9"/><path d="M17.5 3v4.5H13M6.5 21v-4.5H11"/>')
+  };
+  var RA = { on: false, me: '', online: {}, call: null, watchKey: '', ice: [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }] };
+  var TOQUE = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  function raUser(id) { var U = st('User'); return U && U.getUser(id); }
+  function raName(id) { var u = raUser(id), p = PF.cache[id] && PF.cache[id].p; return (p && p.apelido) || (u ? nameOf(u) : 'Alguém'); }
+  function raAvatar(id) { var u = raUser(id); return u ? avatarOf(u, 256) : ''; }
+  function raOnline(id) { return !!RA.online[id]; }
+  function rcEl() { var e = document.getElementById('cc-rc'); if (!e) { e = document.createElement('div'); e.id = 'cc-rc'; document.body.appendChild(e); } return e; }
+
+  window.__ccRtc = function (d) {
+    if (!d) return;
+    if (d.t === 'net') { RA.on = !!d.on; if (d.on) { RA.watchKey = ''; raWatch(); } return; }
+    if (d.t === 'me') { RA.me = d.id; return; }
+    if (d.t === 'online') { RA.online = {}; (d.ids || []).forEach(function (n) { RA.online[n] = 1; }); raBtns(); return; }
+    if (d.t === 'presence') { if (d.on) RA.online[d.id] = 1; else delete RA.online[d.id]; raBtns(); return; }
+    if (d.t === 'offline') { var c0 = RA.call; if (c0 && c0.out && c0.state === 'calling' && c0.uid === d.to) raEnd('Não está no Concord agora'); return; }
+    if (d.t !== 'msg') return;
+    var m = d.data || {}, c = RA.call;
+    if (m.k === 'ring') { if (c && c.id !== m.id) { raSigTo(d.from, d.fromDev, { k: 'busy', id: m.id }); return; } if (!c) raIncoming(d); return; }
+    if (!c || c.id !== m.id) return;
+    switch (m.k) {
+      case 'accept': if (!c.out || c.state !== 'calling') return; c.peerDev = d.fromDev; c.state = 'connecting'; clearTimeout(c.ringT); raTone(false); raPeer(c, false); raPaint(); break;
+      case 'taken': if (!c.out && c.state === 'ringing') raEnd('Atendida em outro aparelho', true); break;
+      case 'decline': if (c.out && c.state === 'calling') raEnd('Recusou a chamada'); break;
+      case 'busy': if (c.out && c.state === 'calling') raEnd('Está em outra chamada'); break;
+      case 'cancel': if (!c.out && c.state === 'ringing') raEnd('Chamada perdida', true); break;
+      case 'bye': raEnd('Chamada encerrada', true); break;
+      case 'sdp': raOnSdp(c, m.d); break;
+      case 'ice': if (c.pc && c.pc.remoteDescription) c.pc.addIceCandidate(m.c).catch(function () {}); else (c.iceQ = c.iceQ || []).push(m.c); break;
+    }
+  };
+  function raSigTo(to, dev, data) { if (window.ccRtcSend) window.ccRtcSend(JSON.stringify({ t: 'to', to: to, dev: dev || '', data: data })).catch(function () {}); }
+  function raSig(c, data) { raSigTo(c.uid, c.peerDev, data); }
+  // quem eu quero saber se está online: amigos e conversas privadas (o servidor só mostra quem também me tem)
+  function raWatch() {
+    if (!window.ccRtcSend || !RA.on) return;
+    var ids = {}, R = st('Rel'), C = st('Channel');
+    try { var fr = R && (R.getFriendIDs ? R.getFriendIDs() : Object.keys((R.getRelationships && R.getRelationships()) || {})); (fr || []).forEach(function (id) { ids[id] = 1; }); } catch (e) {}
+    try { var pcs = C && C.getSortedPrivateChannels ? C.getSortedPrivateChannels() : []; pcs.forEach(function (c) { if ((c.recipients || []).length === 1) ids[c.recipients[0]] = 1; }); } catch (e) {}
+    Object.keys(PF.cache).forEach(function (id) { if (PF.cache[id].p) ids[id] = 1; });
+    var l = Object.keys(ids).filter(function (x) { return /^\d{5,25}$/.test(x); }).slice(0, 1500), k = l.slice().sort().join(',');
+    if (k === RA.watchKey) return; RA.watchKey = k;
+    window.ccRtcSend(JSON.stringify({ t: 'watch', ids: l })).catch(function () {});
+  }
+  setInterval(raWatch, 60000);
+
+  // botão da chamada ReApps no topo da conversa privada (só com quem usa o Concord)
+  function raDmPeer() {
+    var m = /^\/channels\/@me\/(\d+)/.exec(location.pathname); if (!m) return '';
+    var C = st('Channel'), c = C && C.getChannel(m[1]); return c && (c.recipients || []).length === 1 ? c.recipients[0] : '';
+  }
+  function raBtns() {
+    if (!window.ccRtcSend) return;
+    var uid = raDmPeer(), tb = document.querySelector('.chat_f75fb0 .toolbar__9293f, .toolbar__9293f'), b = document.getElementById('cc-rabtn');
+    var ok = uid && tb && perfilDe(uid);
+    if (!ok) { if (b) b.remove(); return; }
+    if (!b || b.parentNode !== tb) { if (b) b.remove(); b = document.createElement('button'); b.id = 'cc-rabtn'; b.className = 'cc-rabtn'; b.innerHTML = RI.reapps; tb.insertBefore(b, tb.firstChild);
+      b.addEventListener('click', function (e) { e.stopPropagation(); raPick(b, raDmPeer()); }); }
+    var on = raOnline(uid); b.classList.toggle('on', on); b.title = on ? 'Chamada ReApps' : 'Chamada ReApps (' + raName(uid).split(' ')[0] + ' não está no Concord agora)';
+  }
+  function raMenu(items, x, y) {
+    var old = document.getElementById('cc-ramenu'); if (old) old.remove();
+    var m = document.createElement('div'); m.id = 'cc-ramenu';
+    m.innerHTML = items.map(function (it, i) { return '<button data-i="' + i + '">' + it.i + '<span>' + esc(it.t) + (it.s ? '<small>' + esc(it.s) + '</small>' : '') + '</span></button>'; }).join('');
+    document.body.appendChild(m);
+    var w = m.offsetWidth, h = m.offsetHeight; m.style.left = Math.max(8, Math.min(innerWidth - w - 8, x - w)) + 'px'; m.style.top = Math.max(8, Math.min(innerHeight - h - 8, y)) + 'px';
+    m.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; m.remove(); items[+b.dataset.i].f(); });
+    setTimeout(function () { document.addEventListener('pointerdown', function f(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('pointerdown', f, true); } }, true); }, 0);
+  }
+  function raPick(btn, uid) {
+    if (!uid) return; var on = raOnline(uid), nm = raName(uid).split(' ')[0], r = btn.getBoundingClientRect();
+    if (RA.call) { raShow(); return; }
+    var off = function () { toast(nm + ' não está no Concord agora'); };
+    raMenu([
+      { t: 'Chamada ReApps de voz', s: on ? 'Dá pra ligar a câmera e a tela depois' : nm + ' não está no Concord agora', i: RI.call, f: function () { if (on) raCall(uid, false); else off(); } },
+      { t: 'Chamada ReApps de vídeo', s: on ? 'Vídeo, tela e assistir junto' : nm + ' não está no Concord agora', i: RI.video, f: function () { if (on) raCall(uid, true); else off(); } }
+    ], r.right, r.bottom + 6);
+  }
+
+  /* ----- câmera e microfone ----- */
+  function raMedia(video, facing) {
+    var v = video ? { width: { ideal: TOQUE ? 960 : 1280 }, height: { ideal: TOQUE ? 540 : 720 }, frameRate: { ideal: TOQUE ? 24 : 30 }, facingMode: facing || 'user' } : false;
+    return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: v }).catch(function (e) {
+      if (video) return navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) { toast('Não consegui abrir a câmera'); return s; });
+      throw e;
+    });
+  }
+  function newCall(o) {
+    var c = { id: o.id, uid: o.uid, name: raName(o.uid), video: !!o.video, out: !!o.out, state: o.state, peerDev: o.peerDev || '',
+      local: null, cam: !!o.video, mic: true, facing: 'user', screen: null, watchS: null, remote: {}, roles: {}, peerCam: !!o.video, peerMic: true, t0: 0 };
+    RA.call = c; return c;
+  }
+  function raCall(uid, video) {
+    if (RA.call) { raShow(); return; }
+    var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    var c = newCall({ id: id, uid: uid, video: video, out: true, state: 'calling' });
+    raOpen(); raPaint();
+    raMedia(video).then(function (s) {
+      if (RA.call !== c) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      c.local = s; c.cam = s.getVideoTracks().length > 0; raSelf(); raPaint();
+      raSig(c, { k: 'ring', id: id, video: !!video }); raTone('out');
+      c.ringT = setTimeout(function () { if (RA.call === c && c.state === 'calling') { raSig(c, { k: 'cancel', id: id }); raEnd('Ninguém atendeu'); } }, 45000);
+    }).catch(function () { raEnd('Sem acesso ao microfone'); });
+  }
+  function raIncoming(d) {
+    var m = d.data || {};
+    var c = newCall({ id: m.id, uid: String(d.from), video: m.video, out: false, state: 'ringing', peerDev: d.fromDev });
+    raOpen(); raPaint(); raTone('in');
+    if (document.hidden && window.ccNotify) window.ccNotify('ra-' + c.id, c.name, 'Chamada ' + (c.video ? 'de vídeo' : 'de voz') + ' ReApps', raAvatar(c.uid)).catch(function () {});
+    c.ringT = setTimeout(function () { if (RA.call === c && c.state === 'ringing') raEnd('Chamada perdida', true); }, 50000);
+  }
+  function raAccept() {
+    var c = RA.call; if (!c || c.state !== 'ringing') return;
+    c.state = 'connecting'; raTone(false); clearTimeout(c.ringT); raPaint();
+    raMedia(c.video).then(function (s) {
+      if (RA.call !== c) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      c.local = s; c.cam = s.getVideoTracks().length > 0; raSelf(); raPeer(c, true); raSig(c, { k: 'accept', id: c.id }); raPaint();
+    }).catch(function () { raSig(c, { k: 'decline', id: c.id }); raEnd('Sem acesso ao microfone'); });
+  }
+  function raDecline() { var c = RA.call; if (!c) return; raSig(c, { k: 'decline', id: c.id }); raEnd('', true); }
+  function raHang() { var c = RA.call; if (!c) return; if (c.out && c.state === 'calling') raSig(c, { k: 'cancel', id: c.id }); else raSig(c, { k: 'bye', id: c.id }); raEnd('Chamada encerrada', true); }
+  function raEnd(msg, quiet) {
+    var c = RA.call; if (!c) return; RA.call = null;
+    clearTimeout(c.ringT); clearInterval(c.tick); clearTimeout(c.failT); raTone(false);
+    [c.local, c.screen, c.watchS].forEach(function (s) { if (s) s.getTracks().forEach(function (t) { t.stop(); }); });
+    if (c.watchV) { c.watchV.pause(); URL.revokeObjectURL(c.watchV.src); }
+    if (c.pc) try { c.pc.close(); } catch (e) {}
+    var rc = rcEl(); rc.classList.add('bye');
+    if (msg) toast(msg + (c.t0 ? ' (' + raDur(c) + ')' : ''));
+    if (!quiet || c.t0) somCurto(330, 0.18);
+    setTimeout(function () { rc.className = ''; rc.innerHTML = ''; }, 260);
+  }
+  function raDur(c) { var s = Math.floor((Date.now() - c.t0) / 1000), m = Math.floor(s / 60); return (m < 10 ? '0' : '') + m + ':' + ((s % 60) < 10 ? '0' : '') + (s % 60); }
+
+  /* ----- toques nossos (sintetizados, baixinhos) ----- */
+  var RT = { t: null, ctx: null };
+  function somCurto(f, dur, vol) {
+    try {
+      var x = RT.ctx = RT.ctx || new (window.AudioContext || window.webkitAudioContext)(), t = x.currentTime, o = x.createOscillator(), g = x.createGain();
+      o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || 0.06, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(x.destination); o.start(t); o.stop(t + dur + 0.05);
+    } catch (e) {}
+  }
+  function raTone(kind) {
+    clearInterval(RT.t); RT.t = null; if (!kind) return;
+    var beep = kind === 'in' ? function () { somCurto(660, 0.35); setTimeout(function () { somCurto(880, 0.45); }, 180); } : function () { somCurto(425, 0.9, 0.045); };
+    beep(); RT.t = setInterval(beep, kind === 'in' ? 2200 : 4000);
+  }
+
+  /* ----- conexão (WebRTC com negociação educada) ----- */
+  function raPeer(c, polite) {
+    var pc = c.pc = new RTCPeerConnection({ iceServers: RA.ice });
+    c.polite = polite; c.making = false;
+    if (polite) c.waitOffer = true; else raAddLocal(c);
+    pc.onnegotiationneeded = function () {
+      if (c.waitOffer) return; c.making = true;
+      pc.setLocalDescription().then(function () { raSig(c, { k: 'sdp', id: c.id, d: pc.localDescription }); }).catch(function () {}).then(function () { c.making = false; });
+    };
+    pc.onicecandidate = function (e) { if (e.candidate) raSig(c, { k: 'ice', id: c.id, c: e.candidate }); };
+    pc.ontrack = function (e) {
+      var s = e.streams[0]; if (!s) return;
+      if (!c.remote[s.id]) { c.remote[s.id] = s; s.onremovetrack = function () { if (!s.getTracks().length) { delete c.remote[s.id]; raLayout(); } }; }
+      e.track.onunmute = raLayout; e.track.onended = raLayout; raLayout();
+    };
+    pc.onconnectionstatechange = function () {
+      var st2 = pc.connectionState;
+      if (st2 === 'connected') { clearTimeout(c.failT); if (!c.t0) { c.t0 = Date.now(); c.tick = setInterval(raClock, 1000); somCurto(740, 0.25); } c.state = 'live'; c.lost = false; raPaint(); raSend({ k: 'streams', roles: raRoles(c) }); raSend({ k: 'cam', on: c.cam }); raSend({ k: 'mic', on: c.mic }); }
+      else if (st2 === 'disconnected') { c.lost = true; raPaint(); }
+      else if (st2 === 'failed') { if (pc.restartIce) pc.restartIce(); c.lost = true; raPaint(); c.failT = setTimeout(function () { if (RA.call === c && pc.connectionState !== 'connected') { raSig(c, { k: 'bye', id: c.id }); raEnd('A conexão caiu'); } }, 15000); }
+    };
+    if (!polite) raDc(c, pc.createDataChannel('fz')); else pc.ondatachannel = function (e) { raDc(c, e.channel); };
+  }
+  function raAddLocal(c) { c.local.getTracks().forEach(function (t) { var s = c.pc.addTrack(t, c.local); if (t.kind === 'video') c.camSender = s; }); }
+  function raOnSdp(c, desc) {
+    var pc = c.pc; if (!pc || !desc) return;
+    var collision = desc.type === 'offer' && (c.making || pc.signalingState !== 'stable');
+    if (!c.polite && collision) return;
+    pc.setRemoteDescription(desc).then(function () {
+      if (c.waitOffer && desc.type === 'offer') { raAddLocal(c); c.waitOffer = false; }
+      (c.iceQ || []).forEach(function (x) { pc.addIceCandidate(x).catch(function () {}); }); c.iceQ = [];
+      if (desc.type === 'offer') return pc.setLocalDescription().then(function () { raSig(c, { k: 'sdp', id: c.id, d: pc.localDescription }); });
+    }).catch(function () {});
+  }
+  function raRoles(c) { return { cam: c.local ? c.local.id : '', screen: c.screen ? c.screen.id : '', watch: c.watchS ? c.watchS.id : '' }; }
+  function raDc(c, dc) {
+    c.dc = dc;
+    dc.onopen = function () { raSend({ k: 'streams', roles: raRoles(c) }); raSend({ k: 'cam', on: c.cam }); raSend({ k: 'mic', on: c.mic }); };
+    dc.onmessage = function (e) {
+      var m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.k === 'streams') { c.roles = m.roles || {}; raLayout(); }
+      else if (m.k === 'cam') { c.peerCam = !!m.on; raLayout(); }
+      else if (m.k === 'mic') { c.peerMic = !!m.on; raPaint(); }
+      else if (m.k === 'yt') ytIn(c, m);
+      else if (m.k === 'wf') { if (c.watchV) { if (m.a === 'toggle') { if (c.watchV.paused) c.watchV.play(); else c.watchV.pause(); } else if (m.a === 'seek') c.watchV.currentTime = Math.max(0, c.watchV.currentTime + m.d); } }
+      else if (m.k === 'wfstate') { c.peerWatchPaused = !!m.paused; raPaintWatch(); }
+    };
+  }
+  function raSend(m) { var c = RA.call; if (c && c.dc && c.dc.readyState === 'open') c.dc.send(JSON.stringify(m)); }
+
+  /* ----- botões ----- */
+  function raMic() { var c = RA.call; if (!c || !c.local) return; c.mic = !c.mic; c.local.getAudioTracks().forEach(function (t) { t.enabled = c.mic; }); raSend({ k: 'mic', on: c.mic }); raPaint(); }
+  function raCam() {
+    var c = RA.call; if (!c || !c.local) return;
+    if (c.cam) { c.local.getVideoTracks().forEach(function (t) { t.stop(); c.local.removeTrack(t); }); if (c.camSender) c.camSender.replaceTrack(null); c.cam = false; raSend({ k: 'cam', on: false }); raSelf(); raPaint(); return; }
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: TOQUE ? 960 : 1280 }, height: { ideal: TOQUE ? 540 : 720 }, facingMode: c.facing } }).then(function (s) {
+      var t = s.getVideoTracks()[0]; if (!t || RA.call !== c) return;
+      c.local.addTrack(t); if (c.camSender) c.camSender.replaceTrack(t); else if (c.pc) c.camSender = c.pc.addTrack(t, c.local);
+      c.cam = true; raSend({ k: 'cam', on: true }); raSelf(); raPaint();
+    }).catch(function () { toast('Não consegui abrir a câmera'); });
+  }
+  function raFlip() {
+    var c = RA.call; if (!c || !c.cam) return; c.facing = c.facing === 'user' ? 'environment' : 'user';
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: c.facing } }).then(function (s) { var nt = s.getVideoTracks()[0]; c.local.getVideoTracks().forEach(function (t) { t.stop(); c.local.removeTrack(t); }); c.local.addTrack(nt); if (c.camSender) c.camSender.replaceTrack(nt); raSelf(); }).catch(function () {});
+  }
+  function canScreen() { return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && !TOQUE; }
+  function raScreen() {
+    var c = RA.call; if (!c || !c.pc) return;
+    if (c.screen) { stopScreen(c); return; }
+    // o getDisplayMedia já tira o som do próprio Concord (ver "compartilhar tela sem o som do próprio Concord")
+    navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 }, width: { max: 1920 }, height: { max: 1080 } }, audio: true, systemAudio: 'include', selfBrowserSurface: 'exclude' }).then(function (s) {
+      if (RA.call !== c) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      c.screen = s; c.screenSenders = s.getTracks().map(function (t) { if (t.kind === 'video' && 'contentHint' in t) t.contentHint = 'detail'; return c.pc.addTrack(t, s); });
+      s.getVideoTracks()[0].onended = function () { stopScreen(c); };
+      raSend({ k: 'streams', roles: raRoles(c) }); raPaint(); raLayout();
+      if (!s.getAudioTracks().length) toast('Tela compartilhada sem som (assim as vozes da chamada não voltam duplicadas)');
+    }).catch(function () {});
+  }
+  function stopScreen(c) {
+    if (!c.screen) return; c.screen.getTracks().forEach(function (t) { t.stop(); });
+    (c.screenSenders || []).forEach(function (s) { try { c.pc.removeTrack(s); } catch (e) {} });
+    c.screen = null; c.screenSenders = null; raSend({ k: 'streams', roles: raRoles(c) }); raPaint(); raLayout();
+  }
+
+  /* ----- assistir junto: YouTube (pelo player do próprio YouTube, sem baixar script) ou vídeo do aparelho ----- */
+  function raWatchMenu(btn) {
+    var c = RA.call; if (!c) return;
+    if (c.ytOn || c.watchS) { raWatchStop(true); return; }
+    var r = btn.getBoundingClientRect();
+    raMenu([{ t: 'Vídeo do YouTube', i: RI.play, f: ytAsk }, { t: 'Vídeo do aparelho', i: RI.file, f: pickWatchFile }], r.right, r.top - 110);
+  }
+  function ytId(u) { var m = String(u).match(/(?:youtu\.be\/|v=|shorts\/|embed\/|live\/)([\w-]{11})/); return m ? m[1] : (/^[\w-]{11}$/.test(u) ? u : ''); }
+  function ytAsk() {
+    var o = document.createElement('div'); o.id = 'cc-ramodal';
+    o.innerHTML = '<div class="cd"><h3>Assistir junto</h3><input placeholder="Link do YouTube"><div class="bt"><button data-x>Cancelar</button><button class="pri" data-go>Assistir</button></div></div>';
+    document.body.appendChild(o); var inp = o.querySelector('input'); inp.focus();
+    var fechar = function () { o.remove(); };
+    var go = function () { var v = ytId(inp.value.trim()); if (!v) { toast('Esse link não parece do YouTube'); return; } fechar(); ytLoad(RA.call, v, 0, true, true); };
+    o.addEventListener('click', function (e) { if (e.target === o || e.target.closest('[data-x]')) fechar(); else if (e.target.closest('[data-go]')) go(); });
+    inp.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') go(); if (e.key === 'Escape') fechar(); });
+    if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { if (ytId(t)) inp.value = t; }).catch(function () {});
+  }
+  function ytCmd(c, func, args) { if (c && c.ytF && c.ytF.contentWindow) c.ytF.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); }
+  window.addEventListener('message', function (e) {
+    var c = RA.call; if (!c || !c.ytF || e.source !== c.ytF.contentWindow) return;
+    var d; try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (x) { return; }
+    if (!d || !d.info) return;
+    if (d.info.currentTime != null) c.ytT = d.info.currentTime;
+    if (d.event === 'onStateChange' || d.info.playerState != null) {
+      var stt = d.event === 'onStateChange' ? d.info : d.info.playerState; if (typeof stt !== 'number' || stt === c.ytS) return; c.ytS = stt;
+      if (Date.now() - (c.ytQuiet || 0) < 900) return;
+      if (stt === 1) raSend({ k: 'yt', a: 'play', t: c.ytT || 0 }); else if (stt === 2) raSend({ k: 'yt', a: 'pause', t: c.ytT || 0 });
+    }
+  });
+  function ytLoad(c, v, t, play, mine) {
+    if (!c) return;
+    if (mine) raSend({ k: 'yt', a: 'load', v: v, t: t || 0 });
+    if (c.watchS) raWatchStop(false);
+    c.ytOn = true; c.ytV = v; c.ytQuiet = Date.now(); raLayout(); raPaint();
+    var box = rcEl().querySelector('.rc-yt'); box.innerHTML = '';
+    var f = document.createElement('iframe'); f.allow = 'autoplay; encrypted-media; picture-in-picture';
+    f.src = 'https://www.youtube.com/embed/' + v + '?enablejsapi=1&autoplay=' + (play ? 1 : 0) + '&start=' + Math.floor(t || 0) + '&playsinline=1&rel=0&origin=' + encodeURIComponent(location.origin);
+    f.onload = function () { if (f.contentWindow) f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 'cc' }), '*'); };
+    box.appendChild(f); c.ytF = f;
+  }
+  function ytIn(c, m) {
+    if (m.a === 'load') { ytLoad(c, m.v, m.t, true, false); toast(c.name.split(' ')[0] + ' começou um vídeo'); return; }
+    if (m.a === 'close') { raWatchStop(false); return; }
+    if (!c.ytF) return; c.ytQuiet = Date.now();
+    if (Math.abs((c.ytT || 0) - (m.t || 0)) > 1.5) ytCmd(c, 'seekTo', [m.t || 0, true]);
+    ytCmd(c, m.a === 'play' ? 'playVideo' : 'pauseVideo');
+  }
+  function pickWatchFile() {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'video/*,audio/*';
+    inp.onchange = function () {
+      var f = inp.files[0], c = RA.call; if (!f || !c || !c.pc) return;
+      if (c.ytOn) raWatchStop(true);
+      var v = document.createElement('video'); v.src = URL.createObjectURL(f); v.playsInline = true; v.controls = true;
+      v.onloadedmetadata = function () {
+        var s = (v.captureStream || v.mozCaptureStream).call(v); c.watchV = v; c.watchS = s;
+        var add = function () { s.getTracks().forEach(function (t) { if (!(c.watchSenders || []).some(function (x) { return x.track === t; })) (c.watchSenders = c.watchSenders || []).push(c.pc.addTrack(t, s)); }); raSend({ k: 'streams', roles: raRoles(c) }); };
+        s.onaddtrack = add; add();
+        v.onplay = v.onpause = function () { raSend({ k: 'wfstate', paused: v.paused }); };
+        v.play().catch(function () {}); raLayout(); raPaint();
+      };
+    };
+    inp.click();
+  }
+  function raWatchStop(tell) {
+    var c = RA.call; if (!c) return;
+    if (c.ytOn) { c.ytOn = false; c.ytF = null; if (tell) raSend({ k: 'yt', a: 'close' }); }
+    if (c.watchS) { c.watchS.getTracks().forEach(function (t) { t.stop(); }); (c.watchSenders || []).forEach(function (s) { try { c.pc.removeTrack(s); } catch (e) {} }); c.watchSenders = null; c.watchS = null; if (c.watchV) { c.watchV.pause(); URL.revokeObjectURL(c.watchV.src); c.watchV = null; } raSend({ k: 'streams', roles: raRoles(c) }); }
+    var box = rcEl().querySelector('.rc-yt'); if (box) box.innerHTML = '';
+    raLayout(); raPaint();
+  }
+
+  /* ----- a tela da chamada ----- */
+  function raOpen() {
+    var rc = rcEl(), c = RA.call; if (!c) return;
+    if (!rc.innerHTML) {
+      rc.innerHTML = '<div class="rc-stage"><div class="rc-main"></div><div class="rc-yt"></div><div class="rc-who"><div class="av"><img alt=""></div><b></b><small></small></div><div class="rc-side"></div></div>' +
+        '<div class="rc-top"><div class="rc-id"><b></b><small></small></div><button class="rcb" data-a="mini" title="Diminuir">' + RI.shrink + '</button></div>' +
+        '<div class="rc-self"><video autoplay playsinline muted></video></div><div class="rc-dock"></div><div class="rc-in"></div><div class="rc-audio"></div>';
+      rc.onclick = function (e) {
+        var b = e.target.closest('[data-a]');
+        if (!b) { if (rc.classList.contains('mini') && !e.target.closest('.rc-dock')) raMini(false); return; }
+        e.stopPropagation(); var a = b.dataset.a;
+        if (a === 'mic') raMic(); else if (a === 'cam') raCam(); else if (a === 'flip') raFlip(); else if (a === 'screen') raScreen();
+        else if (a === 'watch') raWatchMenu(b); else if (a === 'hang') raHang(); else if (a === 'accept') raAccept(); else if (a === 'decline') raDecline();
+        else if (a === 'mini') raMini(!rc.classList.contains('mini'));
+        else if (a === 'wtoggle') raSend({ k: 'wf', a: 'toggle' }); else if (a === 'wback') raSend({ k: 'wf', a: 'seek', d: -10 }); else if (a === 'wfwd') raSend({ k: 'wf', a: 'seek', d: 10 });
+      };
+      raDrag(rc.querySelector('.rc-self'));
+    }
+    rc.className = 'on'; requestAnimationFrame(function () { rc.classList.add('in'); });
+  }
+  function raMini(on) { var rc = rcEl(); rc.classList.toggle('mini', on); if (on) raDrag(rc, true); else { rc.style.left = rc.style.top = rc.style.right = rc.style.bottom = ''; } raPaint(); }
+  function raShow() { raOpen(); raMini(false); }
+  function raPaint() {
+    var c = RA.call, rc = rcEl(); if (!c || !rc.innerHTML) return;
+    var kind = c.video ? 'vídeo' : 'voz';
+    rc.classList.toggle('ringing', c.state === 'ringing'); rc.classList.toggle('live', c.state === 'live');
+    var who = rc.querySelector('.rc-who'), im = who.querySelector('img'), av = raAvatar(c.uid); if (av && im.src !== av) im.src = av;
+    who.querySelector('b').textContent = c.name;
+    var p = PF.cache[c.uid] && PF.cache[c.uid].p; if (p) nomeStyle(who.querySelector('b'), completar(JSON.parse(JSON.stringify(p))).nome);
+    who.querySelector('small').textContent = c.state === 'calling' ? 'Chamando' : c.state === 'ringing' ? 'Chamada de ' + kind + ' ReApps' : c.state === 'connecting' ? 'Conectando' : c.lost ? 'Reconectando' : !c.peerMic ? 'Microfone desligado' : '';
+    rc.querySelector('.rc-id b').textContent = c.name; raClock();
+    var dock = rc.querySelector('.rc-dock');
+    if (c.state === 'ringing') {
+      dock.innerHTML = '';
+      rc.querySelector('.rc-in').innerHTML = '<button class="rcb no" data-a="decline"><i>' + RI.call + '</i><span>Recusar</span></button><button class="rcb yes" data-a="accept"><i>' + (c.video ? RI.video : RI.call) + '</i><span>Atender</span></button>';
+    } else {
+      rc.querySelector('.rc-in').innerHTML = '';
+      var live = !!c.pc, h = '';
+      h += '<button class="rcb' + (c.mic ? '' : ' x') + '" data-a="mic" title="' + (c.mic ? 'Desligar microfone' : 'Ligar microfone') + '">' + (c.mic ? RI.mic : RI.micoff) + '</button>';
+      h += '<button class="rcb' + (c.cam ? '' : ' x') + '" data-a="cam" title="' + (c.cam ? 'Desligar câmera' : 'Ligar câmera') + '">' + (c.cam ? RI.video : RI.vidoff) + '</button>';
+      if (TOQUE && c.cam) h += '<button class="rcb" data-a="flip" title="Virar câmera">' + RI.flip + '</button>';
+      if (canScreen()) h += '<button class="rcb' + (c.screen ? ' act' : '') + '" data-a="screen"' + (live ? '' : ' disabled') + ' title="' + (c.screen ? 'Parar de compartilhar' : 'Compartilhar tela') + '">' + RI.screen + '</button>';
+      h += '<button class="rcb' + (c.ytOn || c.watchS ? ' act' : '') + '" data-a="watch"' + (live ? '' : ' disabled') + ' title="' + (c.ytOn || c.watchS ? 'Parar de assistir' : 'Assistir junto') + '">' + RI.tv + '</button>';
+      h += '<button class="rcb end" data-a="hang" title="Desligar">' + RI.call + '</button>';
+      dock.innerHTML = h;
+    }
+    var mb = rc.querySelector('[data-a="mini"]'); mb.innerHTML = rc.classList.contains('mini') ? RI.grow : RI.shrink;
+    raPaintWatch();
+  }
+  function raClock() { var c = RA.call, rc = rcEl(); if (!c || !rc.innerHTML) return; rc.querySelector('.rc-id small').textContent = c.t0 ? raDur(c) + (c.lost ? '  Reconectando' : '') : c.state === 'ringing' ? 'Tocando' : c.state === 'calling' ? 'Chamando' : 'Conectando'; }
+  function raSelf() {
+    var c = RA.call, rc = rcEl(); if (!c || !rc.innerHTML) return;
+    var v = rc.querySelector('.rc-self video'), sh = c.local && c.cam ? c.local : null;
+    if (v.srcObject !== sh) v.srcObject = sh;
+    rc.querySelector('.rc-self').classList.toggle('nocam', !sh); rc.querySelector('.rc-self').classList.toggle('mirror', c.facing === 'user');
+  }
+  function raLayout() {
+    var c = RA.call, rc = rcEl(); if (!c || !rc.innerHTML) return;
+    var ids = Object.keys(c.remote), R = c.roles || {};
+    var hasV = function (id) { var s = c.remote[id]; return s && s.getVideoTracks().some(function (t) { return t.readyState === 'live' && !t.muted; }); };
+    var screen = R.screen && c.remote[R.screen] ? R.screen : '', watch = R.watch && c.remote[R.watch] ? R.watch : '';
+    var cam = R.cam && c.remote[R.cam] ? R.cam : ids.find(function (id) { return id !== screen && id !== watch; }) || '';
+    var mainId = screen || watch || '', sideId = '';
+    if (!mainId && cam && c.peerCam && hasV(cam)) mainId = cam; else if (mainId && cam && c.peerCam && hasV(cam)) sideId = cam;
+    var main = rc.querySelector('.rc-main'), side = rc.querySelector('.rc-side');
+    if (c.watchV) { if (main.firstChild !== c.watchV) { main.innerHTML = ''; main.appendChild(c.watchV); } sideId = cam && c.peerCam && hasV(cam) ? cam : ''; }
+    else setVid(main, mainId ? c.remote[mainId] : null, mainId === screen || mainId === watch);
+    setVid(side, sideId ? c.remote[sideId] : null, false);
+    rc.classList.toggle('hasmain', !!(mainId || c.watchV)); rc.classList.toggle('hasyt', !!c.ytOn); rc.classList.toggle('hasside', !!sideId);
+    rc.classList.toggle('sharing', !!c.screen); rc.classList.toggle('peerwatch', !!watch && !c.watchV);
+    var au = rc.querySelector('.rc-audio');
+    ids.forEach(function (id) { if (!au.querySelector('[data-s="' + id + '"]')) { var a = document.createElement('audio'); a.autoplay = true; a.dataset.s = id; a.srcObject = c.remote[id]; au.appendChild(a); a.play().catch(function () {}); } });
+    Array.prototype.slice.call(au.children).forEach(function (a) { if (!c.remote[a.dataset.s]) a.remove(); });
+    raPaintWatch();
+  }
+  function setVid(box, stream, contain) {
+    var v = box.querySelector('video');
+    if (!stream) { if (v) { v.srcObject = null; v.remove(); } return; }
+    if (!v) { box.innerHTML = ''; v = document.createElement('video'); v.autoplay = true; v.playsInline = true; v.muted = true; box.appendChild(v); }
+    if (v.srcObject !== stream) { v.srcObject = stream; v.play().catch(function () {}); }
+    v.classList.toggle('fit', !!contain);
+  }
+  function raPaintWatch() {
+    var c = RA.call, rc = rcEl(); if (!c || !rc.innerHTML) return;
+    var w = rc.querySelector('.rc-wctl');
+    if (rc.classList.contains('peerwatch')) {
+      if (!w) { w = document.createElement('div'); w.className = 'rc-wctl'; rc.querySelector('.rc-stage').appendChild(w); }
+      w.innerHTML = '<button class="rcb" data-a="wback" title="Voltar 10 segundos">' + RI.back + '</button><button class="rcb" data-a="wtoggle" title="' + (c.peerWatchPaused ? 'Continuar' : 'Pausar') + '">' + (c.peerWatchPaused ? RI.play : RI.pause) + '</button><button class="rcb" data-a="wfwd" title="Avançar 10 segundos">' + RI.fwd + '</button>';
+    } else if (w) w.remove();
+  }
+  function raDrag(el, whole) {
+    if (el._drag) return; el._drag = 1; var stt = null;
+    el.addEventListener('pointerdown', function (e) { if (whole && !rcEl().classList.contains('mini')) return; if (e.target.closest('button')) return; var r = el.getBoundingClientRect(); stt = { x: e.clientX, y: e.clientY, l: r.left, t: r.top, moved: false, id: e.pointerId }; });
+    window.addEventListener('pointermove', function (e) {
+      if (!stt || e.pointerId !== stt.id) return; var dx = e.clientX - stt.x, dy = e.clientY - stt.y;
+      if (!stt.moved && Math.abs(dx) + Math.abs(dy) < 6) return; stt.moved = true;
+      el.style.transition = 'none'; el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, stt.l + dx)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, stt.t + dy)) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
+    });
+    window.addEventListener('pointerup', function (e) { if (stt && stt.moved) { el.style.transition = ''; var cap = function (ev) { ev.stopPropagation(); }; el.addEventListener('click', cap, { capture: true, once: true }); setTimeout(function () { el.removeEventListener('click', cap, true); }, 50); } stt = null; });
+  }
+
+  window.__ccRa = { ligar: function (id, v) { raCall(String(id), !!v); }, estado: function () { var c = RA.call; return c ? { s: c.state, t0: !!c.t0, remotos: Object.keys(c.remote).length, yt: !!c.ytOn } : null; } };
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
