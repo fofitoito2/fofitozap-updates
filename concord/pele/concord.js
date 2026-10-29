@@ -22,7 +22,7 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Onest', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true, style: true, bub: true, dood: true, tint: 0.06 };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -36,17 +36,27 @@
   function rgba(h, a) { var c = rgb(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (+a).toFixed(3) + ')'; }
   function lum(h) { var c = rgb(h).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
 
+  var DOODLES = ['M30 40c-6-8-20-4-16 6 3 7 16 14 16 14s13-7 16-14c4-10-10-14-16-6z', 'M110 30l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z', 'M200 26v16M192 34h16M196 30l8 8M204 30l-8 8',
+    'M262 30h34a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6h-20l-10 8v-8h-4a6 6 0 0 1-6-6V36a6 6 0 0 1 6-6z', 'M350 24v30a6 5 0 1 1-4-5V28l16-4v24a6 5 0 1 1-4-5', 'M60 120a18 18 0 1 0 22 22 14 14 0 1 1-22-22z',
+    'M140 140a10 10 0 0 1 8-16 13 13 0 0 1 24 2 9 9 0 0 1 2 18h-30a8 8 0 0 1-4-4z', 'M240 120c0 10 6 14 6 14s-10-2-14 6c-2-10-12-10-12-10s8-4 6-14c6 6 14 4 14 4z', 'M318 118a16 16 0 1 0 0.1 0zM312 128h.1M326 128h.1M311 138a9 9 0 0 0 14 0',
+    'M30 220l50-20-18 46-8-18z M54 228l8-8', 'M130 206l-10 22h12l-6 20 18-26h-12l8-16z', 'M210 210h28l-4 26a6 6 0 0 1-6 5h-8a6 6 0 0 1-6-5zM238 216h5a5 5 0 0 1 0 10h-6M216 202c0-4 4-4 4-8M226 202c0-4 4-4 4-8',
+    'M300 226a16 16 0 1 0 32 0 16 16 0 1 0-32 0M290 232c10 6 42 0 52-12', 'M360 210l6 6M372 206v8M384 210l-6 6M366 226a10 10 0 0 0 12 0', 'M60 300c10-10 30-10 40 0M64 310a6 6 0 1 0 0.1 0M96 310a6 6 0 1 0 0.1 0M58 296l-6-10M102 296l6-10',
+    'M150 290l14 14 14-14 14 14M150 310l14 14 14-14 14 14', 'M246 290a14 14 0 0 1 14 14v6h-28v-6a14 14 0 0 1 14-14zM236 316h20M246 290v-6', 'M320 300h40M340 280v40M326 286l28 28M354 286l-28 28',
+    'M30 380c8-14 20-14 28 0s20 14 28 0', 'M130 370h40v26h-40zM150 370v-8a8 8 0 0 1 8-8h-16a8 8 0 0 1 8 8', 'M226 360l12 24 12-24M220 392h36', 'M320 368a10 10 0 1 1 20 0c0 10-10 12-10 22M330 400h.1', 'M380 360c-4 8 4 16 0 24 4 8-4 16 0 24'];
+  var DOOD = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" fill="none" stroke="white" stroke-opacity=".06" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + DOODLES.map(function (d) { return '<path d="' + d + '"/>'; }).join('') + '</svg>') + '")';
   var NOISE = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
   function themeCSS() {
     var P = PRESETS[CFG.preset] || PRESETS.fofito, a1 = CFG.accent || P.a1, a3 = P.a3;
-    var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = P.w;
+    var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = mix(P.w, a1, CFG.style ? +CFG.tint : 0);
     var aink = lum(a1) > 0.45 ? '#0b0c10' : '#ffffff';
     var ink = '#f2f3f8';
     var floatA = solid ? 1 : Math.max(op, 0.84);
     var v = {
       '--cc-bg0': P.bg[0], '--cc-bg1': P.bg[1], '--cc-o1': P.o[0], '--cc-o2': P.o[1], '--cc-o3': P.o[2], '--cc-orbs': CFG.orbs, '--cc-noise': NOISE,
       '--cc-a1': a1, '--cc-a2': P.a2, '--cc-a3': a3, '--cc-aink': aink, '--cc-ink': ink, '--cc-ink2': 'rgba(242,243,248,.74)', '--cc-ink3': 'rgba(242,243,248,.5)',
+      '--cc-dood': DOOD, '--cc-wall1': rgba(mix(w, P.o[0], 0.42), op), '--cc-wall2': rgba(mix(w, P.o[1], 0.3), op), '--cc-wall3': rgba(mix(w, P.o[2], 0.42), op),
+      '--cc-bub-in': 'rgba(255,255,255,.075)', '--cc-bub-me': rgba(a1, 0.24),
       '--cc-glass': rgba(mix(w, '#ffffff', 0.03), solid ? 0.98 : 0.78), '--cc-font': CFG.font ? "'" + CFG.font + "'" : "'gg sans'",
       '--text-0': aink, '--text-1': ink, '--text-2': 'rgba(242,243,248,.88)', '--text-3': 'rgba(242,243,248,.76)', '--text-4': 'rgba(242,243,248,.52)', '--text-5': 'rgba(242,243,248,.34)',
       '--bg-1': rgba(mix(w, '#ffffff', 0.12), Math.min(1, op + 0.18)), '--bg-2': rgba(mix(w, '#ffffff', 0.075), Math.min(1, op + 0.12)),
@@ -103,6 +113,9 @@
     h.classList.toggle('cc-solid', CFG.mat === 'solid');
     h.classList.toggle('cc-anim', !!CFG.anim);
     h.classList.toggle('cc-still', !CFG.motion);
+    h.classList.toggle('cc-style', !!CFG.style);
+    h.classList.toggle('cc-bub', !!(CFG.style && CFG.bub));
+    h.classList.toggle('cc-dood', !!(CFG.style && CFG.dood));
     if (window.ccMat) window.ccMat(CFG.mat === 'acrylic' || CFG.mat === 'mica' ? CFG.mat : 'none').catch(function () {});
     paintWall();
   }
@@ -212,6 +225,8 @@
     if (CFG.mat === 'wall') h += '<div class="walls"><button data-a="wallpick" style="--w:' + (CFG.wall ? 'url(' + CFG.wall + ')' : 'none') + '">' + (CFG.wall ? '' : 'Escolher') + '</button></div>';
     if (CFG.mat === 'aura') h += range('orbs', 'Bolhas', 'Força das cores do fundo', 0.2, 1, 0.05, FMT.pct) + toggle('motion', 'Bolhas em movimento', '');
     if (CFG.mat !== 'solid') h += range('op', 'Opacidade dos painéis', 'Menos opaco deixa ver mais o fundo', 0.2, 1, 0.02, FMT.pct) + range('blur', 'Desfoque', 'Quanto o vidro desfoca o que está atrás', 0, 40, 1, FMT.px);
+    h += '<h4>Estilo</h4>' + toggle('style', 'Estilo ReApps', 'Fundo do chat, caixa de digitar e seleção com a cara do FofitoZap');
+    if (CFG.style) h += toggle('bub', 'Mensagens em balões', 'As suas ficam na cor de destaque') + toggle('dood', 'Desenhos no fundo do chat', '') + range('tint', 'Cor do tema nos painéis', 'Quanto a cor de destaque tinge os painéis', 0, 0.25, 0.01, FMT.pct);
     h += '<h4>Formas</h4>' + range('radius', 'Cantos', '', 0, 24, 1, FMT.px) + range('gap', 'Espaço entre painéis', '', 0, 20, 1, FMT.px);
     h += '<h4>Fonte</h4><div class="fonts">' + FONTS.map(function (f) { return '<button data-f="' + esc(f) + '"' + (CFG.font === f ? ' class="on"' : '') + ' style="font-family:' + (f ? "'" + f + "'" : "'gg sans'") + '">' + (f || 'Padrão do Discord') + '</button>'; }).join('') + '</div>';
     h += '<h4>Detalhes</h4>' + toggle('anim', 'Animações', 'Mensagens, menus e listas se movendo') + toggle('chatbar', 'Barra de mensagem solta', 'A caixa de digitar fica separada do chat') + toggle('small', 'Painel de usuário compacto', 'Seu perfil lá embaixo ocupa menos espaço');
@@ -235,7 +250,7 @@
     var t = e.target;
     if (t.dataset.k) {
       var min = +t.min, max = +t.max, v = +t.value; t.style.setProperty('--p', ((v - min) / (max - min)) * 100 + '%');
-      var o = t.nextElementSibling; if (o) o.textContent = (t.dataset.k === 'op' || t.dataset.k === 'orbs' ? FMT.pct : FMT.px)(v);
+      var o = t.nextElementSibling; if (o) o.textContent = (t.dataset.k === 'op' || t.dataset.k === 'orbs' || t.dataset.k === 'tint' ? FMT.pct : FMT.px)(v);
       CFG[t.dataset.k] = v; save(); applyTheme();
     } else if (t.dataset.ci) { CFG.accent = t.value; save(); applyTheme(); }
   }
@@ -305,13 +320,76 @@
     if (e.key === 'Escape' && PANEL && PANEL.classList.contains('on')) { e.stopPropagation(); togglePanel(false); }
   }, true);
 
+  /* ---------- quais mensagens são suas (para o balão na cor de destaque) ---------- */
+  function myId() {
+    var img = document.querySelector('[class*="panels_"] img[src*="/avatars/"], [class*="panels_"] img[src*="/users/"]');
+    var m = img && /\/(?:avatars|users)\/(\d+)\//.exec(img.src); return m ? m[1] : '';
+  }
+  function tagMine() {
+    var me = myId(), cur = '';
+    if (!me) return;
+    document.querySelectorAll('li[id^="chat-messages-"]').forEach(function (li) {
+      if (li.querySelector('[class*="groupStart_"]')) {
+        var av = li.querySelector('img[class*="avatar_"]'), m = av && /\/(?:avatars|users)\/(\d+)\//.exec(av.src || '');
+        cur = m ? m[1] : '?';
+      }
+      if (cur === me) { if (!li.dataset.ccMe) li.dataset.ccMe = '1'; } else if (li.dataset.ccMe) delete li.dataset.ccMe;
+    });
+  }
+
+  /* ---------- esqueleto da tela (só a estrutura, sem textos, nomes nem imagens) ----------
+     O Concord guarda em dados/estrutura para ajustar a pele quando o Discord muda. */
+  var DUMPED = {};
+  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable'];
+  function skeleton() {
+    var root = document.body.cloneNode(true);
+    root.querySelectorAll('#cc-panel, #cc-aura, #cc-toast, script, style, link, svg *, iframe').forEach(function (n) { n.remove(); });
+    (function walk(el) {
+      for (var i = el.attributes.length - 1; i >= 0; i--) { var a = el.attributes[i].name; if (KEEP.indexOf(a) < 0) el.removeAttribute(a); }
+      if (el.id) el.id = el.id.replace(/\d{6,}/g, '#');
+      var seen = {}, kids = Array.prototype.slice.call(el.childNodes);
+      kids.forEach(function (c) {
+        if (c.nodeType === 3) { if (c.nodeValue.trim()) c.nodeValue = '…'; else c.remove(); return; }
+        if (c.nodeType !== 1) { c.remove(); return; }
+        var sig = c.tagName + '.' + (c.getAttribute('class') || '');
+        seen[sig] = (seen[sig] || 0) + 1;
+        if (seen[sig] > 6) { c.remove(); return; }
+        walk(c);
+      });
+    })(root);
+    return '<!-- Concord ' + INFO.ver + ' | ' + location.pathname.replace(/\d{6,}/g, '#') + ' | ' + new Date().toISOString() + ' -->\n' + root.outerHTML;
+  }
+  function screenKind() {
+    if (document.querySelector('[class*="standardSidebarView_"]')) return 'configuracoes';
+    if (document.querySelector('[class*="callContainer_"]')) return 'chamada';
+    var p = location.pathname;
+    if (/^\/channels\/@me\/\d/.test(p)) return 'conversa';
+    if (/^\/channels\/@me/.test(p)) return 'inicio';
+    if (/^\/channels\/\d+\/\d/.test(p)) return 'canal';
+    if (/^\/(login|register)/.test(p)) return 'entrar';
+    return 'outra';
+  }
+  function dump(force) {
+    var k = screenKind();
+    if (!window.ccDump || (DUMPED[k] && !force) || k === 'entrar') return;
+    DUMPED[k] = 1;
+    try { window.ccDump(force ? 'manual-' + k : k, skeleton()).catch(function () {}); if (force) toast('Estrutura da tela guardada'); } catch (e) {}
+  }
+  var dumpT = null, lastPath = '';
+  function watchScreen() {
+    var k = location.pathname + '|' + screenKind();
+    if (k === lastPath) return; lastPath = k;
+    clearTimeout(dumpT); dumpT = setTimeout(function () { dump(false); }, 4000);
+  }
+  document.addEventListener('keydown', function (e) { if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { e.preventDefault(); dump(true); } }, true);
+
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    (document.hidden ? setTimeout : requestAnimationFrame)(function () { pend = false; place(); if (document.body) { aura(); mountWin(); } }, 200);
+    setTimeout(function () { pend = false; place(); if (document.body) { aura(); mountWin(); if (CFG.style && CFG.bub) tagMine(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
   function ready() {
