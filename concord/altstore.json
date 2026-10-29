@@ -1,0 +1,40 @@
+{
+  "name": "ReApps",
+  "identifier": "br.fofito.reapps",
+  "sourceURL": "https://raw.githubusercontent.com/fofitoito2/fofitozap-updates/main/concord/altstore.json",
+  "subtitle": "Os apps do Fofito",
+  "tintColor": "#5EE7D6",
+  "iconURL": "https://raw.githubusercontent.com/fofitoito2/fofitozap-updates/main/concord/icone-ios.png",
+  "apps": [
+    {
+      "name": "Concord",
+      "bundleIdentifier": "br.fofito.concord",
+      "developerName": "ReApps",
+      "subtitle": "O Discord com a cara dos ReApps",
+      "localizedDescription": "O Discord de verdade com a pele dos ReApps: perfis do Concord, Sala ReApps nas calls, temas e muito mais.",
+      "iconURL": "https://raw.githubusercontent.com/fofitoito2/fofitozap-updates/main/concord/icone-ios.png",
+      "tintColor": "#5EE7D6",
+      "category": "social",
+      "versions": [
+        {
+          "version": "1.0.3",
+          "buildVersion": "3",
+          "date": "2026-10-29",
+          "size": 1546082,
+          "downloadURL": "https://raw.githubusercontent.com/fofitoito2/fofitozap-updates/main/concord/Concord.ipa?v=3",
+          "minOSVersion": "15.0",
+          "localizedDescription": "Versão 3 do Concord."
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSMicrophoneUsageDescription": "Para você falar nas calls do Discord e nas chamadas ReApps.",
+          "NSCameraUsageDescription": "Para a câmera nas calls e chamadas ReApps.",
+          "NSPhotoLibraryUsageDescription": "Para escolher fotos, GIFs e vídeos do seu perfil e das conversas."
+        }
+      }
+    }
+  ],
+  "news": []
+}
