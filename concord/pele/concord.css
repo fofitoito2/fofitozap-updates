@@ -1163,3 +1163,114 @@ html.cc-style .tile__2f4f7[data-cc-vz] .tileChild__2f4f7, html.cc-style .tile__2
 html.cc-style .tile__2f4f7[data-cc-vz] img, html.cc-style .tile__2f4f7[data-cc-vz] [class*="art"], html.cc-style .tile__2f4f7[data-cc-vz] [class*="illustration"] { opacity: .0 !important; }
 html.cc-style .tile__2f4f7[data-cc-vz] button { border-radius: 999px !important; height: 40px !important; padding: 0 16px !important; background: rgba(255,255,255,.08) !important; border: 1px solid rgba(255,255,255,.1) !important; color: var(--text-1) !important; font-weight: 600 !important; transition: transform .2s var(--cc-spring), background-color .15s !important; }
 html.cc-style .tile__2f4f7[data-cc-vz] button:hover { background: color-mix(in srgb, var(--accent-2) 28%, transparent) !important; transform: translateY(-2px); }
+
+/* ================= Sala ReApps (câmera, tela e assistir junto dentro da call de servidor) ================= */
+#cc-salabtn { position: fixed; right: 20px; bottom: 96px; z-index: 1004; display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 12px; border-radius: 999px; border: 0; cursor: pointer;
+  font: 600 13.5px var(--cc-font), system-ui, sans-serif; color: var(--text-1); background: color-mix(in srgb, var(--cc-bg1) 82%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-2) 45%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  animation: cc-pop .35s var(--cc-out) both; transition: transform .25s var(--cc-spring); text-align: left; }
+#cc-salabtn:hover { transform: translateY(-2px); }
+#cc-salabtn svg { width: 26px; height: 26px; padding: 5px; border-radius: 50%; background: var(--accent-2); color: var(--cc-aink); flex: none; box-sizing: content-box; }
+#cc-salabtn small { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-4); }
+#cc-salabtn.chama { box-shadow: inset 0 0 0 2px var(--accent-2), 0 0 0 6px color-mix(in srgb, var(--accent-2) 22%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); animation: cc-pop .35s var(--cc-out) both, cc-chama-sala 1.8s ease-in-out infinite; }
+@keyframes cc-chama-sala { 50% { box-shadow: inset 0 0 0 2px var(--accent-2), 0 0 0 12px color-mix(in srgb, var(--accent-2) 0%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); } }
+html.cc-fs #cc-salabtn { bottom: 110px; }
+#cc-sala { position: fixed; inset: 28px; z-index: 100002; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 10px; padding: 14px; border-radius: 26px; color: var(--text-1);
+  font-family: var(--cc-font), 'gg sans', system-ui, sans-serif; background: radial-gradient(80% 70% at 15% 0%, color-mix(in srgb, var(--cc-o1) 55%, transparent), transparent 70%), radial-gradient(70% 70% at 100% 100%, color-mix(in srgb, var(--cc-o2) 55%, transparent), transparent 70%), color-mix(in srgb, var(--cc-bg0) 94%, transparent);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.08); opacity: 0; transform: scale(.97) translateY(10px); transition: opacity .25s var(--cc-out), transform .45s var(--cc-spring), inset .4s var(--cc-out); }
+#cc-sala.on { opacity: 1; transform: none; }
+#cc-sala button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+#cc-sala .sl-top { display: flex; align-items: center; gap: 12px; padding: 2px 4px 0 8px; }
+#cc-sala .sl-tt { flex: 1; min-width: 0; }
+#cc-sala .sl-tt b { display: block; font-size: 16px; letter-spacing: -.01em; }
+#cc-sala .sl-tt small { display: block; font-size: 12px; color: var(--text-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cc-sala .sl-ppl { display: flex; align-items: center; }
+#cc-sala .sl-ppl img { width: 28px; height: 28px; border-radius: 50%; margin-left: -7px; box-shadow: 0 0 0 2px var(--cc-bg0); object-fit: cover; background: rgba(255,255,255,.1); }
+#cc-sala .sl-ppl em { font-style: normal; font-size: 12px; color: var(--text-3); margin-left: 8px; white-space: nowrap; }
+#cc-sala .sl-ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.07); }
+#cc-sala .sl-ic:hover { background: rgba(255,255,255,.13); }
+#cc-sala .sl-ic svg { width: 18px; height: 18px; }
+#cc-sala .sl-main { position: relative; border-radius: 20px; overflow: hidden; background: #000; min-height: 0; display: none; }
+#cc-sala.temmain .sl-main, #cc-sala .sl-main:has(.sl-vz) { display: block; }
+#cc-sala .sl-main:has(.sl-vz) { background: rgba(255,255,255,.035); }
+#cc-sala .sl-main video, #cc-sala .sl-main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: contain; background: #000; }
+#cc-sala .sl-vz { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 6px; padding: 20px; }
+#cc-sala .sl-vz b { font-size: 17px; }
+#cc-sala .sl-vz span { font-size: 13.5px; color: var(--text-4); max-width: 380px; }
+#cc-sala:not(.temmain) .sl-strip { align-content: center; }
+#cc-sala .sl-strip { display: flex; gap: 10px; overflow-x: auto; padding: 2px; scrollbar-width: thin; }
+#cc-sala:not(.temmain):not(:has(.sl-vz)) { grid-template-rows: auto minmax(0, 1fr) auto; }
+#cc-sala:not(.temmain):not(:has(.sl-vz)) .sl-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); grid-auto-rows: minmax(150px, 1fr); overflow: auto; }
+#cc-sala .sl-q { position: relative; flex: none; width: 190px; aspect-ratio: 16 / 10; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); transition: transform .25s var(--cc-spring); }
+#cc-sala:not(.temmain) .sl-q { width: auto; aspect-ratio: auto; }
+#cc-sala .sl-q:hover { transform: translateY(-2px); }
+#cc-sala .sl-v, #cc-sala .sl-v video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#cc-sala .sl-v video.fit { object-fit: contain; background: #000; }
+#cc-sala .sl-v video.esp, #cc-sala .sl-main video.esp { transform: scaleX(-1); }
+#cc-sala .sl-v { display: grid; place-items: center; }
+#cc-sala .sl-av { width: 34%; max-width: 76px; aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--accent-2), 0 10px 26px -8px color-mix(in srgb, var(--accent-2) 70%, transparent); }
+#cc-sala .sl-q.sem .sl-v { position: absolute; }
+#cc-sala .sl-q em { position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 3px 10px; border-radius: 999px; font-style: normal; font-size: 12px; font-weight: 600; background: rgba(10,8,14,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cc-sala .sl-dock { display: flex; justify-content: center; gap: 8px; }
+#cc-sala .rcb { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.09); color: #fff; transition: background-color .15s, transform .2s var(--cc-spring); }
+#cc-sala .rcb svg { width: 21px; height: 21px; }
+#cc-sala .rcb:hover { background: rgba(255,255,255,.17); }
+#cc-sala .rcb:active { transform: scale(.94); }
+#cc-sala .rcb.on { background: #fff; color: #14121a; }
+#cc-sala .rcb.end { width: 66px; border-radius: 999px; background: #e5484d; }
+#cc-sala.mini { inset: auto 20px 96px auto; width: 300px; height: 190px; padding: 0; gap: 0; grid-template-rows: minmax(0, 1fr); cursor: pointer; }
+#cc-sala.mini > :not(.sl-main) { display: none !important; }
+#cc-sala.mini .sl-main { display: block; border-radius: 26px; }
+#cc-sala.mini:not(.temmain) .sl-main::after { content: 'Sala ReApps'; position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; color: var(--text-2); }
+#cc-sala.mini .sl-main .sl-vz { display: none; }
+html.cc-estreito #cc-sala:not(.mini) { inset: 0; border-radius: 0; padding: 10px; }
+html.cc-estreito #cc-sala .sl-ppl em { display: none; }
+html.cc-estreito #cc-sala.temmain .sl-q { width: 130px; }
+html.cc-estreito #cc-sala:not(.temmain):not(:has(.sl-vz)) .sl-strip { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); grid-auto-rows: minmax(120px, 1fr); }
+html.cc-estreito #cc-sala.mini { width: 220px; height: 140px; right: 12px; bottom: 80px; }
+html.cc-estreito #cc-salabtn { right: 12px; bottom: 80px; }
+html.cc-cel #cc-sala, html.cc-cel #cc-salabtn { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ================= mural do perfil ================= */
+#cc-grande .mu-acts { display: flex; gap: 8px; margin-bottom: 10px; }
+#cc-grande .mu-acts button { flex: 1; height: 38px; border-radius: 12px; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 600 13px var(--cc-font), system-ui, sans-serif; color: var(--text-1);
+  background: color-mix(in srgb, var(--accent-2) 18%, rgba(255,255,255,.05)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-2) 35%, transparent); transition: transform .2s var(--cc-spring), background-color .15s; }
+#cc-grande .mu-acts button:hover { background: color-mix(in srgb, var(--accent-2) 30%, rgba(255,255,255,.05)); transform: translateY(-1px); }
+#cc-grande .mu-acts svg { width: 16px; height: 16px; }
+#cc-grande .mu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 4px 2px 8px; }
+#cc-grande .mu-n { position: relative; padding: 12px 12px 10px; border-radius: 6px 6px 14px 6px; min-height: 96px; display: flex; flex-direction: column; gap: 8px; color: #241d2b; background: var(--c);
+  transform: rotate(var(--r)); box-shadow: 0 10px 20px -10px rgba(0,0,0,.6); animation: cc-mu .5s var(--cc-spring) both; animation-delay: calc(var(--i) * 30ms); transition: transform .25s var(--cc-spring); }
+#cc-grande .mu-n:hover { transform: rotate(0deg) scale(1.04); z-index: 2; }
+@keyframes cc-mu { from { opacity: 0; transform: rotate(var(--r)) translateY(12px) scale(.9); } }
+#cc-grande .mu-n[data-f="fita"]::before { content: ''; position: absolute; top: -8px; left: 50%; width: 52px; height: 16px; transform: translateX(-50%) rotate(-3deg); background: rgba(255,255,255,.55); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+#cc-grande .mu-n[data-f="vidro"] { color: var(--text-1); background: color-mix(in srgb, var(--c) 22%, rgba(255,255,255,.04)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 50%, transparent), 0 10px 20px -10px rgba(0,0,0,.6); border-radius: 14px; }
+#cc-grande .mu-n[data-f="carta"] { border-radius: 4px; background: repeating-linear-gradient(transparent 0 19px, rgba(0,0,0,.08) 19px 20px), var(--c); }
+#cc-grande .mu-n p { margin: 0; font: 600 13.5px/1.35 var(--cc-font), system-ui, sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; flex: 1; }
+#cc-grande .mu-n .mu-d { width: 100%; aspect-ratio: 640 / 420; border-radius: 4px; object-fit: cover; background: rgba(255,255,255,.4); display: block; }
+#cc-grande .mu-n small { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; opacity: .7; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#cc-grande .mu-n small img { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; flex: none; background: rgba(0,0,0,.15); }
+#cc-grande .mu-x { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; display: none; place-items: center; background: #e5484d; color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+#cc-grande .mu-n:hover .mu-x { display: grid; }
+@media (pointer: coarse) { #cc-grande .mu-x { display: grid; width: 30px; height: 30px; } }
+#cc-grande .mu-x svg { width: 14px; height: 14px; }
+.mu-modal .cd { width: min(480px, 100%) !important; }
+.mu-des .cd { width: min(720px, 100%) !important; }
+.mu-modal textarea { width: 100%; box-sizing: border-box; border-radius: 14px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.25); color: inherit; padding: 12px; font: 15px/1.4 var(--cc-font), system-ui, sans-serif; resize: none; outline: none; }
+.mu-modal textarea:focus { border-color: var(--accent-2); }
+.mu-modal .mu-op { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-top: 12px; }
+.mu-modal .mu-cs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.mu-modal .mu-cs button { width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); transition: transform .2s var(--cc-spring); }
+.mu-modal .mu-cs button.on { box-shadow: 0 0 0 2px var(--cc-bg0), 0 0 0 4px var(--accent-2); transform: scale(1.08); }
+.mu-modal .mu-fs { display: flex; gap: 6px; flex-wrap: wrap; }
+.mu-modal .mu-fs button { height: 32px; padding: 0 12px; border-radius: 999px; border: 0; cursor: pointer; font: 600 12.5px var(--cc-font), system-ui, sans-serif; color: var(--text-1); background: rgba(255,255,255,.08); }
+.mu-modal .mu-fs button.on { background: var(--accent-2); color: var(--cc-aink); }
+.mu-modal .mu-papel { margin-top: 10px; }
+.mu-modal .mu-papel span { font-size: 12px; color: var(--text-4); margin-right: 4px; }
+.mu-des .mu-tela { border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+.mu-des canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
+#cc-apk { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 100006; display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 8px 0 14px; border-radius: 999px; border: 0;
+  font: 600 13.5px var(--cc-font), system-ui, sans-serif; color: var(--cc-aink); background: var(--accent-2); box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--accent-2) 70%, transparent); text-align: left; animation: cc-pop .35s var(--cc-out) both; }
+#cc-apk > svg { width: 22px; height: 22px; }
+#cc-apk small { display: block; font-size: 11.5px; font-weight: 500; opacity: .75; }
+#cc-apk i { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.14); margin-left: 4px; }
+#cc-apk i svg { width: 14px; height: 14px; }

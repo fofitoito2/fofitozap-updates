@@ -2001,13 +2001,13 @@
     var acoes = eu ? [['editar', 'Editar perfil', true]] : [['msg', 'Mensagem', true]];
     if (op.host) acoes.push(['discord', 'Perfil do Discord']);
     ov.innerHTML = '<button class="gx" title="Fechar">' + IC.x + '</button><div class="pp"><div class="pp-c"></div><div class="pp-i"><div class="pp-acts">' +
-      acoes.map(function (a) { return '<button data-ppa="' + a[0] + '"' + (a[2] ? ' class="pri"' : '') + '>' + a[1] + '</button>'; }).join('') + '</div><div class="pp-info"></div></div></div>';
+      acoes.map(function (a) { return '<button data-ppa="' + a[0] + '"' + (a[2] ? ' class="pri"' : '') + '>' + a[1] + '</button>'; }).join('') + '</div><div class="pp-info"></div><div class="pp-mural"></div></div></div>';
     var cp = JSON.parse(JSON.stringify(p)); delete cp.__id;
     var card = cardEl(cp, nome, avatar); card.classList.add('grande');
     ov.querySelector('.pp-c').appendChild(card); document.body.appendChild(ov);
     var info = ov.querySelector('.pp-info');
     var pinta = function () { var o = infoDiscord(id, op.dlg); info.innerHTML = perfilInfoHTML(o, eu); var nt = info.querySelector('.pp-nt'); if (nt) nt.textContent = o.nota; };
-    pinta(); setTimeout(function () { if (ov.isConnected) pinta(); }, 900); setTimeout(function () { if (ov.isConnected) pinta(); }, 2500);
+    pinta(); muralCarregar(ov.querySelector('.pp-mural'), id, eu, p); setTimeout(function () { if (ov.isConnected) pinta(); }, 900); setTimeout(function () { if (ov.isConnected) pinta(); }, 2500);
     var fit = function () {
       var largo = innerWidth >= 820, h = card.offsetHeight || 420, w = card.offsetWidth || 330;
       var z = largo ? Math.max(1, Math.min(1.6, (innerHeight - 90) / h, (innerWidth * 0.46) / w)) : Math.max(1, Math.min(1.35, (innerWidth - 32) / w));
@@ -2031,6 +2031,94 @@
     ov._fechaDiscord = !!op.host; ov._host = op.host; ov._dlg = op.dlg;
     requestAnimationFrame(function () { ov.classList.add('on'); });
     return ov;
+  }
+  /* ---------- mural do perfil: recados e desenhos que os outros deixam; o dono (e quem escreveu) apaga ---------- */
+  var MURAL_CORES = ['#ffe27a', '#ffb3c7', '#b8f2c9', '#a9d8ff', '#d6c2ff', '#ffffff'];
+  function muralCarregar(box, id, eu, p) {
+    if (!box || !window.ccNet) return;
+    box.innerHTML = '<section><h5>Mural <i>carregando...</i></h5></section>';
+    if (!PF.conta && !PF.carregando && !PF.tentouMural) { PF.tentouMural = true; carregarConta(); setTimeout(function () { if (box.isConnected && PF.conta) muralCarregar(box, id, eu, p); }, 2500); }
+    net('GET', '/concord/mural?id=' + id).then(function (r) { muralPinta(box, id, eu, r || { itens: [] }); }).catch(function () { box.innerHTML = '<section><h5>Mural</h5><div class="pp-vz">Não consegui abrir o mural agora.</div></section>'; });
+  }
+  function muralPinta(box, id, eu, r) {
+    var meu = PF.conta && PF.conta.id, itens = r.itens || [], aberto = r.aberto !== 'ninguem';
+    var h = '<section><h5>Mural <i>' + (itens.length ? itens.length + (itens.length === 1 ? ' recado' : ' recados') : (eu ? 'os outros escrevem e desenham aqui' : 'deixe o primeiro recado')) + '</i></h5>';
+    if (aberto || eu) h += '<div class="mu-acts"><button data-mu="texto">' + IC.pen + ' Escrever</button><button data-mu="desenho">' + sv('<path d="M3 21c3 0 4-2 4-4a3 3 0 1 1 3 3c0 .6-.2 1-1 1z"/><path d="M14.5 4.5l5 5-8 8-5-5z"/>') + ' Desenhar</button></div>';
+    else h += '<div class="pp-vz">O mural dessa pessoa está fechado.</div>';
+    h += '<div class="mu-grid">' + itens.map(function (it, i) {
+      var pode = meu && (eu || it.autor === meu), rot = ((it.n * 37) % 7) - 3;
+      return '<div class="mu-n" data-f="' + esc(it.fundo || 'nota') + '" style="--c:' + esc(it.cor || '#ffe27a') + ';--r:' + rot + 'deg;--i:' + i + '">' + (pode ? '<button class="mu-x" data-mux="' + it.n + '" title="Apagar">' + IC.x + '</button>' : '') +
+        (it.tipo === 'desenho' ? '<img class="mu-d" data-mud="' + esc(it.desenho || '') + '" alt="Desenho">' : '<p></p>') +
+        '<small><img src="' + esc(raAvatar(it.autor) || '') + '" alt="">' + esc(it.autor === id ? 'Dono do mural' : (raName(it.autor) !== 'Alguém' ? raName(it.autor) : it.nome || 'Alguém')) + '</small></div>';
+    }).join('') + '</div></section>';
+    box.innerHTML = h;
+    box.querySelectorAll('.mu-n').forEach(function (n, i) { var pp = n.querySelector('p'); if (pp) pp.textContent = itens[i].texto; });
+    box.querySelectorAll('[data-mud]').forEach(function (im) { mediaURL(im.dataset.mud).then(function (d) { if (d) im.src = d; }); });
+    box.onclick = function (e) {
+      var b = e.target.closest('[data-mu]'), x = e.target.closest('[data-mux]');
+      if (x) { net('POST', '/concord/mural-apagar', JSON.stringify({ n: +x.dataset.mux })).then(function () { muralCarregar(box, id, eu); toast('Recado apagado'); }).catch(function (er) { toast(er.erro || 'Não consegui apagar'); }); return; }
+      if (!b) return;
+      if (!PF.conta) { toast('Entre com o Discord na aba Perfil do Concord para escrever em murais'); return; }
+      if (b.dataset.mu === 'texto') muralEscrever(box, id, eu); else muralDesenhar(box, id, eu);
+    };
+  }
+  function muralEnviar(box, id, eu, o) {
+    o.dono = id; return net('POST', '/concord/mural', JSON.stringify(o)).then(function () { muralCarregar(box, id, eu); toast('Recado no mural!'); somCurto(880, 0.12); })
+      .catch(function (er) { toast(er.erro || 'Não consegui deixar o recado'); throw er; });
+  }
+  function muralEscrever(box, id, eu) {
+    var cor = MURAL_CORES[0], fundo = 'nota', o = document.createElement('div'); o.id = 'cc-ramodal'; o.className = 'mu-modal';
+    o.innerHTML = '<div class="cd"><h3>Recado no mural</h3><textarea maxlength="160" rows="4" placeholder="Escreva algo legal..."></textarea><div class="mu-op"><div class="mu-cs">' +
+      MURAL_CORES.map(function (c, i) { return '<button data-c="' + c + '" style="--c:' + c + '"' + (i ? '' : ' class="on"') + '></button>'; }).join('') + '</div><div class="mu-fs">' +
+      [['nota', 'Nota'], ['fita', 'Fita'], ['vidro', 'Vidro'], ['carta', 'Carta']].map(function (f, i) { return '<button data-fu="' + f[0] + '"' + (i ? '' : ' class="on"') + '>' + f[1] + '</button>'; }).join('') +
+      '</div></div><div class="bt"><button data-x>Cancelar</button><button class="pri" data-go>Colar no mural</button></div></div>';
+    document.body.appendChild(o); var ta = o.querySelector('textarea'); ta.focus();
+    ta.addEventListener('keydown', function (e) { e.stopPropagation(); });
+    o.addEventListener('click', function (e) {
+      var c = e.target.closest('[data-c]'), f = e.target.closest('[data-fu]');
+      if (c) { cor = c.dataset.c; o.querySelectorAll('[data-c]').forEach(function (x) { x.classList.toggle('on', x === c); }); return; }
+      if (f) { fundo = f.dataset.fu; o.querySelectorAll('[data-fu]').forEach(function (x) { x.classList.toggle('on', x === f); }); return; }
+      if (e.target === o || e.target.closest('[data-x]')) o.remove();
+      else if (e.target.closest('[data-go]')) { var t = ta.value.trim(); if (!t) { toast('Escreva alguma coisa'); return; } muralEnviar(box, id, eu, { tipo: 'texto', texto: t, cor: cor, fundo: fundo }).then(function () { o.remove(); }).catch(function () {}); }
+    });
+  }
+  function muralDesenhar(box, id, eu) {
+    var o = document.createElement('div'); o.id = 'cc-ramodal'; o.className = 'mu-modal mu-des';
+    var tintas = ['#14121a', '#ff5c7a', '#ff8a3d', '#f2c14e', '#5ee7a6', '#4fd6e6', '#5b8cff', '#9b7bff', '#ffffff'];
+    o.innerHTML = '<div class="cd"><h3>Desenho no mural</h3><div class="mu-tela"><canvas width="640" height="420"></canvas></div><div class="mu-op"><div class="mu-cs">' +
+      tintas.map(function (c, i) { return '<button data-t="' + c + '" style="--c:' + c + '"' + (i === 1 ? ' class="on"' : '') + '></button>'; }).join('') + '</div><div class="mu-fs">' +
+      '<button data-g="4">Fino</button><button data-g="9" class="on">Médio</button><button data-g="18">Grosso</button><button data-bo>Borracha</button><button data-des>Desfazer</button><button data-lp>Limpar</button></div></div>' +
+      '<div class="mu-cs mu-papel"><span>Papel</span>' + MURAL_CORES.map(function (c, i) { return '<button data-p="' + c + '" style="--c:' + c + '"' + (i === 5 ? ' class="on"' : '') + '></button>'; }).join('') + '</div>' +
+      '<div class="bt"><button data-x>Cancelar</button><button class="pri" data-go>Colar no mural</button></div></div>';
+    document.body.appendChild(o);
+    var cv = o.querySelector('canvas'), cx = cv.getContext('2d'), tinta = tintas[1], grossura = 9, borracha = false, papel = '#ffffff', hist = [], tracos = 0, ult = null;
+    cx.lineCap = 'round'; cx.lineJoin = 'round';
+    var guarda = function () { hist.push(cx.getImageData(0, 0, cv.width, cv.height)); if (hist.length > 30) hist.shift(); };
+    var pos = function (e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; };
+    cv.style.background = papel;
+    cv.addEventListener('pointerdown', function (e) { e.preventDefault(); cv.setPointerCapture(e.pointerId); guarda(); ult = pos(e); tracos++;
+      cx.globalCompositeOperation = borracha ? 'destination-out' : 'source-over'; cx.strokeStyle = tinta; cx.lineWidth = grossura * (e.pressure && e.pointerType === 'pen' ? 0.5 + e.pressure : 1);
+      cx.beginPath(); cx.arc(ult.x, ult.y, cx.lineWidth / 2, 0, 7); cx.fillStyle = tinta; if (!borracha) cx.fill(); });
+    cv.addEventListener('pointermove', function (e) { if (!ult) return; var p2 = pos(e); cx.beginPath(); cx.moveTo(ult.x, ult.y); cx.lineTo(p2.x, p2.y); cx.stroke(); ult = p2; });
+    var fim = function () { ult = null; }; cv.addEventListener('pointerup', fim); cv.addEventListener('pointercancel', fim);
+    o.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-t]'), g = e.target.closest('[data-g]'), pa = e.target.closest('[data-p]');
+      if (t) { tinta = t.dataset.t; borracha = false; o.querySelectorAll('[data-t]').forEach(function (x) { x.classList.toggle('on', x === t); }); o.querySelector('[data-bo]').classList.remove('on'); return; }
+      if (g) { grossura = +g.dataset.g; o.querySelectorAll('[data-g]').forEach(function (x) { x.classList.toggle('on', x === g); }); return; }
+      if (pa) { papel = pa.dataset.p; cv.style.background = papel; o.querySelectorAll('[data-p]').forEach(function (x) { x.classList.toggle('on', x === pa); }); return; }
+      if (e.target.closest('[data-bo]')) { borracha = !borracha; e.target.closest('[data-bo]').classList.toggle('on', borracha); return; }
+      if (e.target.closest('[data-des]')) { if (hist.length) { cx.putImageData(hist.pop(), 0, 0); tracos = Math.max(0, tracos - 1); } return; }
+      if (e.target.closest('[data-lp]')) { guarda(); cx.clearRect(0, 0, cv.width, cv.height); tracos = 0; return; }
+      if (e.target === o || e.target.closest('[data-x]')) { o.remove(); return; }
+      if (e.target.closest('[data-go]')) {
+        if (!tracos) { toast('Desenhe alguma coisa primeiro'); return; }
+        // o papel vai junto na imagem
+        var out = document.createElement('canvas'); out.width = cv.width; out.height = cv.height; var ox = out.getContext('2d'); ox.fillStyle = papel; ox.fillRect(0, 0, out.width, out.height); ox.drawImage(cv, 0, 0);
+        var url = out.toDataURL('image/png'), bt = e.target.closest('[data-go]'); bt.disabled = true; bt.textContent = 'Enviando...';
+        net('POST', '/concord/midia', url.split(',')[1]).then(function (res) { PF.media[res.url.slice(-32)] = Promise.resolve(url); MEDIA_OK[res.url.slice(-32)] = url; return muralEnviar(box, id, eu, { tipo: 'desenho', desenho: res.url, cor: papel, fundo: 'nota' }); })
+          .then(function () { o.remove(); }).catch(function (er) { bt.disabled = false; bt.textContent = 'Colar no mural'; if (er && er.erro) toast(er.erro); });
+      }
+    });
   }
   function verConcordPill(cb) {
     var b = document.getElementById('cc-vercc'); if (b) b.remove();
@@ -2235,6 +2323,7 @@
       return '<button class="' + (on ? 'on' : '') + (tem ? '' : ' lock') + '" data-pfi="' + k + '"' + (tem ? '' : ' disabled title="' + (k === 'fundador' ? 'Só a primeira conta do Concord' : 'Das 25 primeiras contas do Concord') + '"') + '>' + sv(INS[k][1]) + '<span>' + INS[k][0] + '</span></button>';
     }).join('') + '</div>';
     h += '<h4>Sobre você <em class="pf-n" id="cc-pf-bion">' + d.bio.length + '/190</em></h4><textarea class="pf-bio" data-pfb maxlength="190" rows="3" placeholder="Uma frase sua...">' + esc(d.bio) + '</textarea>';
+    h += '<h4>Mural</h4><div class="note">Quem abre o seu perfil pode deixar recados e desenhos. Você apaga o que quiser.</div><div class="seg">' + [['todos', 'Aberto para todos'], ['ninguem', 'Fechado']].map(function (m) { return '<button data-pfmu="' + m[0] + '"' + ((d.mural || 'todos') === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>';
     h += '<h4>Cor do cartão</h4><div class="sws">' + ['#ff5c7a', '#ff8a3d', '#f2c14e', '#5ee7a6', '#4fd6e6', '#5b8cff', '#9b7bff', '#f06fd3', '#e8e8f0'].map(function (c) { return '<button class="sw' + (d.destaque === c ? ' on' : '') + '" data-pfd="' + c + '" style="--c:' + c + '"></button>'; }).join('') +
       '<label class="sw" title="Outra cor" style="--c:' + d.destaque + '">' + IC.plus + '<input type="color" data-pfdi value="' + d.destaque + '"></label></div>';
     if (PF.erro) h += '<div class="pf-err">' + esc(PF.erro) + '</div>';
@@ -2350,6 +2439,7 @@
     if (b.dataset.pfe) { d.efeito = b.dataset.pfe; marcar(b); return true; }
     if (b.dataset.pfdc) { d.decoracao = b.dataset.pfdc; marcar(b); return true; }
     if (b.dataset.pfpl) { d.placa = b.dataset.pfpl; marcar(b); return true; }
+    if (b.dataset.pfmu) { d.mural = b.dataset.pfmu; marcar(b); return true; }
     if (a === 'grande') { var pv0 = JSON.parse(JSON.stringify(d)); if (d._av) pv0.avatar = d._av; if (d._bn) pv0.banner = d._bn; var U0 = st('User'), me0 = U0 && U0.getCurrentUser && U0.getCurrentUser(); ampliar(pv0, me0 ? nameOf(me0) : PF.conta.nome, me0 ? avatarOf(me0, 128) : ''); return true; }
     if (b.dataset.pfl) { d.luz.tipo = b.dataset.pfl; mexeu(true); return true; }
     if (b.dataset.pfpa) { d.interacao.particulas = b.dataset.pfpa; marcar(b); var pv = document.querySelector('#cc-pf-fl .cc-pcw, #cc-pf-prev .cc-pcw'); if (pv) explodir(pv, 150, 120, d.interacao.particulas, 14); return true; }
@@ -2427,6 +2517,7 @@
     if (d.t === 'presence') { if (d.on) RA.online[d.id] = 1; else delete RA.online[d.id]; raBtns(); return; }
     if (d.t === 'offline') { var c0 = RA.call; if (c0 && c0.out && c0.state === 'calling' && c0.uid === d.to) raEnd('Não está no Concord agora'); return; }
     if (d.t !== 'msg') return;
+    if (d.data && typeof d.data.k === 'string' && d.data.k.indexOf('s-') === 0) { slMsg(d); return; }
     var m = d.data || {}, c = RA.call;
     if (m.k === 'ring') { if (c && c.id !== m.id) { raSigTo(d.from, d.fromDev, { k: 'busy', id: m.id }); return; } if (!c) raIncoming(d); return; }
     if (!c || c.id !== m.id) return;
@@ -2450,6 +2541,7 @@
     try { var fr = R && (R.getFriendIDs ? R.getFriendIDs() : Object.keys((R.getRelationships && R.getRelationships()) || {})); (fr || []).forEach(function (id) { ids[id] = 1; }); } catch (e) {}
     try { var pcs = C && C.getSortedPrivateChannels ? C.getSortedPrivateChannels() : []; pcs.forEach(function (c) { if ((c.recipients || []).length === 1) ids[c.recipients[0]] = 1; }); } catch (e) {}
     Object.keys(PF.cache).forEach(function (id) { if (PF.cache[id].p) ids[id] = 1; });
+    try { membrosCanal(meuCanal()).forEach(function (id) { ids[id] = 1; }); } catch (e) {}
     var l = Object.keys(ids).filter(function (x) { return /^\d{5,25}$/.test(x); }).slice(0, 1500), k = l.slice().sort().join(',');
     if (k === RA.watchKey) return; RA.watchKey = k;
     window.ccRtcSend(JSON.stringify({ t: 'watch', ids: l })).catch(function () {});
@@ -2844,6 +2936,274 @@
     window.addEventListener('pointerup', function (e) { if (stt && stt.moved) { el.style.transition = ''; var cap = function (ev) { ev.stopPropagation(); }; el.addEventListener('click', cap, { capture: true, once: true }); setTimeout(function () { el.removeEventListener('click', cap, true); }, 50); } stt = null; });
   }
 
+  /* ---------- Sala ReApps: dentro da call de servidor, quem usa o Concord liga câmera, compartilha tela e assiste junto em alta.
+     A voz continua toda no Discord (nada sai duplicado). Cada pessoa conecta direto com as outras; os recados passam pelo servidor dos ReApps. ---------- */
+  var SL = { ch: '', on: false, mini: false, peers: {}, cam: null, tela: null, filme: null, filmeV: null, yt: null, foco: '', vids: {}, chamou: {}, tick: 0 };
+  function meuId() { var U = st('User'), me = U && U.getCurrentUser && U.getCurrentUser(); return me ? me.id : ''; }
+  function meuCanal() {
+    var V = st('Voice'), me = meuId(); if (!V || !me) return '';
+    try { if (V.getVoiceStateForUser) { var s = V.getVoiceStateForUser(me); if (s && s.channelId) return String(s.channelId); } } catch (e) {}
+    try { var all = V.getAllVoiceStates(); for (var g in all) { var x = all[g] && all[g][me]; if (x && x.channelId) return String(x.channelId); } } catch (e) {}
+    return '';
+  }
+  function membrosCanal(ch) {
+    var V = st('Voice'), r = []; if (!V || !ch) return r;
+    try { var o = V.getVoiceStatesForChannel(ch) || {}; (Array.isArray(o) ? o : Object.keys(o).map(function (k) { var s = o[k]; if (s && !s.userId) s = { userId: k }; return s; })).forEach(function (s) { var id = s && (s.userId || (s.user && s.user.id)); if (id) r.push(String(id)); }); } catch (e) {}
+    return r;
+  }
+  function nomeCanal(ch) { var C = st('Channel'), c = C && C.getChannel(ch); return c ? c.name : 'call'; }
+  function slOutros() { var me = meuId(); return membrosCanal(SL.ch).filter(function (id) { return id !== me && raOnline(id); }); }
+  function slSig(p, data) { data.ch = SL.ch; raSigTo(p.uid, p.dev, data); }
+  function slTodos(data) { Object.keys(SL.peers).forEach(function (k) { slSig(SL.peers[k], JSON.parse(JSON.stringify(data))); }); }
+  function slPolido(uid) { try { return BigInt(meuId()) > BigInt(uid); } catch (e) { return meuId() > uid; } }
+
+  function slMsg(d) {
+    var m = d.data || {}, uid = String(d.from), dev = d.fromDev || '';
+    if (m.k === 's-oi') {
+      if (!SL.on || m.ch !== SL.ch) { if (m.ch && m.ch === meuCanal() && !SL.chamou[uid]) { SL.chamou[uid] = 1; toast(raName(uid).split(' ')[0] + ' abriu a Sala ReApps nesta call'); slBtn(); } return; }
+      slPeer(uid, dev); if (!m.r) raSigTo(uid, dev, { k: 's-oi', ch: SL.ch, r: 1 }); return;
+    }
+    if (m.k === 's-tchau') { delete SL.chamou[uid]; slFecharPeer(uid); slBtn(); return; }
+    if (!SL.on || m.ch !== SL.ch) return;
+    var p = SL.peers[uid] || (m.k === 's-sdp' ? slPeer(uid, dev) : null); if (!p) return;
+    if (m.k === 's-sdp') slOnSdp(p, m.d);
+    else if (m.k === 's-ice') { if (p.pc.remoteDescription) p.pc.addIceCandidate(m.c).catch(function () {}); else p.iceQ.push(m.c); }
+    else if (m.k === 's-papeis') { p.papeis = m.papeis || {}; slPinta(); }
+    else if (m.k === 's-yt') slYtIn(uid, m);
+  }
+  function slPeer(uid, dev) {
+    var p = SL.peers[uid]; if (p) { if (dev) p.dev = dev; return p; }
+    p = SL.peers[uid] = { uid: uid, dev: dev, polite: slPolido(uid), making: false, ignora: false, remote: {}, papeis: {}, senders: {}, iceQ: [] };
+    var pc = p.pc = new RTCPeerConnection({ iceServers: RA.ice });
+    pc.onnegotiationneeded = function () { p.making = true; pc.setLocalDescription().then(function () { slSig(p, { k: 's-sdp', d: pc.localDescription }); }).catch(function () {}).then(function () { p.making = false; }); };
+    pc.onicecandidate = function (e) { if (e.candidate) slSig(p, { k: 's-ice', c: e.candidate }); };
+    pc.ontrack = function (e) {
+      var s = e.streams[0]; if (!s) return;
+      p.remote[s.id] = s; s.onremovetrack = function () { if (!s.getTracks().length) { delete p.remote[s.id]; slPinta(); } };
+      e.track.onunmute = slPinta; e.track.onmute = slPinta; e.track.onended = slPinta; slPinta();
+    };
+    pc.onconnectionstatechange = function () { var s2 = pc.connectionState; if (s2 === 'failed' && pc.restartIce) pc.restartIce(); if (s2 === 'connected') slPapeis(p); slPinta(); };
+    [['cam', SL.cam], ['tela', SL.tela], ['filme', SL.filme]].forEach(function (x) { if (x[1]) slAddStream(p, x[1], x[0]); });
+    if (SL.yt) slSig(p, { k: 's-yt', a: 'load', v: SL.yt.v, t: SL.yt.t || 0 });
+    slPinta(); return p;
+  }
+  function slOnSdp(p, desc) {
+    var pc = p.pc; if (!desc) return;
+    var col = desc.type === 'offer' && (p.making || pc.signalingState !== 'stable');
+    p.ignora = !p.polite && col; if (p.ignora) return;
+    pc.setRemoteDescription(desc).then(function () {
+      p.iceQ.forEach(function (x) { pc.addIceCandidate(x).catch(function () {}); }); p.iceQ = [];
+      if (desc.type === 'offer') return pc.setLocalDescription().then(function () { slSig(p, { k: 's-sdp', d: pc.localDescription }); });
+    }).catch(function () {});
+  }
+  function slFecharPeer(uid) { var p = SL.peers[uid]; if (!p) return; try { p.pc.close(); } catch (e) {} delete SL.peers[uid]; slPinta(); }
+  function slPapeis(p) {
+    var pa = {}; if (SL.cam) pa[SL.cam.id] = 'cam'; if (SL.tela) pa[SL.tela.id] = 'tela'; if (SL.filme) pa[SL.filme.id] = 'filme';
+    if (p) slSig(p, { k: 's-papeis', papeis: pa }); else slTodos({ k: 's-papeis', papeis: pa });
+  }
+  function slAddStream(p, s, papel) {
+    p.senders[papel] = s.getTracks().map(function (t) {
+      var sd = p.pc.addTrack(t, s);
+      if (t.kind === 'video') { if ('contentHint' in t) t.contentHint = papel === 'tela' && CFG.fluida === false ? 'detail' : 'motion'; raCodec({ pc: p.pc }, sd); }
+      raEnc(sd, t.kind, papel === 'cam' ? 'cam' : papel); return sd;
+    });
+    slPapeis(p);
+  }
+  function slPor(papel, s) {
+    SL[papel] = s;
+    Object.keys(SL.peers).forEach(function (k) { var p = SL.peers[k]; (p.senders[papel] || []).forEach(function (sd) { try { p.pc.removeTrack(sd); } catch (e) {} }); delete p.senders[papel]; if (s) slAddStream(p, s, papel); });
+    slPapeis(); slPinta();
+  }
+
+  /* entrar e sair */
+  function slEntrar() {
+    if (!window.ccRtcSend || !RA.on) { toast('A Sala ReApps precisa da conexão do Concord (entre com o Discord na aba Perfil)'); return; }
+    SL.ch = meuCanal(); if (!SL.ch) { toast('Entre numa call de servidor primeiro'); return; }
+    if (RA.call) { toast('Termine a chamada ReApps antes'); return; }
+    SL.on = true; SL.mini = false; RA.watchKey = ''; raWatch();
+    slOutros().forEach(function (id) { raSigTo(id, '', { k: 's-oi', ch: SL.ch }); });
+    somCurto(660, 0.18); slPinta(); slBtn();
+  }
+  function slSair() {
+    if (!SL.on) return;
+    Object.keys(SL.peers).forEach(function (k) { slSig(SL.peers[k], { k: 's-tchau' }); slFecharPeer(k); });
+    ['cam', 'tela', 'filme'].forEach(function (k) { if (SL[k]) SL[k].getTracks().forEach(function (t) { t.stop(); }); SL[k] = null; });
+    if (SL.filmeV) { SL.filmeV.pause(); URL.revokeObjectURL(SL.filmeV.src); SL.filmeV = null; }
+    SL.yt = null; SL.on = false; SL.foco = ''; SL.vids = {};
+    var el = document.getElementById('cc-sala'); if (el) el.remove(); slBtn();
+  }
+
+  /* câmera, tela, assistir junto */
+  function slCam() {
+    if (SL.cam) { SL.cam.getTracks().forEach(function (t) { t.stop(); }); slPor('cam', null); return; }
+    navigator.mediaDevices.getUserMedia({ audio: false, video: { width: { ideal: TOQUE ? 960 : 1280 }, height: { ideal: TOQUE ? 540 : 720 }, frameRate: { ideal: TOQUE ? 24 : 30 }, facingMode: 'user' } })
+      .then(function (s) { if (!SL.on) { s.getTracks().forEach(function (t) { t.stop(); }); return; } slPor('cam', s); }).catch(function () { toast('Não consegui abrir a câmera'); });
+  }
+  function slTela() {
+    if (SL.tela) { SL.tela.getTracks().forEach(function (t) { t.stop(); }); slPor('tela', null); return; }
+    navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 }, width: { max: 1920 }, height: { max: 1080 } }, audio: true, systemAudio: 'include', selfBrowserSurface: 'exclude' }).then(function (s) {
+      if (!SL.on) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      s.getVideoTracks()[0].onended = function () { if (SL.tela === s) slPor('tela', null); };
+      SL.foco = 'eu:tela'; slPor('tela', s);
+    }).catch(function () {});
+  }
+  function slAssistir(btn) {
+    if (SL.filme || SL.yt) { slPararFilme(true); return; }
+    var r = btn.getBoundingClientRect();
+    raMenu([{ t: 'Vídeo do YouTube', s: 'Todo mundo vê junto, no mesmo ponto', i: RI.play, f: function () { slYtPedir(); } }, { t: 'Vídeo do aparelho', s: 'Vai em alta para quem está na sala', i: RI.file, f: slFilmeArquivo }], r.right, r.top - 120);
+  }
+  function slFilmeArquivo() {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'video/*,audio/*';
+    inp.onchange = function () {
+      var f = inp.files[0]; if (!f || !SL.on) return;
+      if (SL.yt) slPararFilme(true);
+      var v = document.createElement('video'); v.src = URL.createObjectURL(f); v.playsInline = true; v.controls = true;
+      v.onloadedmetadata = function () { var s = (v.captureStream || v.mozCaptureStream).call(v); SL.filmeV = v; SL.foco = 'eu:filme'; s.onaddtrack = function () { slPor('filme', s); }; slPor('filme', s); v.play().catch(function () {}); };
+    };
+    inp.click();
+  }
+  function slPararFilme(avisa) {
+    if (SL.filme) { SL.filme.getTracks().forEach(function (t) { t.stop(); }); slPor('filme', null); }
+    if (SL.filmeV) { SL.filmeV.pause(); URL.revokeObjectURL(SL.filmeV.src); SL.filmeV = null; }
+    if (SL.yt) { SL.yt = null; if (avisa) slTodos({ k: 's-yt', a: 'close' }); }
+    slPinta();
+  }
+  function slYtPedir() {
+    var o = document.createElement('div'); o.id = 'cc-ramodal';
+    o.innerHTML = '<div class="cd"><h3>Assistir junto na sala</h3><input placeholder="Link do YouTube"><div class="bt"><button data-x>Cancelar</button><button class="pri" data-go>Assistir</button></div></div>';
+    document.body.appendChild(o); var inp = o.querySelector('input'); inp.focus();
+    var fechar = function () { o.remove(); };
+    var vai = function () { var v = ytId(inp.value.trim()); if (!v) { toast('Esse link não parece do YouTube'); return; } fechar(); slYtCarregar(v, 0, true, true); };
+    o.addEventListener('click', function (e) { if (e.target === o || e.target.closest('[data-x]')) fechar(); else if (e.target.closest('[data-go]')) vai(); });
+    inp.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') vai(); if (e.key === 'Escape') fechar(); });
+  }
+  function slYtCarregar(v, t, tocar, meu) {
+    if (SL.filme) { SL.filme.getTracks().forEach(function (x) { x.stop(); }); slPor('filme', null); if (SL.filmeV) { SL.filmeV.pause(); SL.filmeV = null; } }
+    var f = document.createElement('iframe'); f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.src = 'https://www.youtube.com/embed/' + v + '?enablejsapi=1&autoplay=' + (tocar ? 1 : 0) + '&start=' + Math.floor(t || 0) + '&playsinline=1&rel=0&origin=' + encodeURIComponent(location.origin);
+    f.onload = function () { if (f.contentWindow) f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 'ccsala' }), '*'); };
+    SL.yt = { v: v, f: f, t: t || 0, s: -1, quieto: Date.now() }; SL.foco = 'yt';
+    if (meu) slTodos({ k: 's-yt', a: 'load', v: v, t: t || 0 });
+    slPinta();
+  }
+  function slYtCmd(func, args) { var y = SL.yt; if (y && y.f.contentWindow) y.f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*'); }
+  function slYtIn(uid, m) {
+    if (m.a === 'load') { slYtCarregar(m.v, m.t, true, false); toast(raName(uid).split(' ')[0] + ' começou um vídeo na sala'); return; }
+    if (m.a === 'close') { if (SL.yt) { SL.yt = null; slPinta(); } return; }
+    if (!SL.yt) return; SL.yt.quieto = Date.now();
+    if (Math.abs((SL.yt.t || 0) - (m.t || 0)) > 1.5) slYtCmd('seekTo', [m.t || 0, true]);
+    slYtCmd(m.a === 'play' ? 'playVideo' : 'pauseVideo');
+  }
+  window.addEventListener('message', function (e) {
+    var y = SL.yt; if (!y || e.source !== y.f.contentWindow) return;
+    var d; try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (x) { return; }
+    if (!d || !d.info) return;
+    if (d.info.currentTime != null) y.t = d.info.currentTime;
+    var stt = d.event === 'onStateChange' ? d.info : d.info.playerState; if (typeof stt !== 'number' || stt === y.s) return; y.s = stt;
+    if (Date.now() - y.quieto < 900) return;
+    if (stt === 1) slTodos({ k: 's-yt', a: 'play', t: y.t || 0 }); else if (stt === 2) slTodos({ k: 's-yt', a: 'pause', t: y.t || 0 });
+  });
+
+  /* a tela da sala */
+  function slItens() {
+    var me = meuId(), it = [];
+    if (SL.tela) it.push({ k: 'eu:tela', uid: me, papel: 'tela', s: SL.tela, eu: true });
+    if (SL.filmeV) it.push({ k: 'eu:filme', uid: me, papel: 'filme', el: SL.filmeV, eu: true });
+    if (SL.cam) it.push({ k: 'eu:cam', uid: me, papel: 'cam', s: SL.cam, eu: true });
+    Object.keys(SL.peers).forEach(function (uid) {
+      var p = SL.peers[uid];
+      Object.keys(p.remote).forEach(function (sid) {
+        var s = p.remote[sid], vivo = s.getVideoTracks().some(function (t) { return t.readyState === 'live'; });
+        if (vivo) it.push({ k: uid + ':' + sid, uid: uid, papel: p.papeis[sid] || 'cam', s: s });
+      });
+    });
+    return it;
+  }
+  function slVid(i) {
+    if (i.el) return i.el;
+    var v = SL.vids[i.k];
+    if (!v) { v = SL.vids[i.k] = document.createElement('video'); v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); }
+    v.muted = !!i.eu || i.papel === 'cam'; if (v.srcObject !== i.s) v.srcObject = i.s;
+    v.classList.toggle('esp', !!i.eu && i.papel === 'cam'); v.classList.toggle('fit', i.papel !== 'cam');
+    return v;
+  }
+  function slPinta() {
+    if (!SL.on) return;
+    var el = document.getElementById('cc-sala');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'cc-sala';
+      el.innerHTML = '<div class="sl-top"><span class="sl-tt"><b>Sala ReApps</b><small></small></span><span class="sl-ppl"></span><button class="sl-ic" data-sl="mini" title="Diminuir">' + RI.shrink + '</button></div><div class="sl-main"></div><div class="sl-strip"></div><div class="sl-dock"></div>';
+      document.body.appendChild(el);
+      el.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-sl]'); if (!b) { if (SL.mini && !e.target.closest('video[controls]')) { SL.mini = false; slPinta(); } return; }
+        e.stopPropagation(); var a = b.dataset.sl;
+        if (a === 'mini') { SL.mini = !SL.mini; slPinta(); }
+        else if (a === 'cam') slCam(); else if (a === 'tela') slTela(); else if (a === 'ver') slAssistir(b); else if (a === 'sair') slSair();
+        else if (a === 'foco') { SL.foco = SL.foco === b.dataset.k ? '' : b.dataset.k; slPinta(); }
+      });
+      requestAnimationFrame(function () { el.classList.add('on'); });
+    }
+    el.classList.toggle('mini', SL.mini);
+    el.querySelector('.sl-tt small').textContent = nomeCanal(SL.ch);
+    var gente = [meuId()].concat(Object.keys(SL.peers));
+    el.querySelector('.sl-ppl').innerHTML = gente.slice(0, 6).map(function (id) { return '<img src="' + esc(raAvatar(id)) + '" title="' + esc(raName(id)) + '" alt="">'; }).join('') + '<em>' + gente.length + (gente.length === 1 ? ' pessoa' : ' pessoas') + '</em>';
+    var it = slItens(), principal = null;
+    if (SL.foco === 'yt' && SL.yt) principal = 'yt';
+    else principal = it.find(function (x) { return x.k === SL.foco; }) || (SL.yt ? 'yt' : it.find(function (x) { return x.papel === 'tela' && !x.eu; }) || it.find(function (x) { return x.papel === 'filme'; }) || it.find(function (x) { return x.papel === 'tela'; }) || null);
+    var main = el.querySelector('.sl-main'), strip = el.querySelector('.sl-strip');
+    var quer = [];
+    if (principal === 'yt') quer.push(SL.yt.f); else if (principal) quer.push(slVid(principal));
+    if (!main.firstChild || main.firstChild !== quer[0]) { main.innerHTML = ''; if (quer[0]) main.appendChild(quer[0]); }
+    if (quer[0] && quer[0].tagName === 'VIDEO') quer[0].play().catch(function () {});
+    el.classList.toggle('temmain', !!principal);
+    // faixa: os outros vídeos e quem está sem câmera
+    var resto = it.filter(function (x) { return x !== principal; }), comCam = {};
+    it.forEach(function (x) { if (x.papel === 'cam') comCam[x.uid] = 1; });
+    var cards = resto.map(function (x) { return { k: x.k, v: slVid(x), uid: x.uid, papel: x.papel }; });
+    gente.forEach(function (id) { if (!comCam[id]) cards.push({ k: 'av:' + id, uid: id }); });
+    var atuais = {}; Array.prototype.forEach.call(strip.children, function (c) { atuais[c.dataset.k] = c; });
+    var ordem = cards.map(function (c) {
+      var box = atuais[c.k]; delete atuais[c.k];
+      if (!box) {
+        box = document.createElement('button'); box.className = 'sl-q'; box.dataset.k = c.k; box.dataset.sl = 'foco';
+        box.innerHTML = '<span class="sl-v"></span><em></em>';
+        if (!c.v) box.querySelector('.sl-v').innerHTML = '<img class="sl-av" src="' + esc(raAvatar(c.uid)) + '" alt="">';
+      }
+      if (c.v && box.querySelector('.sl-v').firstChild !== c.v) { var sv0 = box.querySelector('.sl-v'); sv0.innerHTML = ''; sv0.appendChild(c.v); c.v.play().catch(function () {}); }
+      box.querySelector('em').textContent = (c.uid === meuId() ? 'Você' : raName(c.uid).split(' ')[0]) + (c.papel === 'tela' ? ' · tela' : c.papel === 'filme' ? ' · vídeo' : '');
+      box.classList.toggle('sem', !c.v); return box;
+    });
+    Object.keys(atuais).forEach(function (k) { atuais[k].remove(); });
+    ordem.forEach(function (b, i) { if (strip.children[i] !== b) strip.insertBefore(b, strip.children[i] || null); });
+    var d = el.querySelector('.sl-dock'), sc = canScreen();
+    d.innerHTML = '<button class="rcb' + (SL.cam ? ' on' : '') + '" data-sl="cam" title="' + (SL.cam ? 'Desligar câmera' : 'Ligar câmera') + '">' + (SL.cam ? RI.video : RI.vidoff) + '</button>' +
+      (sc ? '<button class="rcb' + (SL.tela ? ' on' : '') + '" data-sl="tela" title="' + (SL.tela ? 'Parar de compartilhar' : 'Compartilhar tela') + '">' + RI.screen + '</button>' : '') +
+      '<button class="rcb' + (SL.filme || SL.yt ? ' on' : '') + '" data-sl="ver" title="' + (SL.filme || SL.yt ? 'Parar o vídeo' : 'Assistir junto') + '">' + RI.tv + '</button>' +
+      '<button class="rcb end" data-sl="sair" title="Sair da sala (continua na call)">' + sv('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M5 12h11"/>') + '</button>';
+    if (!principal && !it.length) main.innerHTML = '<div class="sl-vz"><b>Ninguém transmitindo ainda</b><span>Ligue a câmera, compartilhe a tela ou chame um vídeo para assistir junto. A voz continua pelo Discord.</span></div>';
+  }
+  // botão da sala: aparece quando você está numa call de servidor com alguém que usa o Concord
+  function slBtn() {
+    var b = document.getElementById('cc-salabtn'), ch = meuCanal(), outros = ch ? membrosCanal(ch).filter(function (id) { return id !== meuId() && raOnline(id); }) : [];
+    if (!window.ccRtcSend || !ch || SL.on || (!outros.length && !CFG.salaSozinho)) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('button'); b.id = 'cc-salabtn'; b.addEventListener('click', slEntrar); document.body.appendChild(b); }
+    var la = Object.keys(SL.chamou).filter(function (id) { return outros.indexOf(id) >= 0; });
+    b.classList.toggle('chama', la.length > 0);
+    b.innerHTML = RI.reapps + '<span>Sala ReApps<small>' + (la.length ? raName(la[0]).split(' ')[0] + (la.length > 1 ? ' e mais ' + (la.length - 1) : '') + ' na sala' : outros.length + (outros.length === 1 ? ' pessoa' : ' pessoas') + ' com Concord') + '</small></span>';
+  }
+  function slTick() {
+    var ch = meuCanal();
+    if (ch !== SL.ch) { if (SL.on) { slSair(); toast('Você saiu da call: a Sala ReApps fechou'); } SL.ch = ch; SL.chamou = {}; RA.watchKey = ''; raWatch(); }
+    if (SL.on) { var m = membrosCanal(SL.ch); Object.keys(SL.peers).forEach(function (uid) { if (m.indexOf(uid) < 0) slFecharPeer(uid); }); }
+    slBtn();
+  }
+  setInterval(function () { if (window.ccRtcSend) slTick(); }, 2000);
+  window.__ccSala = { entrar: function () { slEntrar(); }, sair: function () { slSair(); }, cam: function () { slCam(); }, tick: function () { slTick(); },
+    estado: function () { return SL.on ? { peers: Object.keys(SL.peers).map(function (k) { var p = SL.peers[k]; return [k, p.pc.connectionState, Object.keys(p.remote).length]; }), cam: !!SL.cam, itens: slItens().map(function (x) { return x.k.split(':')[0] + ':' + x.papel; }) } : null; },
+    _teste: function (o) { for (var k in o) STORES[k] = o[k]; },
+    _stats: function (uid) { var p = SL.peers[uid]; return p.pc.getStats().then(function (r) { var o = []; r.forEach(function (x) { if (x.type === 'outbound-rtp' || x.type === 'inbound-rtp') o.push([x.type, x.kind, x.bytesSent || x.bytesReceived || 0, x.framesEncoded || x.framesDecoded || 0, x.qualityLimitationReason || '', x.encoderImplementation || x.decoderImplementation || '']); }); return o; }); },
+    _dbg: function (uid) { var p = SL.peers[uid]; if (!p) return null; return { sig: p.pc.signalingState, tr: p.pc.getTransceivers().map(function (t) { return [t.mid, t.direction, t.currentDirection, t.sender.track && t.sender.track.kind, t.receiver.track.muted]; }) }; } };
+
   window.__ccRa = { ligar: function (id, v) { raCall(String(id), !!v); }, estado: function () { var c = RA.call; return c ? { s: c.state, t0: !!c.t0, remotos: Object.keys(c.remote).length, yt: !!c.ytOn } : null; } };
   /* ---------- tela estreita (celular, tablet em pé, janela pequena): uma coluna, lista ou conversa ----------
      Trocar de servidor mostra a lista de canais; escolher canal ou conversa mostra a conversa; o botão voltar volta à lista. */
@@ -2910,6 +3270,7 @@
     var mn = document.getElementById('cc-ramenu') || document.getElementById('cc-ramodal'); if (mn) { mn.remove(); return true; }
     if (PANEL && PANEL.classList.contains('on')) { togglePanel(false); return true; }
     var rc = document.getElementById('cc-rc'); if (rc && rc.classList.contains('on') && !rc.classList.contains('mini') && RA.call && RA.call.state !== 'ringing') { raMini(true); return true; }
+    var sla = document.getElementById('cc-sala'); if (sla && !SL.mini) { SL.mini = true; slPinta(); return true; }
     if (POP.card) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true; }
     if (SET.side && SET.ver) { SET.ver = false; flag('cc-setmain', false); return true; }
     if (SET.side) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true })); return true; }
@@ -2939,7 +3300,15 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
   window.addEventListener('resize', function () { win('state'); });
-  window.__ccUpdateReady = function (v) { INFO.update = v; toast('Versão nova do Concord pronta. Ela entra quando você fechar e abrir.'); if (PANEL && PANEL.classList.contains('on')) paintPanel(); };
+  window.__ccUpdateReady = function (v) {
+    INFO.update = v; if (PANEL && PANEL.classList.contains('on')) paintPanel();
+    if (!window.__ccCel) { toast('Versão nova do Concord pronta. Ela entra quando você fechar e abrir.'); return; }
+    // no celular: um botão para instalar na hora (o Android confirma)
+    var b = document.getElementById('cc-apk'); if (b) return;
+    b = document.createElement('button'); b.id = 'cc-apk'; b.innerHTML = IC.down + '<span>Versão nova do Concord<small>Toque para atualizar</small></span><i data-x>' + IC.x + '</i>';
+    b.addEventListener('click', function (e) { if (e.target.closest('[data-x]')) { b.remove(); return; } if (window.ccUpdate) window.ccUpdate(); b.remove(); });
+    document.body.appendChild(b);
+  };
   window.__ccToggle = togglePanel;
   window.__ccChecked = function (m) { toast(m); };
   window.__ccEditor = function (id) { togglePanel(false); edOpen(id || ''); };
