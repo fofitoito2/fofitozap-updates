@@ -22,7 +22,7 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Bricolage Grotesque', 'Onest', 'Space Grotesk', 'Sora', 'Manrope', 'DM Sans', 'Urbanist', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272 };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -328,13 +328,14 @@
     } else if (tab === 'som') {
       h += '<h4>Chamadas</h4>' + range('boost', 'Volume das vozes', 'Aumenta o som de todo mundo, até 300%', 0.5, 3, 0.05, FMT.pct);
     } else if (tab === 'telas') {
-      h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível');
+      h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível') +
+        '<h4>Janela</h4>' + toggle('bg', 'Continuar aberto ao fechar', 'Fechar a janela deixa o Concord no ícone perto do relógio: você segue nas calls e recebendo avisos') + '<div class="btns" style="justify-content:flex-start"><button class="btn" data-a="fechar">Sair do Concord de vez</button></div>';
     }
     PANEL.querySelector('.tabbar').innerHTML = tabs;
     var bd = PANEL.querySelector('.bd'), sc = bd.dataset.tab === tab ? bd.scrollTop : 0; bd.innerHTML = h; bd.scrollTop = sc; bd.dataset.tab = tab;
     PANEL.querySelector('[data-a="update"]').hidden = !INFO.update;
   }
-  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (repaint) paintPanel(); if (k === 'home') homeTick(); if (k === 'parallax') parallax(); }
+  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (k === 'bg' && window.ccSegundoPlano) window.ccSegundoPlano(!!v).catch(function () {}); if (repaint) paintPanel(); if (k === 'home') homeTick(); if (k === 'parallax') parallax(); }
   function newId() { return 'meu-' + Date.now().toString(36); }
   function themeCode(t) { try { return 'CONCORD-TEMA:' + btoa(unescape(encodeURIComponent(JSON.stringify(t)))); } catch (e) { return ''; } }
   function readCode(c) {
@@ -347,6 +348,7 @@
     if (b.dataset.tab) { CFG.tab = b.dataset.tab; EDIT = null; save(); paintPanel(); return; }
     if (b.dataset.edit) { e.stopPropagation(); var k = b.dataset.edit; EDIT = { key: k, t: JSON.parse(JSON.stringify(CFG.mine[k])), prev: CFG.preset }; CFG.preset = k; applyTheme(); paintPanel(); return; }
     if (a === 'close') togglePanel(false);
+    else if (a === 'fechar') { if (window.ccFechar) window.ccFechar(); }
     else if (a === 'reset') { Object.keys(DEF).forEach(function (k) { if (k !== 'mine' && k !== 'places') CFG[k] = DEF[k]; }); delete CFG.wall; save(); applyTheme(); paintPanel(); toast('Aparência padrão de volta. Seus temas continuam salvos.'); }
     else if (a === 'update') { if (window.ccUpdate) window.ccUpdate(); }
     else if (a === 'check') { if (window.ccCheck) { toast('Procurando atualização...'); window.ccCheck().catch(function () { toast('Não consegui procurar agora'); }); } else toast('Atualize o Concord para usar este botão'); }
@@ -2144,7 +2146,7 @@
     splash(); aura(); mountWin(); applyTheme(); parallax(); LAST_THEME = themeKey(); fallbackSheets(); badge();
     new MutationObserver(badge).observe(document.querySelector('title') || document.head, { childList: true, subtree: true, characterData: true });
     if (window.ccInfo) window.ccInfo().then(function (i) { if (i) { INFO.ver = i.ver; INFO.mats = i.mats || INFO.mats; INFO.update = i.update; if (!INFO.mats[CFG.mat]) { CFG.mat = 'aura'; save(); } applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); } }).catch(function () {});
-    win('state'); restoreZoom();
+    win('state'); restoreZoom(); if (window.ccSegundoPlano) window.ccSegundoPlano(CFG.bg !== false).catch(function () {});
     setTimeout(function () { homeTick(); if (window.ccDump) window.ccDump('diagnostico', '<!-- ' + JSON.stringify(diag()) + ' -->').catch(function () {}); }, 30000);
     setTimeout(function () { (window.requestIdleCallback || setTimeout)(dumpCSS, { timeout: 10000 }); }, 15000);
   }
