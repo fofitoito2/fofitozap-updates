@@ -439,7 +439,10 @@ html.cc-lay .guilds__5e434 .scroller_ef3116 { display: flex !important; flex-dir
   overflow-x: auto !important; overflow-y: hidden !important; padding: 0 8px !important; gap: 8px; scrollbar-width: none; scroll-behavior: smooth; }
 html.cc-lay .guilds__5e434 .scroller_ef3116::-webkit-scrollbar { display: none; }
 html.cc-lay .guilds__5e434 .scroller_ef3116 > * { flex: none !important; }
-html.cc-lay .guilds__5e434 .scroller_ef3116 > .stack_dbd263, html.cc-lay #guild-list-unread-dms { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; height: auto !important; }
+html.cc-lay .guilds__5e434 .scroller_ef3116 > .stack_dbd263, html.cc-lay #guild-list-unread-dms { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; height: auto !important; width: auto !important; }
+/* o Discord marca as pilhas da faixa com data-full-width (width: 100%): a pilha vazia das DMs não lidas tomava a faixa toda e empurrava os servidores pra fora */
+html.cc-lay #guild-list-unread-dms:empty { display: none !important; }
+html.cc-lay .guilds__5e434 .guildSeparator__252b6.fullWidth__252b6 { width: 2px !important; }
 html.cc-lay .guilds__5e434 .listItem__650eb { width: auto !important; min-width: 0 !important; height: 48px; margin: 0 !important; padding: 0 !important; display: flex !important; align-items: center; justify-content: center; position: relative; }
 html.cc-lay .guilds__5e434 .listItem__650eb > .wrapper__58105 { position: absolute !important; left: calc(50% - 4px) !important; top: auto !important; bottom: -22px !important; width: 8px !important; height: 48px !important; transform: rotate(-90deg); }
 html.cc-lay .guilds__5e434 .guildSeparator__252b6 { width: 2px !important; height: 30px !important; margin: 0 4px !important; border-radius: 2px; background: var(--border-hover) !important; }
@@ -466,13 +469,13 @@ html.cc-lay .container_c8ffbb { width: 68px !important; min-width: 68px !importa
   background: transparent !important; position: relative; z-index: 6; overflow: hidden !important; box-shadow: none !important;
   -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent); mask-image: linear-gradient(90deg, #000 78%, transparent);
   transition: width .34s var(--cc-out), min-width .34s var(--cc-out), margin .34s var(--cc-out), background-color .2s; }
-html.cc-lay .container_c8ffbb:hover { width: 290px !important; min-width: 290px !important; margin-left: -222px !important; background: color-mix(in srgb, var(--cc-bg1) 70%, transparent) !important;
+html.cc-lay .container_c8ffbb:is(:hover, .cc-open) { width: 290px !important; min-width: 290px !important; margin-left: -222px !important; background: color-mix(in srgb, var(--cc-bg1) 70%, transparent) !important;
   -webkit-backdrop-filter: blur(26px) saturate(1.35) !important; backdrop-filter: blur(26px) saturate(1.35) !important; -webkit-mask-image: none; mask-image: none;
   border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important; box-shadow: -30px 0 60px -30px rgba(0,0,0,.7) !important; transition-delay: .15s; }
 html.cc-lay .container_c8ffbb .membersWrap_c8ffbb, html.cc-lay .container_c8ffbb .members_c8ffbb { width: 290px !important; min-width: 290px !important; }
-html.cc-lay .container_c8ffbb:not(:hover) .content__91a9d, html.cc-lay .container_c8ffbb:not(:hover) .membersGroup_c8ffbb > * { opacity: 0; transition: opacity .12s; }
+html.cc-lay .container_c8ffbb:not(:hover):not(.cc-open) .content__91a9d, html.cc-lay .container_c8ffbb:not(:hover):not(.cc-open) .membersGroup_c8ffbb > * { opacity: 0; transition: opacity .12s; }
 html.cc-lay .container_c8ffbb .content__91a9d, html.cc-lay .container_c8ffbb .membersGroup_c8ffbb > * { transition: opacity .25s .12s; }
-html.cc-lay .container_c8ffbb:not(:hover) .membersGroup_c8ffbb::after { content: ''; display: block; width: 28px; height: 2px; margin: 8px 0 0 20px; border-radius: 2px; background: var(--border-hover); }
+html.cc-lay .container_c8ffbb:not(:hover):not(.cc-open) .membersGroup_c8ffbb::after { content: ''; display: block; width: 28px; height: 2px; margin: 8px 0 0 20px; border-radius: 2px; background: var(--border-hover); }
 
 /* ================= Fundos guardados (aba Fundo) ================= */
 #cc-panel .walls2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -612,4 +615,104 @@ html.cc-edon #cc-home, html.cc-edon #cc-homeback { display: none !important; }
 html.cc-mica body { background: var(--cc-sheet) !important; }
 html.cc-mica #cc-aura { display: block; background: none; }
 html.cc-mica #cc-aura i { opacity: calc(var(--cc-orbs, .6) * .5); }
-html.cc-mica #cc-aura b { opacity: .9; }
+/* a textura no modo "sobrepor" só funciona em cima de algo opaco. Aqui atrás só tem o vidro do Windows (transparente pra página),
+   então ela saía crua e virava um chuvisco cinza na janela toda. No Mica ela entra normal e bem fraca. */
+html.cc-mica #cc-aura b { mix-blend-mode: normal; opacity: .07; }
+html.cc-mica .guilds__5e434, html.cc-mica .sidebarList__5e434, html.cc-mica .panels__5e434, html.cc-mica .chat_f75fb0, html.cc-mica .container_c8ffbb, html.cc-mica #cc-home {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 30px -18px rgba(0,0,0,.55) !important; }
+
+/* ================= Perfil do Concord =================
+   O cartão (prévia no editor e cartão ao lado do cartão do Discord) e o estilo do nome no chat. */
+.cc-pc { position: relative; width: 300px; max-width: 100%; border-radius: 22px; overflow: hidden; color: #f2f3f8; isolation: isolate; text-align: left;
+  font-family: var(--cc-font), 'gg sans', system-ui, sans-serif; background: var(--pf); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 18px 50px -18px rgba(0,0,0,.7); }
+.cc-pc * { box-sizing: border-box; }
+.cc-pc .pc-bn { height: 104px; background: center / cover no-repeat; }
+.cc-pc .pc-bn::after { content: ''; position: absolute; inset: 0 0 auto; height: 104px; background: linear-gradient(to bottom, transparent 55%, rgba(0,0,0,.18)); pointer-events: none; }
+.cc-pc .pc-av { position: absolute; left: 18px; top: 58px; width: 88px; height: 88px; border-radius: 50%; padding: 4px; z-index: 2;
+  background: conic-gradient(from 200deg, var(--d), color-mix(in srgb, var(--d) 40%, #fff), var(--d)); box-shadow: 0 8px 24px -6px color-mix(in srgb, var(--d) 70%, transparent); }
+.cc-pc .pc-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; background: #1b1620; }
+.cc-pc .pc-ct { position: relative; margin: -2px 10px 10px; padding: 48px 14px 14px; border-radius: 16px; min-height: 64px;
+  background: rgba(14,10,18,.62); -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3); border: 1px solid rgba(255,255,255,.08); }
+.cc-pc .pc-nm { font-size: 21px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: 2px; }
+.cc-pc .pc-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; height: 22px; padding: 0 9px 0 4px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  background: color-mix(in srgb, var(--d) 20%, transparent); color: color-mix(in srgb, var(--d) 35%, #fff); }
+.cc-pc .pc-tag svg { width: 16px; height: 16px; border-radius: 5px; }
+.cc-pc .pc-ins { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.cc-pc .pc-i { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px 0 7px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08); color: #f2f3f8; }
+.cc-pc .pc-i svg { width: 15px; height: 15px; color: var(--d); }
+.cc-pc .pc-i em { font-style: normal; }
+.cc-pc .pc-bio { margin: 10px 0 0; font-size: 13.5px; line-height: 1.45; color: rgba(242,243,248,.82); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ao lado do cartão do Discord */
+.cc-pc.cc-pop { position: fixed; z-index: 100000; opacity: 0; transform: translateY(8px) scale(.97); transform-origin: top left;
+  transition: opacity .22s var(--cc-out), transform .38s var(--cc-spring); pointer-events: auto; }
+.cc-pc.cc-pop.on { opacity: 1; transform: none; }
+.cc-pc.cc-pop.sheet { left: 50% !important; top: auto !important; bottom: 12px; width: min(340px, calc(100vw - 24px)); transform: translate(-50%, 16px); }
+.cc-pc.cc-pop.sheet.on { transform: translate(-50%, 0); }
+
+/* nome com estilo (cartão e chat) */
+[data-ccn="normal"] { color: var(--n1) !important; }
+[data-ccn="degrade"], [data-ccn="arcoiris"] { background: linear-gradient(90deg, var(--n1), var(--n2), var(--n3), var(--n1)) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; }
+[data-ccn="arcoiris"] { background-image: linear-gradient(90deg, #ff5c7a, #ffb84d, #f2e14e, #5ee7a6, #4fd6e6, #7b8cff, #c77bff, #ff5c7a); }
+[data-ccn="brilho"] { color: var(--n1) !important; text-shadow: 0 0 12px color-mix(in srgb, var(--n2) 85%, transparent); }
+[data-ccn="neon"] { color: color-mix(in srgb, var(--n1) 35%, #fff) !important; text-shadow: 0 0 3px var(--n1), 0 0 10px var(--n1), 0 0 22px var(--n2); }
+[data-ccn][data-cca] { animation: cc-nome 6s linear infinite; }
+[data-ccn="brilho"][data-cca], [data-ccn="neon"][data-cca] { animation: cc-pulsa 2.6s ease-in-out infinite; }
+@keyframes cc-nome { to { background-position: 300% 0; } }
+@keyframes cc-pulsa { 50% { text-shadow: 0 0 4px var(--n1), 0 0 16px var(--n2), 0 0 30px var(--n2); } }
+html.cc-lite [data-ccn][data-cca], html.cc-still [data-ccn][data-cca] { animation: none; }
+@media (prefers-reduced-motion: reduce) { [data-ccn][data-cca] { animation: none; } }
+.username_c19a55.cc-nm { font-weight: 700; }
+.cc-ins { display: inline-flex; gap: 3px; margin: 0 4px 0 2px; vertical-align: -2px; }
+.cc-ins i { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; background: rgba(255,255,255,.07); color: var(--accent-2); }
+.cc-ins svg { width: 12px; height: 12px; }
+
+/* editor do perfil (aba Perfil do painel) */
+#cc-panel .pf-prev { display: flex; justify-content: center; padding: 6px 0 4px; }
+#cc-panel .pf-prev.sticky { position: sticky; top: -4px; z-index: 3; padding: 10px 0; margin: 0 -20px; background: linear-gradient(to bottom, var(--cc-glass) 82%, transparent); }
+#cc-panel .pf-prev .cc-pc { width: 100%; max-width: 330px; }
+#cc-panel .pf-hero { text-align: center; padding-top: 6px; }
+#cc-panel .pf-hero .note { margin: 0 auto 0; max-width: 320px; }
+#cc-panel .pf-entrar { width: 100%; height: 46px; margin-top: 14px; border-radius: 14px; font-size: 14.5px; }
+#cc-panel .pf-entrar:disabled { opacity: .7; cursor: progress; }
+#cc-panel .pf-load { padding: 40px 0; text-align: center; color: var(--cc-ink3); }
+#cc-panel .pf-err { margin-top: 12px; padding: 10px 12px; border-radius: 12px; font-size: 12.5px; background: rgba(242,182,60,.12); border: 1px solid rgba(242,182,60,.3); color: #f7d58c; }
+#cc-panel .pf-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#cc-panel .pf-img { padding: 12px; border-radius: 14px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.06); }
+#cc-panel .pf-img b { display: block; font-size: 13.5px; font-weight: 600; } #cc-panel .pf-img small { display: block; font-size: 11.5px; color: var(--cc-ink3); margin-top: 2px; }
+#cc-panel .pf-img .btns { justify-content: flex-start; margin-top: 10px; gap: 6px; }
+#cc-panel .pf-img .btn { height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; }
+#cc-panel .btn svg { width: 15px; height: 15px; }
+#cc-panel .pf-cores { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }
+#cc-panel .pf-cor { position: relative; width: 40px; height: 40px; border-radius: 12px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); cursor: pointer; overflow: hidden; transition: transform .2s var(--cc-spring); }
+#cc-panel .pf-cor:hover { transform: scale(1.06); }
+#cc-panel .pf-cor input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+#cc-panel .pf-cor.add { display: grid; place-items: center; background: rgba(255,255,255,.06); color: var(--cc-ink2); }
+#cc-panel .pf-cor.add svg { width: 16px; height: 16px; }
+#cc-panel .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+#cc-panel .pf-chips .chip { height: 36px; padding: 0 14px; }
+#cc-panel .pf-fontes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+#cc-panel .pf-fontes button { height: 40px; border-radius: 10px; background: rgba(255,255,255,.05); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; box-shadow: inset 0 0 0 1px transparent; }
+#cc-panel .pf-fontes button.on { box-shadow: inset 0 0 0 2px var(--cc-a1); background: rgba(255,255,255,.08); }
+#cc-panel h4 .pf-n { font-style: normal; font-weight: 500; color: var(--cc-ink3); margin-left: 6px; }
+#cc-panel .pf-ins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+#cc-panel .pf-ins button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 58px; border-radius: 12px; background: rgba(255,255,255,.045);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); font-size: 11px; font-weight: 600; color: var(--cc-ink2); transition: transform .2s var(--cc-spring), background-color .15s, box-shadow .15s; }
+#cc-panel .pf-ins button svg { width: 20px; height: 20px; }
+#cc-panel .pf-ins button:hover { transform: translateY(-2px); }
+#cc-panel .pf-ins button.on { background: color-mix(in srgb, var(--cc-a1) 18%, transparent); box-shadow: inset 0 0 0 2px var(--cc-a1); color: var(--cc-ink); }
+#cc-panel .pf-ins button.on svg { color: var(--cc-a1); }
+#cc-panel .pf-ins button.lock { opacity: .38; cursor: not-allowed; transform: none; }
+#cc-panel .pf-bio { width: 100%; resize: vertical; min-height: 76px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.2); color: var(--cc-ink); padding: 10px 12px; font: inherit; font-size: 14px; outline: none; }
+#cc-panel .pf-bio:focus { border-color: var(--cc-a1); }
+#cc-panel .pf-acts { align-items: center; margin-top: 20px; }
+#cc-panel .pf-acts .sp { flex: 1; }
+#cc-panel .pf-acts .btn { height: 40px; padding: 0 16px; }
+#cc-panel .pf-acts .btn:disabled { opacity: .6; }
+#cc-panel .sws .sw { width: 32px; height: 32px; }
+@media (max-width: 600px) {
+  #cc-panel .pf-ins { grid-template-columns: repeat(4, 1fr); }
+  #cc-panel .pf-fontes { grid-template-columns: repeat(2, 1fr); }
+}
+#cc-panel .tabbar button { flex: 1 0 auto; padding: 0 9px; height: 36px; }

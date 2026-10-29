@@ -75,7 +75,7 @@
     v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid ? 1 : 0.95);
     v['--cc-side-w'] = (+CFG.sideW || 272) + 'px';
     // acrílico e mica: uma folha de vidro só, tingida por igual (antes os vãos entre os painéis viravam barras claras)
-    if (CFG.mat === 'mica') v['--cc-sheet'] = rgba(P.bg[0], Math.max(0.12, op * 0.55));
+    if (CFG.mat === 'mica') v['--cc-sheet'] = rgba(P.bg[0], Math.max(0.28, op * 0.7)); // tinge a cor do Windows com o fundo do tema (antes ficava cinza lavado)
     if (CFG.mat === 'acrylic') {
       v['--cc-sheet'] = rgba(w, Math.max(0.15, op * 0.92));
       v['--bg-4'] = 'rgba(255,255,255,.035)'; v['--bg-3'] = 'rgba(255,255,255,.05)'; v['--bg-2'] = 'rgba(255,255,255,.075)'; v['--bg-1'] = 'rgba(255,255,255,.11)';
@@ -262,7 +262,7 @@
   function toggle(k, label, sub) { return '<div class="row"><div class="l"><b>' + label + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div><button class="tg' + (CFG[k] ? ' on' : '') + '" data-t="' + k + '" role="switch" aria-checked="' + !!CFG[k] + '"></button></div>'; }
   var FMT = { pct: function (v) { return Math.round(v * 100) + '%'; }, px: function (v) { return Math.round(v) + 'px'; } };
   var EDIT = null; // tema sendo criado/editado
-  var TABS = [['tema', 'Tema'], ['fundo', 'Fundo'], ['estilo', 'Estilo'], ['texto', 'Texto'], ['som', 'Som'], ['telas', 'Telas']];
+  var TABS = [['perfil', 'Perfil'], ['tema', 'Tema'], ['fundo', 'Fundo'], ['estilo', 'Estilo'], ['texto', 'Texto'], ['som', 'Som'], ['telas', 'Telas']];
   function themeCard(k, t, on, extra) {
     return '<button class="th' + (on ? ' on' : '') + '" data-p="' + esc(k) + '" style="--a:' + t.a1 + ';--g:radial-gradient(90% 120% at 15% 10%, ' + t.o[0] + ', transparent 70%), radial-gradient(90% 120% at 95% 90%, ' + t.o[1] + ', transparent 70%), ' + t.bg[1] + '"><i><em style="--c:' + t.a1 + '"></em><em style="--c:' + t.a2 + '"></em><em style="--c:' + t.a3 + '"></em></i><span>' + esc(t.n) + '</span>' + (extra || '') + '</button>';
   }
@@ -281,7 +281,8 @@
   function paintPanel() {
     var P = allThemes()[themeKey()] || PRESETS.fofito, h = '', tab = CFG.tab || 'tema';
     var tabs = '<div class="tabs">' + TABS.map(function (t) { return '<button data-tab="' + t[0] + '"' + (tab === t[0] ? ' class="on"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div>';
-    if (tab === 'tema' && EDIT) {
+    if (tab === 'perfil') h += perfilPanel();
+    else if (tab === 'tema' && EDIT) {
       var t = EDIT.t;
       h += '<h4>' + (EDIT.key ? 'Editar tema' : 'Criar tema') + '</h4><div class="row"><div class="l"><b>Nome</b></div><input class="txt" data-en value="' + esc(t.n) + '" maxlength="24"></div>';
       h += '<div class="cols">' + EDIT_FIELDS.map(function (f) { return '<label class="col"><input type="color" data-ef="' + f[0] + '" value="' + getF(t, f[0]) + '"><span>' + f[1] + '</span></label>'; }).join('') + '</div>';
@@ -339,6 +340,7 @@
   }
   function onPanelClick(e) {
     var b = e.target.closest('button, b[data-edit]'); if (!b) return;
+    if (perfilClick(b)) return;
     var a = b.dataset.a;
     if (b.dataset.tab) { CFG.tab = b.dataset.tab; EDIT = null; save(); paintPanel(); return; }
     if (b.dataset.edit) { e.stopPropagation(); var k = b.dataset.edit; EDIT = { key: k, t: JSON.parse(JSON.stringify(CFG.mine[k])), prev: CFG.preset }; CFG.preset = k; applyTheme(); paintPanel(); return; }
@@ -371,6 +373,7 @@
   }
   function onPanelInput(e) {
     var t = e.target;
+    if (perfilInput(t)) return;
     if (t.dataset.ef && EDIT) { setF(EDIT.t, t.dataset.ef, t.value); applyTheme(); return; }
     if (t.dataset.en != null && EDIT) { EDIT.t.n = t.value || 'Meu tema'; return; }
     if (t.dataset.k) {
@@ -476,7 +479,7 @@
   /* ---------- esqueleto da tela (só a estrutura, sem textos, nomes nem imagens) ----------
      O Concord guarda em dados/estrutura para ajustar a pele quando o Discord muda. */
   var DUMPED = {};
-  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable', 'href', 'data-list-item-id', 'aria-label', 'data-cc-r', 'data-cc-p', 'style'];
+  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable', 'href', 'data-list-item-id', 'aria-label', 'data-full-width', 'data-direction', 'data-cc-r', 'data-cc-p', 'style'];
   function visibleEdge(cs) {
     var b = ['Top', 'Right', 'Bottom', 'Left'].some(function (k) { return parseFloat(cs['border' + k + 'Width']) > 0 && cs['border' + k + 'Style'] !== 'none' && !/rgba\(.*, 0\)$|transparent/.test(cs['border' + k + 'Color']); });
     return b || (cs.boxShadow && cs.boxShadow !== 'none') || (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0);
@@ -884,6 +887,20 @@
     };
     document.addEventListener('pointerdown', function () { if (BOOST.ctx && BOOST.ctx.state === 'suspended') BOOST.ctx.resume().catch(function () {}); }, true);
   })();
+
+  /* ---------- membros no toque: o trilho abre com um toque (no mouse ele já abre ao passar por cima) ---------- */
+  document.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    var rail = e.target.closest && e.target.closest('.container_c8ffbb');
+    document.querySelectorAll('.container_c8ffbb.cc-open').forEach(function (r) { if (r !== rail) r.classList.remove('cc-open'); });
+    if (rail && !rail.classList.contains('cc-open') && document.documentElement.classList.contains('cc-lay')) {
+      rail.classList.add('cc-open');
+      // o primeiro toque só abre: não entra no perfil de quem estava embaixo do dedo
+      var stop = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
+      rail.addEventListener('click', stop, { capture: true, once: true });
+      setTimeout(function () { rail.removeEventListener('click', stop, true); }, 600);
+    }
+  }, true);
 
   /* ---------- esconder Nitro, Loja, Missões, presente e baixar app ---------- */
   function cleanAds() {
@@ -1582,13 +1599,313 @@
     window.addEventListener('keypress', function (e) { if (ED && ED.open) e.stopPropagation(); }, true);
   }
 
+  /* ---------- perfis do Concord ----------
+     Ficam no servidor dos ReApps e só aparecem para quem usa Concord. A pele fala com o servidor pelo Concord (ccNet),
+     nunca direto da página do Discord. Login: "Entrar com o Discord" no navegador (ccEntrar). */
+  var PF = { conta: null, draft: null, cache: {}, fila: {}, media: {}, salvando: false, entrando: false, erro: '', carregando: false, sujo: false };
+  var NET_N = 0, NET_CB = {};
+  window.__ccNet = function (id, status, text) { var cb = NET_CB[id]; delete NET_CB[id]; if (cb) cb(status, text); };
+  function net(method, path, body) {
+    return new Promise(function (ok, no) {
+      if (!window.ccNet) { no({ status: 0, erro: 'Atualize o Concord para usar o perfil.' }); return; }
+      var id = ++NET_N;
+      NET_CB[id] = function (s, t) {
+        var j = t; if (t && (t[0] === '{' || t[0] === '[')) { try { j = JSON.parse(t); } catch (e) {} }
+        if (s >= 200 && s < 300) ok(j); else no({ status: s, erro: (j && j.erro) || (s ? 'O servidor respondeu ' + s + '.' : 'Sem conexão com o servidor dos ReApps.') });
+      };
+      Promise.resolve(window.ccNet(id, method, path, body || '')).catch(function () { delete NET_CB[id]; no({ status: 0, erro: 'Não consegui falar com o Concord.' }); });
+    });
+  }
+  function mediaURL(u) {
+    if (!u) return Promise.resolve('');
+    if (/^data:image\//.test(u)) return Promise.resolve(u);
+    var h = String(u).slice(-32);
+    if (!/^[0-9a-f]{32}$/.test(h)) return Promise.resolve('');
+    if (!PF.media[h]) PF.media[h] = net('GET', '/concord/m/' + h).catch(function () { delete PF.media[h]; return ''; });
+    return PF.media[h];
+  }
+
+  var INS = {
+    noite: ['Noturno', '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'],
+    gamer: ['Gamer', '<rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4M15.5 11.5h.01M18 13.5h.01"/>'],
+    musica: ['Música', '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'],
+    arte: ['Arte', '<path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L11 16l-4 1 1-4z"/><path d="M7 17c-2 0-3 1.5-3 3.5h4c1.5 0 2.5-1 2.5-2.5"/>'],
+    fofo: ['Fofo', '<path d="M12 20s-7.5-4.6-9.2-9.3C1.7 7.4 3.9 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.1 0 5.3 2.9 4.2 6.2C19.5 15.4 12 20 12 20z"/>'],
+    raio: ['Raio', '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'],
+    planta: ['Planta', '<path d="M5 21c0-9 5-15 15-16-1 10-7 15-15 16z"/><path d="M5 21l8-8"/>'],
+    estrela: ['Estrela', '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'],
+    fundador: ['Fundador', '<path d="M2.5 20h19L14.5 7l-3.2 5.5-2.1-3z"/><path d="M14.5 7l1.6-3 1.6 3"/>'],
+    pioneiro: ['Pioneiro', '<path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/>']
+  };
+  var INS_LIVRES = ['noite', 'gamer', 'musica', 'arte', 'fofo', 'raio', 'planta', 'estrela'];
+  var ESTILOS = [['normal', 'Normal'], ['degrade', 'Degradê'], ['brilho', 'Brilho'], ['neon', 'Neon'], ['arcoiris', 'Arco-íris']];
+  var PADROES = [['pontos', 'Pontos'], ['listras', 'Listras'], ['xadrez', 'Xadrez'], ['ondas', 'Ondas'], ['estrelas', 'Estrelas'], ['doodles', 'Desenhos']];
+  function perfilVazio() { return { avatar: null, banner: null, fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', ganhas: [] }; }
+  function padraoSVG(k, cor) {
+    var s = cor.replace('#', '%23'), o = "stroke='" + s + "' stroke-opacity='.32' fill='none' stroke-width='2' stroke-linecap='round'", d = '';
+    if (k === 'pontos') d = "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><circle cx='4' cy='4' r='1.8' fill='" + s + "' fill-opacity='.4'/><circle cx='13' cy='13' r='1.8' fill='" + s + "' fill-opacity='.4'/></svg>";
+    else if (k === 'listras') d = "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M-4 20L20 -4M4 28L28 4M-12 12L12 -12' " + o + "/></svg>";
+    else if (k === 'xadrez') d = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><rect width='12' height='12' fill='" + s + "' fill-opacity='.16'/><rect x='12' y='12' width='12' height='12' fill='" + s + "' fill-opacity='.16'/></svg>";
+    else if (k === 'ondas') d = "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20'><path d='M0 10c5-7 15-7 20 0s15 7 20 0' " + o + "/></svg>";
+    else if (k === 'estrelas') d = "<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><path d='M14 8l1.6 3.4 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z' fill='" + s + "' fill-opacity='.45'/><circle cx='44' cy='40' r='1.6' fill='" + s + "' fill-opacity='.5'/><circle cx='36' cy='14' r='1' fill='" + s + "' fill-opacity='.5'/><path d='M48 50v6M45 53h6' " + o + "/></svg>";
+    else d = "<svg xmlns='http://www.w3.org/2000/svg' width='210' height='210' viewBox='0 0 420 420'><g " + o.replace("stroke-width='2'", "stroke-width='3'") + ">" + DOODLES.slice(0, 12).map(function (p) { return "<path d='" + p + "'/>"; }).join('') + "</g></svg>";
+    return 'url("data:image/svg+xml,' + d.replace(/</g, '%3C').replace(/>/g, '%3E') + '")';
+  }
+  function fundoCSS(f) {
+    f = f || {}; var c = (f.cores || []).filter(Boolean); if (!c.length) c = ['#ff5c7a', '#7b5cff']; if (c.length < 2) c = [c[0], c[0]];
+    var g = 'linear-gradient(' + (+f.angulo || 0) + 'deg, ' + c.join(', ') + ')';
+    if (f.tipo === 'cor') return c[0];
+    if (f.tipo === 'padrao') return padraoSVG(f.padrao, '#ffffff') + ', ' + g;
+    return g;
+  }
+  function nomeStyle(el, n) {
+    n = n || {}; var c = (n.cores || []).filter(Boolean); if (!c.length) c = ['#ffffff'];
+    el.dataset.ccn = n.estilo || 'normal';
+    if (n.animado) el.dataset.cca = '1'; else delete el.dataset.cca;
+    el.style.setProperty('--n1', c[0]); el.style.setProperty('--n2', c[1] || c[0]); el.style.setProperty('--n3', c[2] || c[1] || c[0]);
+    if (n.fonte && CC.fonts && CC.fonts[n.fonte]) { loadFam(n.fonte); el.style.fontFamily = "'" + n.fonte + "', var(--cc-font), sans-serif"; } else el.style.removeProperty('font-family');
+  }
+  function loadFam(fam) {
+    if (FONTS_LOADED[fam] || !CC.fonts || !CC.fonts[fam]) return; FONTS_LOADED[fam] = 1;
+    Object.keys(CC.fonts[fam]).forEach(function (wt) {
+      try { var bin = atob(CC.fonts[fam][wt]), buf = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); var f = new FontFace(fam, buf, { weight: wt, style: 'normal', display: 'swap' }); document.fonts.add(f); f.load().catch(function () {}); } catch (e) {}
+    });
+  }
+  function insHTML(k) { var i = INS[k]; return i ? '<span class="pc-i" title="' + i[0] + '">' + sv(i[1]) + '<em>' + i[0] + '</em></span>' : ''; }
+  // o cartão do perfil (o mesmo na prévia do editor e no cartão que os outros veem)
+  function cardEl(p, nome, avatar) {
+    p = p || perfilVazio();
+    var el = document.createElement('div'); el.className = 'cc-pc';
+    var ins = (p.insignias || []).filter(function (k) { return INS[k]; });
+    el.innerHTML = '<div class="pc-bn"></div><div class="pc-av"><img alt=""></div><div class="pc-ct"><div class="pc-nm"></div><div class="pc-tag">' + MARK + '<span>Concord</span></div>' +
+      (ins.length ? '<div class="pc-ins">' + ins.map(insHTML).join('') + '</div>' : '') + (p.bio ? '<p class="pc-bio"></p>' : '') + '</div>';
+    el.style.setProperty('--pf', fundoCSS(p.fundo)); el.style.setProperty('--d', p.destaque || '#ff5c7a');
+    var nm = el.querySelector('.pc-nm'); nm.textContent = nome || p.nomeDiscord || 'Você'; nomeStyle(nm, p.nome);
+    if (p.bio) el.querySelector('.pc-bio').textContent = p.bio;
+    var img = el.querySelector('.pc-av img'); if (avatar) img.src = avatar;
+    if (p.avatar) mediaURL(p.avatar).then(function (d) { if (d) img.src = d; });
+    if (p.banner) mediaURL(p.banner).then(function (d) { if (d) { el.querySelector('.pc-bn').style.backgroundImage = 'url("' + d + '")'; el.classList.add('has-bn'); } });
+    return el;
+  }
+
+  // ---- perfis dos outros: pede em lote ao servidor e guarda por 10 minutos ----
+  var FILA_T = null;
+  function perfilDe(id) {
+    var c = PF.cache[id];
+    if (c && Date.now() - c.t < 6e5) return c.p;
+    if (!PF.fila[id] && window.ccNet) { PF.fila[id] = 1; clearTimeout(FILA_T); FILA_T = setTimeout(pedirPerfis, 250); }
+    return c ? c.p : undefined;
+  }
+  function pedirPerfis() {
+    var ids = Object.keys(PF.fila).slice(0, 100); ids.forEach(function (id) { delete PF.fila[id]; });
+    if (!ids.length) return;
+    net('GET', '/concord/perfis?ids=' + ids.join(',')).then(function (r) {
+      var got = (r && r.perfis) || {}, t = Date.now();
+      ids.forEach(function (id) { PF.cache[id] = { t: t, p: got[id] || null }; });
+      pintarNomes(true); popTick(true);
+    }).catch(function () { var t = Date.now() - 5e5; ids.forEach(function (id) { if (!PF.cache[id]) PF.cache[id] = { t: t, p: null }; }); });
+  }
+
+  // ---- nome com estilo no chat (só de quem tem perfil do Concord) ----
+  function pintarNomes(tudo) {
+    if (!window.ccNet) return;
+    var lis = document.querySelectorAll(tudo ? 'li[data-cc-a]' : 'li[data-cc-a]:not([data-cc-n])');
+    for (var i = 0; i < lis.length; i++) {
+      var li = lis[i], a = li.dataset.ccA; li.dataset.ccN = '1';
+      if (!a || a === '?') continue;
+      var p = perfilDe(a); if (!p) continue;
+      var u = li.querySelector('.username_c19a55'); if (!u) continue;
+      nomeStyle(u, p.nome); u.classList.add('cc-nm');
+      if (!u.nextElementSibling || !u.nextElementSibling.classList.contains('cc-ins')) {
+        var ins = (p.insignias || []).filter(function (k) { return INS[k]; }).slice(0, 3);
+        if (ins.length) { var s = document.createElement('span'); s.className = 'cc-ins'; s.innerHTML = ins.map(function (k) { return '<i title="' + INS[k][0] + '">' + sv(INS[k][1]) + '</i>'; }).join(''); u.after(s); }
+      }
+    }
+  }
+
+  // ---- cartão Concord ao lado do cartão do Discord ----
+  var POP = { host: null, id: '', card: null };
+  function fiberUser(el) {
+    var k = null; for (var x in el) { if (x.indexOf('__reactFiber$') === 0) { k = x; break; } }
+    for (var f = k && el[k], i = 0; f && i < 60; f = f.return, i++) {
+      var p = f.memoizedProps; if (!p || typeof p !== 'object') continue;
+      var u = p.user; if (u && typeof u === 'object' && /^\d{5,25}$/.test(u.id || '') && 'username' in u) return u.id;
+      if (typeof p.userId === 'string' && /^\d{5,25}$/.test(p.userId)) return p.userId;
+    }
+    return '';
+  }
+  function popUserId(host) {
+    var img = host.querySelector('img[src*="/avatars/"]'), m = img && /\/avatars\/(\d{5,25})\//.exec(img.src);
+    if (m) return m[1];
+    var c = host.querySelectorAll('img, [class*="avatar"]');
+    for (var i = 0; i < c.length && i < 6; i++) { var id = fiberUser(c[i]); if (id) return id; }
+    return fiberUser(host.firstElementChild || host);
+  }
+  function popTick(refresh) {
+    var host = document.querySelector('.user-profile-popout, .user-profile-modal');
+    if (!host || !window.ccNet) { popClose(); return; }
+    if (host === POP.host && !refresh) { popPlace(); return; }
+    var id = host === POP.host ? POP.id : popUserId(host);
+    if (!id) return;
+    var p = perfilDe(id);
+    if (host === POP.host && POP.card && POP.card.dataset.v === String(p && p.v)) { popPlace(); return; }
+    POP.host = host; POP.id = id;
+    if (!p) { if (POP.card) { POP.card.remove(); POP.card = null; } return; }
+    var U = st('User'), u = U && U.getUser(id);
+    var card = cardEl(p, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '');
+    card.classList.add('cc-pop'); card.dataset.v = String(p.v);
+    if (POP.card) POP.card.remove();
+    POP.card = card; document.body.appendChild(card); popPlace();
+    requestAnimationFrame(function () { card.classList.add('on'); });
+  }
+  function popClose() { if (POP.card) { var c = POP.card; c.classList.remove('on'); setTimeout(function () { c.remove(); }, 260); } POP.card = null; POP.host = null; POP.id = ''; }
+  function popPlace() {
+    var c = POP.card, h = POP.host; if (!c || !h || !h.isConnected) return;
+    var r = h.getBoundingClientRect(), w = Math.min(300, innerWidth - 24), gap = 12, x, y = Math.max(12, Math.min(r.top, innerHeight - c.offsetHeight - 12));
+    c.classList.remove('sheet');
+    if (r.right + gap + w <= innerWidth - 12) x = r.right + gap;
+    else if (r.left - gap - w >= 12) x = r.left - gap - w;
+    else { c.classList.add('sheet'); c.style.left = ''; c.style.top = ''; return; }
+    c.style.left = Math.round(x) + 'px'; c.style.top = Math.round(y) + 'px';
+  }
+
+  // ---- a própria conta ----
+  window.__ccConta = function (ok, msg) {
+    PF.entrando = false;
+    if (ok) { toast('Conta do Concord conectada'); PF.tentou = true; carregarConta(); } else { PF.conta = null; PF.draft = null; if (msg) toast(msg); repintarPerfil(); }
+  };
+  function carregarConta() {
+    if (!window.ccNet || PF.carregando) return;
+    PF.carregando = true; repintarPerfil();
+    Promise.resolve(window.ccConta ? window.ccConta() : false).then(function (tem) {
+      if (!tem) { PF.carregando = false; PF.conta = null; repintarPerfil(); return; }
+      return net('GET', '/concord/eu').then(function (r) {
+        PF.carregando = false; PF.conta = r; PF.erro = '';
+        PF.draft = JSON.parse(JSON.stringify(r.perfil || perfilVazio())); PF.sujo = false;
+        PF.cache[r.id] = { t: Date.now(), p: r.perfil };
+        repintarPerfil(); pintarNomes(true);
+      });
+    }).catch(function (e) { PF.carregando = false; PF.erro = (e && e.erro) || 'Não consegui carregar a conta.'; if (e && e.status === 401) PF.conta = null; repintarPerfil(); });
+  }
+  function repintarPerfil() { if (PANEL && PANEL.classList.contains('on') && (CFG.tab || 'tema') === 'perfil') paintPanel(); }
+  function chips(attr, list, cur) { return '<div class="pf-chips">' + list.map(function (x) { return '<button class="chip' + (cur === x[0] ? ' on' : '') + '" data-' + attr + '="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>'; }
+  function coresHTML(grupo, cores, n) {
+    var h = '<div class="pf-cores">';
+    for (var i = 0; i < n; i++) h += '<label class="pf-cor" style="--c:' + (cores[i] || cores[0] || '#ffffff') + '"><input type="color" data-pfc="' + grupo + '.' + i + '" value="' + (cores[i] || cores[0] || '#ffffff') + '"></label>';
+    return h + (n < 3 ? '<button class="pf-cor add" data-pfa="addcor" data-g="' + grupo + '" title="Mais uma cor">' + IC.plus + '</button>' : '') + (n > 1 ? '<button class="pf-cor add" data-pfa="tirarcor" data-g="' + grupo + '" title="Uma cor a menos">' + sv('<path d="M5 12h14"/>') + '</button>' : '') + '</div>';
+  }
+  function perfilPanel() {
+    var h = '';
+    if (window.ccNet && !PF.conta && !PF.carregando && !PF.tentou) { PF.tentou = true; setTimeout(carregarConta, 0); }
+    if (!window.ccNet) return '<h4>Perfil do Concord</h4><div class="note">Atualize o Concord para usar o perfil. Feche e abra o Concord para a versão nova entrar.</div>';
+    if (PF.carregando && !PF.conta) return '<div class="pf-load">Carregando sua conta...</div>';
+    if (!PF.conta) {
+      h += '<div class="pf-hero"><div class="pf-prev" id="cc-pf-prev"></div><h4>Seu perfil do Concord</h4><div class="note">Avatar e banner com GIF, fundo, nome com estilo, insígnias e uma descrição. Só quem usa o Concord vê.</div>' +
+        '<button class="btn pri pf-entrar" data-pfa="entrar"' + (PF.entrando ? ' disabled' : '') + '>' + (PF.entrando ? 'Esperando o login no navegador...' : 'Entrar com o Discord') + '</button>' +
+        '<div class="note" style="margin-top:10px">Abre o navegador no login oficial do Discord. O Concord só fica sabendo quem você é, nada mais.</div>' + (PF.erro ? '<div class="pf-err">' + esc(PF.erro) + '</div>' : '') + '</div>';
+      setTimeout(function () { var b = document.getElementById('cc-pf-prev'); if (b) { b.innerHTML = ''; var p = perfilVazio(); p.insignias = ['estrela', 'fofo']; p.bio = 'Seu cartão aparece assim para quem usa o Concord.'; p.nome.estilo = 'degrade'; b.appendChild(cardEl(p, 'Seu nome', '')); } }, 0);
+      return h;
+    }
+    var d = PF.draft, f = d.fundo, n = d.nome, ganhas = d.ganhas || (PF.conta.perfil && PF.conta.perfil.ganhas) || [];
+    h += '<div class="pf-prev" id="cc-pf-prev"></div>';
+    h += '<h4>Imagens</h4><div class="pf-imgs"><div class="pf-img"><b>Avatar</b><small>GIF, PNG, JPG ou WEBP, até 6 MB</small><div class="btns"><button class="btn" data-pfa="pick" data-k="avatar">' + IC.img + ' Trocar</button>' + (d.avatar ? '<button class="btn" data-pfa="tirar" data-k="avatar">Tirar</button>' : '') + '</div></div>' +
+      '<div class="pf-img"><b>Banner</b><small>Fica no topo do cartão</small><div class="btns"><button class="btn" data-pfa="pick" data-k="banner">' + IC.img + ' Trocar</button>' + (d.banner ? '<button class="btn" data-pfa="tirar" data-k="banner">Tirar</button>' : '') + '</div></div></div>';
+    h += '<h4>Fundo do cartão</h4><div class="seg">' + [['degrade', 'Degradê'], ['cor', 'Cor'], ['padrao', 'Padrão']].map(function (m) { return '<button data-pff="' + m[0] + '"' + (f.tipo === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>';
+    h += coresHTML('fundo', f.cores, f.tipo === 'cor' ? 1 : f.cores.length);
+    if (f.tipo !== 'cor') h += '<div class="row"><div class="l"><b>Direção</b></div><input type="range" data-pfr="angulo" min="0" max="360" step="5" value="' + f.angulo + '" style="--p:' + (f.angulo / 3.6) + '%"><output>' + f.angulo + '°</output></div>';
+    if (f.tipo === 'padrao') h += chips('pfp', PADROES, f.padrao);
+    h += '<h4>Nome</h4>' + chips('pfn', ESTILOS, n.estilo);
+    if (n.estilo !== 'arcoiris') h += coresHTML('nome', n.cores, n.estilo === 'normal' ? 1 : Math.max(2, n.cores.length));
+    if (n.estilo === 'degrade' || n.estilo === 'arcoiris' || n.estilo === 'neon' || n.estilo === 'brilho') h += '<div class="row"><div class="l"><b>Animado</b><small>As cores andam devagar</small></div><button class="tg' + (n.animado ? ' on' : '') + '" data-pfa="animado" role="switch" aria-checked="' + !!n.animado + '"></button></div>';
+    h += '<div class="pf-fontes">' + [''].concat(FONTS.filter(Boolean)).map(function (fm) { if (fm) loadFam(fm); return '<button data-pffo="' + esc(fm) + '"' + (n.fonte === fm ? ' class="on"' : '') + ' style="font-family:' + (fm ? "'" + fm + "'" : 'inherit') + '">' + (fm === 'Bricolage Grotesque' ? 'Concord' : fm || 'Igual ao chat') + '</button>'; }).join('') + '</div>';
+    h += '<h4>Insígnias <em class="pf-n">' + d.insignias.length + ' de 4</em></h4><div class="pf-ins">' + INS_LIVRES.concat(['fundador', 'pioneiro']).map(function (k) {
+      var livre = INS_LIVRES.indexOf(k) >= 0, tem = livre || ganhas.indexOf(k) >= 0, on = d.insignias.indexOf(k) >= 0;
+      return '<button class="' + (on ? 'on' : '') + (tem ? '' : ' lock') + '" data-pfi="' + k + '"' + (tem ? '' : ' disabled title="' + (k === 'fundador' ? 'Só a primeira conta do Concord' : 'Das 25 primeiras contas do Concord') + '"') + '>' + sv(INS[k][1]) + '<span>' + INS[k][0] + '</span></button>';
+    }).join('') + '</div>';
+    h += '<h4>Sobre você <em class="pf-n" id="cc-pf-bion">' + d.bio.length + '/190</em></h4><textarea class="pf-bio" data-pfb maxlength="190" rows="3" placeholder="Uma frase sua...">' + esc(d.bio) + '</textarea>';
+    h += '<h4>Cor do cartão</h4><div class="sws">' + ['#ff5c7a', '#ff8a3d', '#f2c14e', '#5ee7a6', '#4fd6e6', '#5b8cff', '#9b7bff', '#f06fd3', '#e8e8f0'].map(function (c) { return '<button class="sw' + (d.destaque === c ? ' on' : '') + '" data-pfd="' + c + '" style="--c:' + c + '"></button>'; }).join('') +
+      '<label class="sw" title="Outra cor" style="--c:' + d.destaque + '">' + IC.plus + '<input type="color" data-pfdi value="' + d.destaque + '"></label></div>';
+    if (PF.erro) h += '<div class="pf-err">' + esc(PF.erro) + '</div>';
+    h += '<div class="btns pf-acts"><button class="btn" data-pfa="sair">Sair da conta</button><span class="sp"></span><button class="btn pri" data-pfa="salvar"' + (PF.salvando ? ' disabled' : '') + '>' + (PF.salvando ? 'Salvando...' : PF.sujo ? 'Salvar perfil' : 'Salvo') + '</button></div>';
+    setTimeout(pfPreview, 0);
+    return h;
+  }
+  function pfPreview() {
+    var b = document.getElementById('cc-pf-prev'); if (!b || !PF.draft) return;
+    var U = st('User'), me = U && U.getCurrentUser && U.getCurrentUser();
+    var p = JSON.parse(JSON.stringify(PF.draft)); if (PF.draft._av) p.avatar = PF.draft._av; if (PF.draft._bn) p.banner = PF.draft._bn;
+    b.innerHTML = ''; b.appendChild(cardEl(p, me ? nameOf(me) : PF.conta.nome, me ? avatarOf(me, 128) : ''));
+  }
+  function mexeu(repaint) {
+    PF.sujo = true; PF.erro = '';
+    if (repaint) paintPanel(); else { pfPreview(); var s = PANEL.querySelector('[data-pfa="salvar"]'); if (s) s.textContent = 'Salvar perfil'; }
+  }
+  function pickImg(k) {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/gif,image/png,image/jpeg,image/webp';
+    inp.onchange = function () {
+      var file = inp.files[0]; if (!file) return;
+      if (file.size > 6 << 20) { toast('A imagem precisa ter até 6 MB'); return; }
+      var r = new FileReader();
+      r.onload = function () {
+        var url = String(r.result), b64 = url.split(',')[1];
+        PF.draft[k === 'avatar' ? '_av' : '_bn'] = url; pfPreview(); toast('Enviando a imagem...');
+        net('POST', '/concord/midia', b64).then(function (res) {
+          PF.draft[k] = res.url; PF.media[res.url.slice(-32)] = Promise.resolve(url); mexeu(true); toast('Imagem pronta. Salve o perfil para valer.');
+        }).catch(function (e) { delete PF.draft[k === 'avatar' ? '_av' : '_bn']; PF.erro = e.erro || 'Não consegui enviar a imagem.'; paintPanel(); });
+      };
+      r.readAsDataURL(file);
+    };
+    inp.click();
+  }
+  function perfilClick(b) {
+    if (!Object.keys(b.dataset).some(function (k) { return k.indexOf('pf') === 0; })) return false;
+    var d = PF.draft, a = b.dataset.pfa;
+    if (a === 'entrar') { if (!window.ccEntrar) { toast('Atualize o Concord para entrar'); return true; } PF.entrando = true; PF.erro = ''; window.ccEntrar(); paintPanel(); toast('Abri o login do Discord no navegador'); return true; }
+    if (!d) return a != null;
+    if (a === 'sair') { if (b.dataset.sure) { if (window.ccSair) window.ccSair(); PF.conta = null; PF.draft = null; paintPanel(); } else { b.dataset.sure = '1'; b.textContent = 'Sair mesmo?'; } return true; }
+    if (a === 'salvar') {
+      PF.salvando = true; paintPanel();
+      var body = JSON.parse(JSON.stringify(d)); delete body._av; delete body._bn; delete body.ganhas; delete body.nomeDiscord; delete body.v;
+      net('PUT', '/concord/perfil', JSON.stringify(body)).then(function (r) {
+        PF.salvando = false; PF.sujo = false; PF.conta.perfil = r.perfil; var av = d._av, bn = d._bn; PF.draft = JSON.parse(JSON.stringify(r.perfil)); if (av && PF.draft.avatar) PF.draft._av = av; if (bn && PF.draft.banner) PF.draft._bn = bn;
+        PF.cache[PF.conta.id] = { t: Date.now(), p: r.perfil }; paintPanel(); pintarNomes(true); toast('Perfil salvo. Quem usa o Concord já vê.');
+      }).catch(function (e) { PF.salvando = false; PF.erro = e.erro || 'Não consegui salvar.'; if (e.status === 401) { PF.conta = null; PF.draft = null; } paintPanel(); });
+      return true;
+    }
+    if (a === 'pick') { pickImg(b.dataset.k); return true; }
+    if (a === 'tirar') { d[b.dataset.k] = null; delete d[b.dataset.k === 'avatar' ? '_av' : '_bn']; mexeu(true); return true; }
+    if (a === 'animado') { d.nome.animado = !d.nome.animado; mexeu(true); return true; }
+    if (a === 'addcor' || a === 'tirarcor') {
+      var g = b.dataset.g === 'fundo' ? d.fundo : d.nome, l = g.cores;
+      if (a === 'addcor' && l.length < 3) l.push(l[l.length - 1] || '#ffffff'); else if (a === 'tirarcor' && l.length > 1) l.pop();
+      mexeu(true); return true;
+    }
+    if (b.dataset.pff) { d.fundo.tipo = b.dataset.pff; if (d.fundo.cores.length < 2 && d.fundo.tipo !== 'cor') d.fundo.cores.push('#7b5cff'); mexeu(true); return true; }
+    if (b.dataset.pfp) { d.fundo.padrao = b.dataset.pfp; mexeu(true); return true; }
+    if (b.dataset.pfn) { d.nome.estilo = b.dataset.pfn; if (d.nome.estilo !== 'normal' && d.nome.cores.length < 2) d.nome.cores.push('#ff5c7a'); mexeu(true); return true; }
+    if (b.dataset.pffo != null) { d.nome.fonte = b.dataset.pffo; mexeu(true); return true; }
+    if (b.dataset.pfi) { var k = b.dataset.pfi, i = d.insignias.indexOf(k); if (i >= 0) d.insignias.splice(i, 1); else if (d.insignias.length < 4) d.insignias.push(k); else toast('Até 4 insígnias'); mexeu(true); return true; }
+    if (b.dataset.pfd) { d.destaque = b.dataset.pfd; mexeu(true); return true; }
+    return false;
+  }
+  function perfilInput(t) {
+    var d = PF.draft; if (!d) return false;
+    if (t.dataset.pfc) { var p = t.dataset.pfc.split('.'), g = p[0] === 'fundo' ? d.fundo : d.nome; g.cores[+p[1]] = t.value; t.parentNode.style.setProperty('--c', t.value); mexeu(false); return true; }
+    if (t.dataset.pfr) { d.fundo.angulo = +t.value; t.style.setProperty('--p', (+t.value / 3.6) + '%'); var o = t.nextElementSibling; if (o) o.textContent = t.value + '°'; mexeu(false); return true; }
+    if (t.dataset.pfb != null) { d.bio = t.value.slice(0, 190); var c = document.getElementById('cc-pf-bion'); if (c) c.textContent = d.bio.length + '/190'; mexeu(false); return true; }
+    if (t.dataset.pfdi != null) { d.destaque = t.value; mexeu(false); return true; }
+    return false;
+  }
+  function pfTick() { if (!window.ccNet) return; pintarNomes(false); popTick(false); }
+  window.addEventListener('resize', function () { popPlace(); });
+
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
+    setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); pfTick(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
   // troca de tela na hora (sem esperar o Discord mexer na página): o Início entra sem mostrar a lista de amigos antes
