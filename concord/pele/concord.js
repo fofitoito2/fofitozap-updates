@@ -22,7 +22,7 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Bricolage Grotesque', 'Onest', 'Space Grotesk', 'Sora', 'Manrope', 'DM Sans', 'Urbanist', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema' };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272 };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -73,6 +73,13 @@
       '--border-light': 'rgba(255,255,255,.05)', '--border': 'rgba(255,255,255,.085)', '--border-hover': 'rgba(255,255,255,.15)', '--button-border': 'rgba(255,255,255,.1)'
     };
     v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid ? 1 : 0.95);
+    v['--cc-side-w'] = (+CFG.sideW || 272) + 'px';
+    // acrílico e mica: uma folha de vidro só, tingida por igual (antes os vãos entre os painéis viravam barras claras)
+    if (CFG.mat === 'acrylic' || CFG.mat === 'mica') {
+      v['--cc-sheet'] = rgba(w, Math.max(0.15, op * 0.92));
+      v['--bg-4'] = 'rgba(255,255,255,.035)'; v['--bg-3'] = 'rgba(255,255,255,.05)'; v['--bg-2'] = 'rgba(255,255,255,.075)'; v['--bg-1'] = 'rgba(255,255,255,.11)';
+      v['--cc-wall1'] = rgba(mix(w, P.o[0], 0.4), 0.22); v['--cc-wall2'] = rgba(mix(w, P.o[1], 0.3), 0.16); v['--cc-wall3'] = rgba(mix(w, P.o[2], 0.4), 0.22);
+    }
     var root = ':root{' + Object.keys(v).map(function (k) { return k + ':' + v[k]; }).join(';') + '}';
     var F = v['--cc-float'];
     root += 'body,.theme-dark,.theme-darker,.theme-midnight,.theme-light{--background-surface-high:' + F + '!important;--background-surface-higher:' + F + '!important;--background-surface-highest:' + F + '!important;--bg-surface-overlay:' + F + '!important;--bg-surface-overlay-tmp:' + F + '!important;--bg-surface-raised:' + F + '!important;--background-floating:' + F + '!important;--modal-background:' + F + '!important;--bg-floating:' + F + '!important}';
@@ -81,7 +88,7 @@
     var body = 'body{' + [
       "--font:" + (CFG.font ? "'" + CFG.font + "'" : "''"), '--gap:' + CFG.gap + 'px', '--border-thickness:1px',
       '--animations:' + on(CFG.anim), '--list-item-transition:.2s ease',
-      '--top-bar-height:36px', '--top-bar-button-position:off', '--top-bar-title-position:off', '--subtle-top-bar-title:on',
+      '--top-bar-height:' + (CFG.layout === 'palco' ? '0px' : '36px'), '--top-bar-button-position:off', '--top-bar-title-position:off', '--subtle-top-bar-title:on',
       '--custom-window-controls:off', '--custom-dms-icon:off', '--custom-dms-background:off', '--background-image:off',
       '--transparency-tweaks:' + on(!solid), '--remove-bg-layer:' + on(!solid), '--panel-blur:' + on(!solid && CFG.blur > 0 && !CFG.lite), '--blur-amount:' + CFG.blur + 'px',
       '--bg-floating:' + rgba(mix(w, '#ffffff', 0.04), floatA),
@@ -124,19 +131,29 @@
   }
 
   // o Discord reescreve as classes do <html> quando termina de carregar ou troca o tema: as nossas voltam sozinhas
-  var HASBAR = false;
+  // (o Discord troca as classes do <html> quando a janela ganha ou perde o foco: por isso TODAS as nossas, inclusive as de estado, voltam aqui)
+  var HASBAR = false, FLAGS = {};
+  function wantMarks() {
+    var w = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-glass': CFG.mat === 'acrylic' || CFG.mat === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
+      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite, 'cc-hasbar': HASBAR,
+      'cc-lay': CFG.layout === 'palco', 'cc-homecfg': !!CFG.home };
+    Object.keys(FLAGS).forEach(function (k) { w[k] = FLAGS[k]; });
+    return w;
+  }
   function marks() {
     var h = document.documentElement; if (!h) return;
     watchHtml();
-    var want = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
-      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite, 'cc-hasbar': HASBAR };
+    var want = wantMarks();
     Object.keys(want).forEach(function (c) { if (h.classList.contains(c) !== want[c]) h.classList.toggle(c, want[c]); });
   }
+  function flag(c, on) { on = !!on; FLAGS[c] = on; var h = document.documentElement; if (h && h.classList.contains(c) !== on) h.classList.toggle(c, on); }
   var htmlWatched = false;
   function watchHtml() {
     if (htmlWatched || !document.documentElement) return; htmlWatched = true;
-    new MutationObserver(function () { if (!document.documentElement.classList.contains('cc-on')) marks(); })
-      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    new MutationObserver(function () {
+      var h = document.documentElement, want = wantMarks();
+      for (var c in want) if (h.classList.contains(c) !== want[c]) { marks(); return; }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 
   /* ---------- fontes (FontFace com os bytes: não depende de baixar nada) ---------- */
@@ -167,12 +184,6 @@
     var a = document.createElement('div'); a.id = 'cc-aura'; a.innerHTML = '<i></i><i></i><i></i><b></b>';
     document.body.insertBefore(a, document.body.firstChild);
   }
-  function paintWall() {
-    var a = document.getElementById('cc-aura'); if (!a) return;
-    a.classList.toggle('wall', CFG.mat === 'wall' && !!CFG.wall);
-    a.style.setProperty('--cc-wall', CFG.wall ? 'url("' + CFG.wall + '")' : 'none');
-  }
-
   /* ---------- ícones ---------- */
   function sv(d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
   var IC = {
@@ -207,11 +218,23 @@
   // arrastar pela barra de cima; dois cliques maximiza
   function isBarSpot(t) {
     if (!t || !t.closest) return false;
-    if (t.closest('button, a, input, textarea, [role="button"], [role="tab"], [contenteditable], .cc-win')) return false;
-    return !!t.closest('[class*="base_"] > [class*="bar_"], #cc-drag');
+    if (t.closest('button, a, input, textarea, [role="button"], [role="tab"], [role="treeitem"], [contenteditable], .cc-win, #cc-ed')) return false;
+    if (t.closest('[class*="base_"] > [class*="bar_"], #cc-drag')) return true;
+    // layout Palco: o espaço vazio da faixa de cima (em volta dos servidores) também arrasta a janela
+    if (CFG.layout === 'palco') {
+      if (t.classList && (t.classList.contains('content__5e434') || t.classList.contains('scroller_ef3116') || t.classList.contains('tree_ef3116') || t.classList.contains('guilds__5e434'))) return true;
+      if (t.id === 'cc-dockbg') return true;
+    }
+    return false;
   }
   document.addEventListener('mousedown', function (e) { if (e.button === 0 && e.detail === 1 && isBarSpot(e.target)) { e.preventDefault(); win('drag'); } }, true);
   document.addEventListener('dblclick', function (e) { if (isBarSpot(e.target)) win('max'); }, true);
+  // layout Palco: a roda do mouse anda pelos servidores de lado
+  document.addEventListener('wheel', function (e) {
+    if (CFG.layout !== 'palco' || e.ctrlKey || !e.target.closest) return;
+    var sc = e.target.closest('.guilds__5e434 .scroller_ef3116'); if (!sc || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault(); sc.scrollLeft += e.deltaY;
+  }, { capture: true, passive: false });
 
   /* ---------- painel do Concord ---------- */
   var PANEL = null;
@@ -224,7 +247,7 @@
   function buildPanel() {
     PANEL = document.createElement('div'); PANEL.id = 'cc-panel';
     PANEL.innerHTML = '<div class="hd">' + MARK + '<div class="t"><b>Aparência</b><small>Concord ' + esc(INFO.ver) + '</small></div><button class="ib" data-a="close" title="Fechar">' + IC.x + '</button></div><div class="tabbar"></div><div class="bd"></div>' +
-      '<div class="ft"><span class="sp">As mudanças aparecem na hora</span><button class="btn" data-a="reset">Restaurar padrão</button><button class="btn pri" data-a="update" hidden>Atualizar o Concord</button></div>';
+      '<div class="ft"><button class="btn" data-a="check" title="Procura versão nova do Concord e da pele">Procurar atualização</button><span class="sp"></span><button class="btn" data-a="reset">Restaurar padrão</button><button class="btn pri" data-a="update" hidden>Atualizar o Concord</button></div>';
     document.body.appendChild(PANEL);
     PANEL.addEventListener('click', onPanelClick);
     PANEL.addEventListener('input', onPanelInput);
@@ -279,11 +302,18 @@
       h += '<h4>Material</h4><div class="seg">' + [['aura', 'Aura'], ['acrylic', 'Acrílico'], ['mica', 'Mica'], ['wall', 'Imagem'], ['solid', 'Sólido']].map(function (m) {
         return '<button data-m="' + m[0] + '"' + (CFG.mat === m[0] ? ' class="on"' : '') + (INFO.mats[m[0]] === false ? ' disabled title="Precisa do Windows 11"' : '') + '>' + m[1] + '</button>';
       }).join('') + '</div><div class="note" style="margin-top:8px">' + ({ aura: 'Bolhas com as cores do tema atrás dos painéis de vidro.', acrylic: 'O que está atrás da janela aparece desfocado. Painéis bem transparentes combinam mais.', mica: 'A cor do seu papel de parede do Windows tinge a janela.', wall: 'Uma imagem sua atrás dos painéis de vidro.', solid: 'Painéis firmes, sem transparência. O mais leve.' }[CFG.mat] || '') + '</div>';
-      if (CFG.mat === 'wall') h += '<div class="walls"><button data-a="wallpick" style="--w:' + (CFG.wall ? 'url(' + CFG.wall + ')' : 'none') + '">' + (CFG.wall ? '' : 'Escolher') + '</button></div>';
+      if (CFG.mat === 'wall') {
+        h += '<h4>Seus fundos</h4><div class="note">Crie no editor com camadas, pincel, imagens e texto. Cada fundo tem versão para PC, tablet e celular.</div><div class="walls2" id="cc-walls"><div class="wl-load">Carregando...</div></div>' +
+          '<div class="btns" style="justify-content:flex-start"><button class="btn pri" data-a="wallnew">' + IC.plus + ' Criar fundo</button><button class="btn" data-a="wallpick">' + IC.img + ' Usar uma imagem</button></div>';
+        setTimeout(paintWalls, 0);
+      }
       if (CFG.mat === 'aura') h += range('orbs', 'Bolhas', 'Força das cores do fundo', 0.2, 1, 0.05, FMT.pct) + toggle('motion', 'Bolhas em movimento', 'Mais bonito, pesa um pouco mais');
       if (CFG.mat === 'aura' || CFG.mat === 'wall') h += toggle('parallax', 'Profundidade', 'O fundo acompanha o mouse devagar, como se estivesse mais longe');
       if (CFG.mat !== 'solid') h += range('op', 'Opacidade dos painéis', 'Menos opaco deixa ver mais o fundo', 0.2, 1, 0.02, FMT.pct) + range('blur', 'Desfoque', 'Quanto o vidro desfoca o que está atrás', 0, 40, 1, FMT.px);
     } else if (tab === 'estilo') {
+      h += '<h4>Layout</h4><div class="seg">' + [['palco', 'Palco'], ['classico', 'Clássico']].map(function (m) { return '<button data-lay="' + m[0] + '"' + (CFG.layout === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div><div class="note" style="margin-top:8px">' +
+        (CFG.layout === 'palco' ? 'Servidores numa faixa no topo, canais num cartão e os membros abrem quando você passa o mouse na direita. Ctrl+Shift+L troca.' : 'O arranjo de sempre do Discord, com a nossa pele. Ctrl+Shift+L troca.') + '</div>';
+      if (CFG.layout === 'palco') h += range('sideW', 'Largura dos canais', '', 220, 380, 2, FMT.px);
       h += '<h4>Estilo</h4>' + toggle('style', 'Estilo ReApps', 'Fundo do chat, caixa de digitar e seleção com a nossa cara');
       if (CFG.style) h += toggle('bub', 'Mensagens em balões', 'As suas ficam na cor de destaque') + toggle('dood', 'Desenhos no fundo do chat', '') + range('tint', 'Cor do tema nos painéis', 'Quanto a cor de destaque tinge os painéis', 0, 0.25, 0.01, FMT.pct);
       h += '<h4>Formas</h4>' + range('radius', 'Cantos', '', 0, 24, 1, FMT.px) + range('gap', 'Espaço entre painéis', '', 0, 20, 1, FMT.px);
@@ -314,6 +344,12 @@
     if (a === 'close') togglePanel(false);
     else if (a === 'reset') { Object.keys(DEF).forEach(function (k) { if (k !== 'mine' && k !== 'places') CFG[k] = DEF[k]; }); delete CFG.wall; save(); applyTheme(); paintPanel(); toast('Aparência padrão de volta. Seus temas continuam salvos.'); }
     else if (a === 'update') { if (window.ccUpdate) window.ccUpdate(); }
+    else if (a === 'check') { if (window.ccCheck) { toast('Procurando atualização...'); window.ccCheck().catch(function () { toast('Não consegui procurar agora'); }); } else toast('Atualize o Concord para usar este botão'); }
+    else if (a === 'edopen') { togglePanel(false); edOpen(b.dataset.id || ''); }
+    else if (a === 'wallnew') { togglePanel(false); edOpen(''); }
+    else if (a === 'walluse') { wallUse(b.dataset.id); }
+    else if (a === 'walldel') { if (b.dataset.sure) { DB.del(b.dataset.id).then(function () { if (CFG.wallId === b.dataset.id) { delete CFG.wallId; save(); applyTheme(); } paintPanel(); toast('Fundo apagado'); }); } else { b.dataset.sure = '1'; b.textContent = 'Apagar mesmo?'; } }
+    else if (b.dataset.lay) { set('layout', b.dataset.lay, true); }
     else if (a === 'wallpick') pickWall();
     else if (a === 'fontpc') pickFont();
     else if (a === 'enew') { var base = allThemes()[themeKey()] || PRESETS.fofito; var t = JSON.parse(JSON.stringify(base)); t.n = 'Meu tema'; EDIT = { key: '', t: t, prev: CFG.preset, tmp: newId() }; CFG.mine = CFG.mine || {}; CFG.mine[EDIT.tmp] = EDIT.t; CFG.preset = EDIT.tmp; applyTheme(); paintPanel(); }
@@ -353,20 +389,6 @@
         FONTS_LOADED.pc = 0; loadCustomFont(); set('font', 'Fonte do PC', true); toast('Fonte "' + f.name.replace(/\.[^.]+$/, '') + '" aplicada');
       };
       r.readAsDataURL(f);
-    };
-    inp.click();
-  }
-  function pickWall() {
-    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
-    inp.onchange = function () {
-      var f = inp.files[0]; if (!f) return;
-      var img = new Image(); img.onload = function () {
-        // reduz para caber guardado (até 2560px, JPEG)
-        var s = Math.min(1, 2560 / Math.max(img.width, img.height)), c = document.createElement('canvas');
-        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        CFG.wall = c.toDataURL('image/jpeg', 0.86); CFG.mat = 'wall'; save(); applyTheme(); paintPanel(); URL.revokeObjectURL(img.src);
-      };
-      img.src = URL.createObjectURL(f);
     };
     inp.click();
   }
@@ -420,6 +442,7 @@
   document.addEventListener('keydown', function (e) {
     if (e.ctrlKey && e.shiftKey && (e.key === '<' || e.key === ',' || e.code === 'Comma')) { e.preventDefault(); togglePanel(); }
     if (e.key === 'Escape' && PANEL && PANEL.classList.contains('on')) { e.stopPropagation(); togglePanel(false); }
+    if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l') && !(ED && ED.open)) { e.preventDefault(); set('layout', CFG.layout === 'palco' ? 'classico' : 'palco', PANEL && PANEL.classList.contains('on')); toast(CFG.layout === 'palco' ? 'Layout Palco' : 'Layout Clássico'); }
   }, true);
 
   /* ---------- quais mensagens são suas (para o balão na cor de destaque) ---------- */
@@ -452,7 +475,7 @@
   /* ---------- esqueleto da tela (só a estrutura, sem textos, nomes nem imagens) ----------
      O Concord guarda em dados/estrutura para ajustar a pele quando o Discord muda. */
   var DUMPED = {};
-  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable', 'href', 'data-list-item-id', 'aria-label', 'data-cc-r'];
+  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable', 'href', 'data-list-item-id', 'aria-label', 'data-cc-r', 'data-cc-p', 'style'];
   function visibleEdge(cs) {
     var b = ['Top', 'Right', 'Bottom', 'Left'].some(function (k) { return parseFloat(cs['border' + k + 'Width']) > 0 && cs['border' + k + 'Style'] !== 'none' && !/rgba\(.*, 0\)$|transparent/.test(cs['border' + k + 'Color']); });
     return b || (cs.boxShadow && cs.boxShadow !== 'none') || (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0);
@@ -461,19 +484,24 @@
     var marked = [];
     document.body.querySelectorAll('*').forEach(function (el) {
       if (el.closest('svg') && el.tagName !== 'svg') return;
-      var cs = getComputedStyle(el); if (cs.display === 'none' || !visibleEdge(cs)) return;
+      var cs = getComputedStyle(el); if (cs.display === 'none') return;
+      // ::before / ::after com borda ou fundo (linhas soltas costumam vir daí)
+      var ps = ['::before', '::after'].map(function (w) { var p = getComputedStyle(el, w); return p.content && p.content !== 'none' && p.display !== 'none' && (visibleEdge(p) || !/rgba\(.*, 0\)$|transparent/.test(p.backgroundColor) || p.backgroundImage !== 'none') ? w + ' ' + p.position + ' ' + p.width + 'x' + p.height + ' b=' + p.borderTopWidth + ' ' + p.borderTopColor + ' bg=' + p.backgroundColor + ' op=' + p.opacity : ''; }).filter(Boolean).join(' | ');
+      if (ps) { el.setAttribute('data-cc-p', ps); marked.push(el); }
+      if (!visibleEdge(cs)) return;
       var r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
       el.setAttribute('data-cc-r', Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + ',' + Math.round(r.height) + ' op=' + cs.opacity + ' vis=' + cs.visibility + ' z=' + cs.zIndex + ' b=' + cs.borderTopWidth + ' ' + cs.borderTopColor + ' sh=' + (cs.boxShadow || '').slice(0, 40));
       marked.push(el);
     });
     var root = document.body.cloneNode(true);
-    marked.forEach(function (el) { el.removeAttribute('data-cc-r'); });
-    root.querySelectorAll('#cc-panel, #cc-aura, #cc-toast, script, style, link, svg *, iframe').forEach(function (n) { n.remove(); });
+    marked.forEach(function (el) { el.removeAttribute('data-cc-r'); el.removeAttribute('data-cc-p'); });
+    root.querySelectorAll('#cc-panel, #cc-aura, #cc-toast, #cc-ed, script, style, link, svg *, iframe').forEach(function (n) { n.remove(); });
     (function walk(el) {
       for (var i = el.attributes.length - 1; i >= 0; i--) {
         var a = el.attributes[i].name;
         if (KEEP.indexOf(a) < 0 || (a === 'aria-label' && el.tagName !== 'BUTTON')) el.removeAttribute(a);
         else if (a === 'href' || a === 'data-list-item-id' || a === 'aria-label') el.setAttribute(a, el.getAttribute(a).replace(/\d{6,}/g, '#'));
+        else if (a === 'style') el.setAttribute(a, el.getAttribute(a).replace(/url\([^)]*\)/g, 'url(#)').slice(0, 300));
       }
       if (el.id) el.id = el.id.replace(/\d{6,}/g, '#');
       var seen = {}, kids = Array.prototype.slice.call(el.childNodes);
@@ -504,6 +532,23 @@
     DUMPED[k] = Date.now();
     try { window.ccDump(force ? 'manual-' + k : k, skeleton()).catch(function () {}); if (force) toast('Estrutura da tela guardada'); } catch (e) {}
   }
+  // janela sem foco: guarda a tela como fica (para achar o que aparece pela transparência)
+  window.addEventListener('blur', function () {
+    setTimeout(function () { if (document.hasFocus() || DUMPED.desfocado || !window.ccDump) return; DUMPED.desfocado = 1; try { window.ccDump('desfocado', skeleton()).catch(function () {}); } catch (e) {} }, 1200);
+  });
+  // estilos do próprio Discord (uma vez por versão do Discord): assim eu testo a pele com o Discord de verdade
+  function dumpCSS() {
+    if (!window.ccDump) return;
+    var sheets = [].slice.call(document.styleSheets).filter(function (sh) { return sh.href && /discord\.com\/assets\//.test(sh.href); });
+    if (!sheets.length) return;
+    var key = sheets.map(function (sh) { return sh.href.split('/').pop(); }).join(','), done = '';
+    try { done = LS && LS.getItem('concord.cssdump'); } catch (e) {}
+    if (done === key + '|' + INFO.ver) return;
+    var out = ['/* ' + key + ' */'];
+    sheets.forEach(function (sh) { try { out.push([].map.call(sh.cssRules, function (r) { return r.cssText; }).join('\n')); } catch (e) { out.push('/* sem acesso: ' + sh.href + ' */'); } });
+    var html = '<!-- Concord ' + INFO.ver + ' estilos do Discord -->\n<style>\n' + out.join('\n') + '\n</style>';
+    window.ccDump('discord-css', html).then(function () { try { LS && LS.setItem('concord.cssdump', key + '|' + INFO.ver); } catch (e) {} }).catch(function () {});
+  }
   var dumpT = null, lastPath = '';
   function watchScreen() {
     var k = location.pathname + '|' + screenKind();
@@ -520,10 +565,14 @@
   var dragT = null;
   ['dragenter', 'dragover'].forEach(function (ev) { window.addEventListener(ev, function (e) {
     if (!e.dataTransfer || [].indexOf.call(e.dataTransfer.types || [], 'Files') < 0) return;
-    document.documentElement.classList.add('cc-drag'); clearTimeout(dragT);
-    dragT = setTimeout(function () { document.documentElement.classList.remove('cc-drag'); }, 600);
+    if (ED && ED.open) return;
+    flag('cc-drag', true); clearTimeout(dragT);
+    dragT = setTimeout(function () { flag('cc-drag', false); }, 600);
   }, true); });
-  window.addEventListener('drop', function () { setTimeout(function () { document.documentElement.classList.remove('cc-drag'); }, 300); }, true);
+  window.addEventListener('drop', function () { setTimeout(function () { flag('cc-drag', false); }, 300); }, true);
+  // anel de foco do Discord só quando a pessoa navega pelo teclado (senão aparecia um retângulo solto pela transparência)
+  document.addEventListener('keydown', function (e) { if (e.key === 'Tab') flag('cc-kbd', true); }, true);
+  document.addEventListener('mousedown', function () { if (FLAGS['cc-kbd']) flag('cc-kbd', false); }, true);
 
   /* ---------- zoom (Ctrl + roda do mouse, Ctrl + / -): o Concord lembra e volta com ele ---------- */
   var DPI = 1, ZOOM_OK = false;
@@ -641,15 +690,16 @@
   }
   function homeTick() {
     var h = document.documentElement;
-    if (!CFG.home) { if (HOME.el) HOME.el.classList.remove('on'); if (HOME.back) HOME.back.classList.remove('on'); h.classList.remove('cc-home-on'); return; }
+    if (!CFG.home) { if (HOME.el) HOME.el.classList.remove('on'); if (HOME.back) HOME.back.classList.remove('on'); flag('cc-home-on', false); flag('cc-homelist', false); return; }
     var want = onHomePath();
     if (!want) HOME.hidden = false;
+    flag('cc-homelist', want && HOME.hidden);
     var show = want && !HOME.hidden;
     if (!HOME.el && show) buildHome();
     if (!HOME.el) return;
     var r = homeRect();
     var vis = show && r && r.width > 200;
-    h.classList.toggle('cc-home-on', !!vis);
+    flag('cc-home-on', !!vis);
     if (vis) {
       HOME.el.style.left = r.left + 'px'; HOME.el.style.top = r.top + 'px'; HOME.el.style.width = r.width + 'px'; HOME.el.style.height = r.height + 'px';
       var ready = !!st('User');
@@ -912,8 +962,627 @@
     }, 30);
   }
 
+  /* ================= Editor de fundos =================
+     Camadas (imagem, texto, pintura, forma e degradê), pincel, borracha, opacidade, mistura, desfazer.
+     Cada fundo tem uma versão para PC, uma para tablet e uma para celular. Fica guardado só neste computador. */
+  var IDBF = null; try { IDBF = window.indexedDB; } catch (e) {}
+  var IDBP = null;
+  function db() {
+    if (!IDBP) IDBP = new Promise(function (res, rej) {
+      if (!IDBF) { rej(new Error('sem banco')); return; }
+      var r = IDBF.open('concord', 1);
+      r.onupgradeneeded = function () { var d = r.result; if (!d.objectStoreNames.contains('fundos')) d.createObjectStore('fundos', { keyPath: 'id' }); if (!d.objectStoreNames.contains('arquivos')) d.createObjectStore('arquivos'); };
+      r.onsuccess = function () { res(r.result); }; r.onerror = function () { IDBP = null; rej(r.error); };
+    });
+    return IDBP;
+  }
+  function dbReq(store, mode, fn) {
+    return db().then(function (d) { return new Promise(function (res, rej) { var tx = d.transaction(store, mode), q = fn(tx.objectStore(store)); tx.oncomplete = function () { res(q ? q.result : undefined); }; tx.onerror = tx.onabort = function () { rej(tx.error); }; }); });
+  }
+  var DB = {
+    list: function () { return dbReq('fundos', 'readonly', function (s) { return s.getAll(); }).then(function (a) { return (a || []).sort(function (x, y) { return (y.at || 0) - (x.at || 0); }); }); },
+    get: function (id) { return dbReq('fundos', 'readonly', function (s) { return s.get(id); }); },
+    put: function (p) { return dbReq('fundos', 'readwrite', function (s) { return s.put(p); }); },
+    del: function (id) { return dbReq('fundos', 'readwrite', function (s) { return s.delete(id); }); }
+  };
+  function blobURL(b) { return new Promise(function (res) { if (!b) { res(''); return; } var r = new FileReader(); r.onload = function () { res(String(r.result)); }; r.onerror = function () { res(''); }; r.readAsDataURL(b); }); }
+  function canvasBlob(c, type, q) { return new Promise(function (res) { c.toBlob(function (b) { res(b); }, type || 'image/png', q); }); }
+
+  // fundo em uso (material Imagem)
+  var WALL = { id: '', url: '' };
+  function paintWall() {
+    var a = document.getElementById('cc-aura'); if (!a) return;
+    var on = CFG.mat === 'wall' && !!(CFG.wallId || CFG.wall);
+    a.classList.toggle('wall', on);
+    if (CFG.wallId) {
+      if (WALL.id !== CFG.wallId) {
+        WALL.id = CFG.wallId;
+        DB.get(CFG.wallId).then(function (p) { return p && p.renders ? blobURL(p.renders.pc) : ''; }).then(function (u) {
+          if (WALL.id !== CFG.wallId) return; WALL.url = u; a.style.setProperty('--cc-wall', u ? 'url("' + u + '")' : 'none');
+        }).catch(function () {});
+      } else if (WALL.url) a.style.setProperty('--cc-wall', 'url("' + WALL.url + '")');
+    } else a.style.setProperty('--cc-wall', CFG.wall ? 'url("' + CFG.wall + '")' : 'none');
+  }
+  function wallUse(id) { CFG.wallId = id; delete CFG.wall; CFG.mat = 'wall'; WALL.id = ''; save(); applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); toast('Fundo aplicado'); }
+  function paintWalls() {
+    var box = document.getElementById('cc-walls'); if (!box) return;
+    DB.list().then(function (list) {
+      return Promise.all(list.map(function (p) { return blobURL(p.thumb).then(function (u) { return { p: p, u: u }; }); }));
+    }).then(function (items) {
+      box = document.getElementById('cc-walls'); if (!box) return;
+      var old = CFG.wall && !CFG.wallId ? '<div class="wl on"><button class="wl-i" style="--w:url(' + CFG.wall + ')"></button><span>Imagem antiga</span></div>' : '';
+      box.innerHTML = old + items.map(function (it) {
+        return '<div class="wl' + (CFG.wallId === it.p.id ? ' on' : '') + '"><button class="wl-i" data-a="walluse" data-id="' + esc(it.p.id) + '" style="--w:url(' + it.u + ')" title="Usar este fundo"></button><span>' + esc(it.p.name) + '</span>' +
+          '<div class="wl-b"><button data-a="edopen" data-id="' + esc(it.p.id) + '">Editar</button><button data-a="walldel" data-id="' + esc(it.p.id) + '">Apagar</button></div></div>';
+      }).join('') + (items.length || old ? '' : '<div class="wl-load">Nenhum fundo ainda. Crie o primeiro.</div>');
+    }).catch(function () { var b = document.getElementById('cc-walls'); if (b) b.innerHTML = '<div class="wl-load">Não consegui abrir os fundos guardados.</div>'; });
+  }
+  function pickWall() {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = function () { var f = inp.files[0]; if (!f) return; togglePanel(false); edOpen('', { image: f }); };
+    inp.click();
+  }
+
+  var DEVS = { pc: { n: 'PC', w: 1920, h: 1080 }, tab: { n: 'Tablet', w: 1600, h: 1200 }, cel: { n: 'Celular', w: 1080, h: 1920 } };
+  var BLENDS = [['source-over', 'Normal'], ['multiply', 'Multiplicar'], ['screen', 'Clarear (tela)'], ['overlay', 'Sobrepor'], ['soft-light', 'Luz suave'], ['lighten', 'Mais claro'], ['darken', 'Mais escuro'], ['color', 'Só a cor'], ['difference', 'Diferença']];
+  var ETOOLS = [['move', 'Mover', 'V'], ['brush', 'Pincel', 'B'], ['eraser', 'Borracha', 'E'], ['text', 'Texto', 'T'], ['image', 'Imagem', 'I'], ['shape', 'Forma', 'U'], ['fill', 'Degradê', 'G'], ['pick', 'Conta-gotas', 'K'], ['hand', 'Mão', 'H']];
+  var EIC = {
+    move: sv('<path d="M5 3l14 7-6 2-2 6z"/>'), brush: sv('<path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M7 14c-2 0-3.5 1.5-3.5 3.5 0 1.2-.6 2.2-1.5 2.5 1 .7 2.4 1 3.5 1C8.4 21 10 19 10 17z"/>'),
+    eraser: sv('<path d="M20 20H9L4 15a2 2 0 0 1 0-2.8l9.2-9.2a2 2 0 0 1 2.8 0l4.6 4.6a2 2 0 0 1 0 2.8L12 18.6"/><path d="M8.5 9.5l6 6"/>'), text: sv('<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'),
+    image: IC.img, shape: sv('<rect x="3" y="3" width="11" height="11" rx="2"/><circle cx="16" cy="16" r="5"/>'), fill: sv('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 15L15 3M8 21L21 8"/>'),
+    pick: sv('<path d="M14.5 4.5l5 5M17 7l-9.5 9.5L4 20l3.5-3.5"/><path d="M13 3l8 8-2 2-8-8z"/>'), hand: sv('<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5V4a1.5 1.5 0 0 1 3 0v8M14 11.5V5.5a1.5 1.5 0 0 1 3 0V14c0 4-3 7-7 7-3 0-4.5-1.6-6-4l-2-3.5a1.5 1.5 0 0 1 2.5-1.6L8 15"/>'),
+    undo: sv('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'), redo: sv('<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>'), back: sv('<path d="M15 18l-6-6 6-6"/>'),
+    eye: sv('<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'), eyeOff: sv('<path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.4M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/>'),
+    lock: sv('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'), unlock: sv('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>'),
+    up: sv('<path d="M12 19V5M6 11l6-6 6 6"/>'), dn: sv('<path d="M12 5v14M6 13l6 6 6-6"/>'), dup: sv('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'),
+    trash: sv('<path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>'), paint: sv('<path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.3-4-7.8-9-7.8z"/>')
+  };
+  var ED = null;
+  function edDev() { return ED.p.devs[ED.dev]; }
+  function edLayers() { return edDev().layers; }
+  function edSel() { var id = ED.sel; return id ? edLayers().find(function (L) { return L.id === id; }) || null : null; }
+  function lid() { return 'c' + Math.random().toString(36).slice(2, 10); }
+  function edNewCanvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+  // estado sem as imagens (para desfazer e para guardar)
+  function strip(L) { var o = {}; for (var k in L) if (k[0] !== '_') o[k] = L[k]; return o; }
+  function snap() { return JSON.stringify(edLayers().map(strip)); }
+  function commit(before) {
+    if (before == null || before === snap()) return;
+    ED.undo.push({ k: 'st', dev: ED.dev, a: before, b: snap() }); if (ED.undo.length > 60) ED.undo.shift();
+    ED.redo = []; ED.dirty = true; edPaintSide(); edButtons();
+  }
+  function copyCanvas(c) { var n = edNewCanvas(c.width, c.height); n.getContext('2d').drawImage(c, 0, 0); return n; }
+  function edUndo(redo) {
+    var from = redo ? ED.redo : ED.undo, to = redo ? ED.undo : ED.redo, e = from.pop(); if (!e) return;
+    if (e.dev !== ED.dev) edSetDev(e.dev, true);
+    if (e.k === 'st') edDev().layers = JSON.parse(redo ? e.b : e.a);
+    else { var c = ED.cv[e.id]; if (c) { var x = c.getContext('2d'); x.clearRect(0, 0, c.width, c.height); x.drawImage(redo ? e.b : e.a, 0, 0); } }
+    to.push(e); ED.dirty = true;
+    if (ED.sel && !edSel()) ED.sel = '';
+    edPaintSide(); edButtons(); edDraw();
+  }
+
+  /* ----- desenhar ----- */
+  function fontOf(L) { return (L.italic ? 'italic ' : '') + (L.weight || 700) + ' ' + Math.max(1, L.size) + "px '" + (L.font || 'Bricolage Grotesque') + "', 'gg sans', sans-serif"; }
+  function textBox(L) {
+    var x = ED.ctx; x.save(); x.font = fontOf(L);
+    var lines = String(L.text == null ? '' : L.text).split('\n'), w = 0;
+    lines.forEach(function (ln) { w = Math.max(w, x.measureText(ln).width); }); x.restore();
+    return { w: Math.max(w, L.size * 0.5) + (L.stroke || 0) * 2, h: lines.length * L.size * 1.2 + (L.stroke || 0) * 2 };
+  }
+  function bounds(L) { if (L.type === 'image' || L.type === 'shape') return { w: L.w, h: L.h }; if (L.type === 'text') return textBox(L); return null; }
+  function drawLayer(x, L, W, H) {
+    if (L.type === 'fill') {
+      var g;
+      if (L.kind === 'solid') x.fillStyle = L.c1;
+      else if (L.kind === 'radial') { g = x.createRadialGradient(W * (L.cx == null ? 0.5 : L.cx), H * (L.cy == null ? 0.5 : L.cy), 0, W / 2, H / 2, Math.hypot(W, H) * 0.6); g.addColorStop(0, L.c1); g.addColorStop(1, L.c2); x.fillStyle = g; }
+      else { var a = (L.ang || 0) * Math.PI / 180, len = Math.abs(W * Math.cos(a)) + Math.abs(H * Math.sin(a)), dx = Math.cos(a) * len / 2, dy = Math.sin(a) * len / 2; g = x.createLinearGradient(W / 2 - dx, H / 2 - dy, W / 2 + dx, H / 2 + dy); g.addColorStop(0, L.c1); g.addColorStop(1, L.c2); x.fillStyle = g; }
+      x.fillRect(0, 0, W, H); return;
+    }
+    if (L.type === 'paint') {
+      var c = ED.cv[L.id]; if (!c) return;
+      if (ED.stroke && ED.stroke.id === L.id && ED.stroke.tool === 'brush') {
+        // o traço sendo feito agora fica numa folha à parte até soltar o mouse
+        var t = ED.tmpL || (ED.tmpL = edNewCanvas(W, H)); if (t.width !== W || t.height !== H) { t.width = W; t.height = H; }
+        var tx = t.getContext('2d'); tx.clearRect(0, 0, W, H); tx.drawImage(c, 0, 0); tx.save(); tx.globalAlpha = ED.brush.op; if (ED.brush.soft) tx.filter = 'blur(' + Math.max(1, ED.brush.size * 0.18) + 'px)'; tx.drawImage(ED.tmp, 0, 0); tx.restore();
+        x.drawImage(t, L.dx || 0, L.dy || 0);
+      } else x.drawImage(c, L.dx || 0, L.dy || 0);
+      return;
+    }
+    x.translate(L.x, L.y); x.rotate((L.rot || 0) * Math.PI / 180); if (L.flip) x.scale(-1, 1);
+    if (L.type === 'image') { var im = ED.img[L.id]; if (im) x.drawImage(im, -L.w / 2, -L.h / 2, L.w, L.h); return; }
+    if (L.type === 'shape') {
+      x.beginPath();
+      if (L.kind === 'ellipse') x.ellipse(0, 0, Math.abs(L.w / 2), Math.abs(L.h / 2), 0, 0, Math.PI * 2);
+      else if (x.roundRect) x.roundRect(-L.w / 2, -L.h / 2, L.w, L.h, Math.min(L.r || 0, Math.abs(L.w) / 2, Math.abs(L.h) / 2)); else x.rect(-L.w / 2, -L.h / 2, L.w, L.h);
+      if (L.kind === 'line') { x.beginPath(); x.moveTo(-L.w / 2, 0); x.lineTo(L.w / 2, 0); x.lineCap = 'round'; x.lineWidth = Math.max(1, L.h); x.strokeStyle = L.color; x.stroke(); return; }
+      x.fillStyle = L.color; x.fill(); if (L.stroke > 0) { x.lineWidth = L.stroke; x.strokeStyle = L.strokeColor || '#ffffff'; x.stroke(); } return;
+    }
+    if (L.type === 'text') {
+      x.font = fontOf(L); x.textAlign = L.align || 'center'; x.textBaseline = 'middle';
+      var lines = String(L.text == null ? '' : L.text).split('\n'), lh = L.size * 1.2, tb = textBox(L);
+      var ax = L.align === 'left' ? -tb.w / 2 + (L.stroke || 0) : L.align === 'right' ? tb.w / 2 - (L.stroke || 0) : 0;
+      lines.forEach(function (ln, i) {
+        var yy = -tb.h / 2 + (L.stroke || 0) + lh * (i + 0.5);
+        x.save();
+        if (L.shadow) { x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = L.size * 0.25; x.shadowOffsetY = L.size * 0.06; }
+        if (L.stroke > 0) { x.lineWidth = L.stroke * 2; x.lineJoin = 'round'; x.strokeStyle = L.strokeColor || '#000000'; x.strokeText(ln, ax, yy); x.shadowColor = 'transparent'; }
+        x.fillStyle = L.color; x.fillText(ln, ax, yy); x.restore();
+      });
+    }
+  }
+  function renderTo(x, layers, W, H) {
+    layers.forEach(function (L) { if (!L.vis) return; x.save(); x.globalAlpha = L.op == null ? 1 : L.op; x.globalCompositeOperation = L.blend || 'source-over'; try { drawLayer(x, L, W, H); } catch (e) {} x.restore(); });
+  }
+  function edDraw() { if (!ED.raf) ED.raf = requestAnimationFrame(edFrame); }
+  function edFrame() {
+    ED.raf = 0; if (!ED.open) return;
+    var D = DEVS[ED.dev], x = ED.ctx;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, D.w, D.h);
+    renderTo(x, edLayers(), D.w, D.h);
+    edOverlay();
+  }
+
+  /* ----- tela e zoom ----- */
+  function edFit() {
+    var st = ED.el.querySelector('.e-stage').getBoundingClientRect(), D = DEVS[ED.dev];
+    ED.z = Math.max(0.05, Math.min((st.width - 48) / D.w, (st.height - 48) / D.h));
+    ED.pan = { x: (st.width - D.w * ED.z) / 2, y: (st.height - D.h * ED.z) / 2 }; edBoard();
+  }
+  function edZoom(f, cx, cy) {
+    var st = ED.el.querySelector('.e-stage').getBoundingClientRect(); if (cx == null) { cx = st.width / 2; cy = st.height / 2; }
+    var nz = Math.max(0.05, Math.min(8, ED.z * f)), k = nz / ED.z;
+    ED.pan = { x: cx - (cx - ED.pan.x) * k, y: cy - (cy - ED.pan.y) * k }; ED.z = nz; edBoard();
+  }
+  function edBoard() {
+    var D = DEVS[ED.dev], b = ED.el.querySelector('.e-board');
+    b.style.width = D.w * ED.z + 'px'; b.style.height = D.h * ED.z + 'px'; b.style.transform = 'translate(' + ED.pan.x + 'px,' + ED.pan.y + 'px)';
+    ED.el.querySelector('.e-zv').textContent = Math.round(ED.z * 100) + '%'; edOverlay();
+  }
+  function toArt(e) { var r = ED.cvEl.getBoundingClientRect(), D = DEVS[ED.dev]; return { x: (e.clientX - r.left) / r.width * D.w, y: (e.clientY - r.top) / r.height * D.h }; }
+  function toLocal(L, p) { var a = -(L.rot || 0) * Math.PI / 180, dx = p.x - L.x, dy = p.y - L.y; return { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) }; }
+  function hit(L, p) {
+    if (!L.vis || L.lock) return false;
+    if (L.type === 'paint') { var c = ED.cv[L.id]; if (!c) return false; var px = Math.round(p.x - (L.dx || 0)), py = Math.round(p.y - (L.dy || 0)); if (px < 0 || py < 0 || px >= c.width || py >= c.height) return false; try { return c.getContext('2d').getImageData(px, py, 1, 1).data[3] > 20; } catch (e) { return false; } }
+    var b = bounds(L); if (!b) return false; var q = toLocal(L, p); return Math.abs(q.x) <= Math.abs(b.w) / 2 + 4 && Math.abs(q.y) <= Math.abs(b.h) / 2 + 4;
+  }
+  function edOverlay() {
+    var ov = ED.el.querySelector('.e-sel'), L = edSel(), b = L && bounds(L);
+    ED.el.querySelector('.e-gv').classList.toggle('on', !!ED.guide.v); ED.el.querySelector('.e-gh').classList.toggle('on', !!ED.guide.h);
+    if (!L || !b || !L.vis || ED.tool !== 'move') { ov.style.display = 'none'; return; }
+    var z = ED.z; ov.style.display = 'block';
+    ov.style.left = (L.x - Math.abs(b.w) / 2) * z + 'px'; ov.style.top = (L.y - Math.abs(b.h) / 2) * z + 'px';
+    ov.style.width = Math.abs(b.w) * z + 'px'; ov.style.height = Math.abs(b.h) * z + 'px'; ov.style.transform = 'rotate(' + (L.rot || 0) + 'deg)';
+    ov.classList.toggle('txt', L.type === 'text'); ov.classList.toggle('lk', !!L.lock);
+  }
+
+  /* ----- abrir, carregar, guardar ----- */
+  function edBlank(name) {
+    var P = allThemes()[themeKey()] || PRESETS.fofito, devs = {};
+    Object.keys(DEVS).forEach(function (k) { devs[k] = { layers: k !== 'pc' ? [] : [{ id: lid(), type: 'fill', name: 'Degradê', vis: true, lock: false, op: 1, blend: 'source-over', kind: 'linear', c1: P.o[0], c2: P.bg[0], ang: 35 }] }; });
+    return { id: 'f' + Date.now().toString(36), name: name || 'Meu fundo', devs: devs };
+  }
+  function edOpen(id, opt) {
+    opt = opt || {};
+    if (!ED) edBuild();
+    ED.open = true; ED.undo = []; ED.redo = []; ED.sel = ''; ED.cv = {}; ED.img = {}; ED.blob = {}; ED.dirty = false; ED.guide = {};
+    ED.el.classList.add('on'); flag('cc-edon', true);
+    loadFonts(true);
+    var load = id ? DB.get(id) : Promise.resolve(null);
+    load.then(function (p) {
+      if (!p) { ED.p = edBlank(); ED.isNew = true; return; }
+      ED.isNew = false;
+      ED.p = { id: p.id, name: p.name, devs: {} };
+      var jobs = [];
+      Object.keys(DEVS).forEach(function (k) {
+        var src = (p.devs && p.devs[k]) || { layers: [] }, D = DEVS[k];
+        ED.p.devs[k] = { layers: src.layers.map(function (L) {
+          var o = strip(L); delete o.blob;
+          if (L.blob && (L.type === 'image' || L.type === 'paint')) jobs.push(createImageBitmap(L.blob).then(function (bm) {
+            if (L.type === 'image') { ED.img[o.id] = bm; ED.blob[o.id] = L.blob; }
+            else { var c = edNewCanvas(D.w, D.h); c.getContext('2d').drawImage(bm, 0, 0); ED.cv[o.id] = c; }
+          }).catch(function () {}));
+          if (L.type === 'paint' && !L.blob) ED.cv[o.id] = edNewCanvas(D.w, D.h);
+          return o;
+        }) };
+      });
+      return Promise.all(jobs);
+    }).then(function () {
+      ED.dev = 'pc'; ED.el.querySelector('.e-name').value = ED.p.name; edSetDev('pc', true);
+      if (opt.image) edAddImage(opt.image, true);
+      setTimeout(edFit, 30);
+    }).catch(function () { toast('Não consegui abrir esse fundo'); edClose(true); });
+  }
+  function edClose(force) {
+    if (!force && ED.dirty) { edAsk('Sair sem salvar?', 'As mudanças deste fundo ainda não foram salvas.', [['save', 'Salvar e sair', 'pri'], ['drop', 'Sair sem salvar'], ['', 'Continuar editando']], function (r) { if (r === 'save') edSave().then(function () { edClose(true); }); else if (r === 'drop') edClose(true); }); return; }
+    ED.open = false; ED.el.classList.remove('on'); flag('cc-edon', false); ED.cv = {}; ED.img = {}; ED.blob = {}; ED.undo = []; ED.redo = [];
+  }
+  function edSave() {
+    var p = ED.p, out = { id: p.id, name: (ED.el.querySelector('.e-name').value || 'Meu fundo').slice(0, 40), at: Date.now(), devs: {}, renders: {} }, jobs = [];
+    Object.keys(DEVS).forEach(function (k) {
+      var D = DEVS[k], ls = p.devs[k].layers;
+      out.devs[k] = { layers: ls.map(function (L) {
+        var o = strip(L);
+        if (L.type === 'image') o.blob = ED.blob[L.id] || null;
+        if (L.type === 'paint' && ED.cv[L.id]) jobs.push(canvasBlob(ED.cv[L.id]).then(function (b) { o.blob = b; }));
+        return o;
+      }) };
+      var c = edNewCanvas(D.w, D.h); renderTo(c.getContext('2d'), ls, D.w, D.h);
+      jobs.push(canvasBlob(c, 'image/jpeg', 0.92).then(function (b) { out.renders[k] = b; }));
+      if (k === 'pc') { var t = edNewCanvas(384, 216); t.getContext('2d').drawImage(c, 0, 0, 384, 216); jobs.push(canvasBlob(t, 'image/jpeg', 0.85).then(function (b) { out.thumb = b; })); }
+    });
+    var bt = ED.el.querySelector('[data-e="save"]'); bt.disabled = true; bt.textContent = 'Salvando...';
+    return Promise.all(jobs).then(function () { return DB.put(out); }).then(function () {
+      ED.dirty = false; ED.isNew = false; p.name = out.name; bt.disabled = false; bt.textContent = 'Salvar';
+      if (CFG.wallId === p.id) { WALL.id = ''; paintWall(); }
+      toast('Fundo salvo'); return out;
+    }).catch(function (e) { bt.disabled = false; bt.textContent = 'Salvar'; toast('Não consegui salvar: ' + (e && e.message || 'erro')); throw e; });
+  }
+  function edAsk(title, text, btns, cb) {
+    var d = document.createElement('div'); d.className = 'e-ask';
+    d.innerHTML = '<div class="e-askb"><b>' + esc(title) + '</b><p>' + esc(text) + '</p><div class="e-askr">' + btns.map(function (b) { return '<button class="e-btn ' + (b[2] || '') + '" data-r="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + '</div></div>';
+    d.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b && e.target !== d) return; d.remove(); cb(b ? b.dataset.r : ''); });
+    ED.el.appendChild(d);
+  }
+
+  /* ----- versões (PC, tablet, celular) ----- */
+  function edSetDev(k, quiet) {
+    ED.dev = k; ED.sel = ''; var D = DEVS[k];
+    ED.cvEl.width = D.w; ED.cvEl.height = D.h;
+    ED.el.querySelectorAll('[data-dev]').forEach(function (b) { b.classList.toggle('on', b.dataset.dev === k); });
+    var empty = !edLayers().length;
+    ED.el.querySelector('.e-empty').classList.toggle('on', empty && k !== 'pc');
+    if (!quiet) edFit(); else edBoard();
+    edPaintSide(); edButtons(); edDraw();
+  }
+  // copia as camadas de outra versão, ajustando ao tamanho desta (cobrindo a tela)
+  function edCopyFrom(src) {
+    var S = DEVS[src], T = DEVS[ED.dev], s = Math.max(T.w / S.w, T.h / S.h), before = snap();
+    var out = ED.p.devs[src].layers.map(function (L) {
+      var o = strip(L); o.id = lid();
+      if (L.type === 'image') { ED.img[o.id] = ED.img[L.id]; ED.blob[o.id] = ED.blob[L.id]; }
+      if (L.type === 'paint') { var c = edNewCanvas(T.w, T.h), x = c.getContext('2d'); x.translate(T.w / 2, T.h / 2); x.scale(s, s); x.translate(-S.w / 2 + (L.dx || 0), -S.h / 2 + (L.dy || 0)); if (ED.cv[L.id]) x.drawImage(ED.cv[L.id], 0, 0); ED.cv[o.id] = c; o.dx = 0; o.dy = 0; }
+      if (o.x != null) { o.x = (L.x - S.w / 2) * s + T.w / 2; o.y = (L.y - S.h / 2) * s + T.h / 2; }
+      if (o.w != null) { o.w = L.w * s; o.h = L.h * s; }
+      if (o.size) o.size = L.size * s; if (o.stroke) o.stroke = L.stroke * s;
+      return o;
+    });
+    edDev().layers = out; ED.el.querySelector('.e-empty').classList.remove('on'); commit(before); edDraw();
+  }
+
+  /* ----- camadas novas ----- */
+  function edInsert(L) { var ls = edLayers(), i = ED.sel ? ls.findIndex(function (x) { return x.id === ED.sel; }) : ls.length - 1; ls.splice(i < 0 ? ls.length : i + 1, 0, L); ED.sel = L.id; ED.el.querySelector('.e-empty').classList.remove('on'); }
+  function base(type, name) { var D = DEVS[ED.dev]; return { id: lid(), type: type, name: name, vis: true, lock: false, op: 1, blend: 'source-over', x: D.w / 2, y: D.h / 2, rot: 0, flip: false }; }
+  function edAddPaint() { var D = DEVS[ED.dev], L = base('paint', 'Pintura'); delete L.x; delete L.y; delete L.rot; delete L.flip; L.dx = 0; L.dy = 0; ED.cv[L.id] = edNewCanvas(D.w, D.h); edInsert(L); return L; }
+  function edAddImage(file, cover) {
+    if (!file || !/^image\//.test(file.type || 'image/')) return;
+    if (file.size > 40 << 20) { toast('Imagem grande demais (até 40 MB)'); return; }
+    createImageBitmap(file).then(function (bm) {
+      // imagens enormes ficam com até 4096 pontos no lado maior
+      var big = Math.max(bm.width, bm.height) > 4096;
+      var go = function (bmp, blob) {
+        var D = DEVS[ED.dev], before = snap(), L = base('image', (file.name || 'Imagem').replace(/\.[^.]+$/, '').slice(0, 30) || 'Imagem');
+        var s = cover ? Math.max(D.w / bmp.width, D.h / bmp.height) : Math.min(D.w * 0.6 / bmp.width, D.h * 0.6 / bmp.height, 1);
+        L.w = bmp.width * s; L.h = bmp.height * s; ED.img[L.id] = bmp; ED.blob[L.id] = blob;
+        edInsert(L); edSetTool('move'); commit(before); edDraw();
+        if (cover) Object.keys(DEVS).forEach(function (k) {
+          if (k === ED.dev) return; var T = DEVS[k], o = JSON.parse(JSON.stringify(L)); o.id = lid(); var t = Math.max(T.w / bmp.width, T.h / bmp.height); o.w = bmp.width * t; o.h = bmp.height * t; o.x = T.w / 2; o.y = T.h / 2; ED.img[o.id] = bmp; ED.blob[o.id] = blob; ED.p.devs[k].layers.push(o);
+        });
+      };
+      if (!big) { go(bm, file); return; }
+      var s = 4096 / Math.max(bm.width, bm.height), c = edNewCanvas(Math.round(bm.width * s), Math.round(bm.height * s)); c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
+      canvasBlob(c, 'image/png').then(function (b) { return createImageBitmap(b).then(function (b2) { go(b2, b); }); });
+    }).catch(function () { toast('Não consegui abrir essa imagem'); });
+  }
+  function edPickImage() { var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true; inp.onchange = function () { [].forEach.call(inp.files, function (f) { edAddImage(f); }); }; inp.click(); }
+  function edAddText(p) { var D = DEVS[ED.dev], before = snap(), L = base('text', 'Texto'); L.text = 'Seu texto'; L.size = Math.round(D.h * 0.09); L.font = CFG.font || 'Bricolage Grotesque'; L.weight = 700; L.color = '#ffffff'; L.align = 'center'; L.stroke = 0; L.strokeColor = '#000000'; L.shadow = true; if (p) { L.x = p.x; L.y = p.y; } edInsert(L); commit(before); edSetTool('move'); setTimeout(function () { var t = ED.el.querySelector('[data-lp="text"]'); if (t) { t.focus(); t.select(); } }, 30); }
+  function edAddFill(kind) { var P = allThemes()[themeKey()] || PRESETS.fofito, before = snap(), L = base('fill', kind === 'solid' ? 'Cor' : 'Degradê'); delete L.x; delete L.y; delete L.rot; delete L.flip; L.kind = kind; L.c1 = kind === 'solid' ? P.o[1] : P.a1; L.c2 = P.o[1]; L.ang = 35; if (kind !== 'solid') L.op = 0.7; edInsert(L); commit(before); edDraw(); }
+
+  /* ----- ferramentas ----- */
+  function edSetTool(t) {
+    if (t === 'image') { edPickImage(); return; }
+    ED.tool = t; ED.el.querySelectorAll('[data-tool]').forEach(function (b) { b.classList.toggle('on', b.dataset.tool === t); });
+    ED.el.querySelector('.e-stage').dataset.tool = t; edPaintSide(); edOverlay();
+  }
+  function edDown(e) {
+    if (e.button === 2) return;
+    var stage = ED.el.querySelector('.e-stage'); stage.setPointerCapture(e.pointerId);
+    var p = toArt(e), D = DEVS[ED.dev], h = e.target.closest('.e-h');
+    if (e.button === 1 || ED.tool === 'hand' || ED.space) { ED.drag = { mode: 'pan', sx: e.clientX, sy: e.clientY, pan: { x: ED.pan.x, y: ED.pan.y } }; return; }
+    var L = edSel();
+    if (h && L) { ED.drag = { mode: h.dataset.h === 'rot' ? 'rot' : /^[nsew]$/.test(h.dataset.h) ? 'side' : 'scale', h: h.dataset.h, start: p, L0: JSON.parse(JSON.stringify(strip(L))), before: snap() }; return; }
+    if (ED.tool === 'move') {
+      var ls = edLayers(), hitL = null;
+      if (L && hit(L, p)) hitL = L; else for (var i = ls.length - 1; i >= 0; i--) if (ls[i].type !== 'fill' && hit(ls[i], p)) { hitL = ls[i]; break; }
+      if (!hitL) { if (ED.sel) { ED.sel = ''; edPaintSide(); edOverlay(); } return; }
+      if (ED.sel !== hitL.id) { ED.sel = hitL.id; edPaintSide(); }
+      if (e.altKey && hitL.type !== 'paint') { var cp = edDupLayer(hitL); hitL = cp; }
+      ED.drag = { mode: 'move', start: p, L0: JSON.parse(JSON.stringify(strip(hitL))), before: snap() }; edOverlay(); return;
+    }
+    if (ED.tool === 'brush' || ED.tool === 'eraser') {
+      if (!L || L.type !== 'paint' || L.lock) { var b4 = snap(); L = edAddPaint(); commit(b4); }
+      if (!L.vis) { L.vis = true; edPaintSide(); }
+      var c = ED.cv[L.id]; ED.stroke = { id: L.id, tool: ED.tool, before: copyCanvas(c), last: { x: p.x - (L.dx || 0), y: p.y - (L.dy || 0) } };
+      if (ED.tool === 'brush') { ED.tmp = ED.tmp && ED.tmp.width === D.w && ED.tmp.height === D.h ? ED.tmp : edNewCanvas(D.w, D.h); ED.tmp.getContext('2d').clearRect(0, 0, D.w, D.h); }
+      edStroke([e]); return;
+    }
+    if (ED.tool === 'text') { edAddText(p); return; }
+    if (ED.tool === 'pick') {
+      try { var d = ED.ctx.getImageData(Math.round(p.x), Math.round(p.y), 1, 1).data; ED.brush.color = hex([d[0], d[1], d[2]]); edPaintSide(); toast('Cor ' + ED.brush.color + ' no pincel'); } catch (er) {}
+      return;
+    }
+    if (ED.tool === 'shape') {
+      var b5 = snap(), S = base('shape', ED.shape === 'ellipse' ? 'Elipse' : ED.shape === 'line' ? 'Linha' : 'Retângulo'); S.kind = ED.shape; S.color = ED.brush.color; S.r = 24; S.stroke = 0; S.strokeColor = '#ffffff'; S.x = p.x; S.y = p.y; S.w = 1; S.h = ED.shape === 'line' ? 8 : 1;
+      edInsert(S); ED.drag = { mode: 'draw', start: p, before: b5 }; return;
+    }
+    if (ED.tool === 'fill') { edAddFill('linear'); }
+  }
+  function edStroke(evs) {
+    var s = ED.stroke, L = edLayers().find(function (x) { return x.id === s.id; }); if (!L) return;
+    var c = s.tool === 'brush' ? ED.tmp : ED.cv[s.id], x = c.getContext('2d'), B = ED.brush;
+    x.save(); x.lineCap = 'round'; x.lineJoin = 'round';
+    if (s.tool === 'eraser') { x.globalCompositeOperation = 'destination-out'; x.lineWidth = ED.eraser.size; x.strokeStyle = 'rgba(0,0,0,' + ED.eraser.op + ')'; if (ED.eraser.soft) x.filter = 'blur(' + Math.max(1, ED.eraser.size * 0.18) + 'px)'; }
+    else { x.lineWidth = B.size; x.strokeStyle = B.color; }
+    evs.forEach(function (e) {
+      var p = toArt(e), q = { x: p.x - (L.dx || 0), y: p.y - (L.dy || 0) };
+      x.beginPath(); x.moveTo(s.last.x, s.last.y); x.lineTo(q.x + 0.01, q.y); x.stroke(); s.last = q;
+    });
+    x.restore(); edDraw();
+  }
+  function edMove(e) {
+    if (ED.stroke) { edStroke(e.getCoalescedEvents ? e.getCoalescedEvents() : [e]); return; }
+    var d = ED.drag; if (!d) return;
+    if (d.mode === 'pan') { ED.pan = { x: d.pan.x + e.clientX - d.sx, y: d.pan.y + e.clientY - d.sy }; edBoard(); return; }
+    var p = toArt(e), L = edSel(); if (!L) return;
+    var D = DEVS[ED.dev], L0 = d.L0, snapD = 10 / ED.z;
+    if (d.mode === 'move') {
+      if (L.type === 'paint') { L.dx = (L0.dx || 0) + p.x - d.start.x; L.dy = (L0.dy || 0) + p.y - d.start.y; }
+      else {
+        var nx = L0.x + p.x - d.start.x, ny = L0.y + p.y - d.start.y;
+        if (e.shiftKey) { if (Math.abs(p.x - d.start.x) > Math.abs(p.y - d.start.y)) ny = L0.y; else nx = L0.x; }
+        ED.guide = {}; if (Math.abs(nx - D.w / 2) < snapD) { nx = D.w / 2; ED.guide.v = 1; } if (Math.abs(ny - D.h / 2) < snapD) { ny = D.h / 2; ED.guide.h = 1; }
+        L.x = nx; L.y = ny;
+      }
+    } else if (d.mode === 'scale') {
+      var r0 = Math.hypot(d.start.x - L0.x, d.start.y - L0.y) || 1, f = Math.max(0.02, Math.hypot(p.x - L0.x, p.y - L0.y) / r0);
+      if (L.type === 'text') L.size = Math.max(4, L0.size * f); else { L.w = L0.w * f; L.h = L0.h * f; }
+    } else if (d.mode === 'side') {
+      var q = toLocal(L0, p);
+      if (L.type === 'text') { L.size = Math.max(4, L0.size * Math.max(0.05, (/[ew]/.test(d.h) ? Math.abs(q.x) * 2 / (textBox(L0).w || 1) : Math.abs(q.y) * 2 / (textBox(L0).h || 1)))); }
+      else if (/[ew]/.test(d.h)) L.w = Math.max(2, Math.abs(q.x) * 2); else L.h = Math.max(2, Math.abs(q.y) * 2);
+    } else if (d.mode === 'rot') {
+      var a = Math.atan2(p.y - L0.y, p.x - L0.x) - Math.atan2(d.start.y - L0.y, d.start.x - L0.x), deg = (L0.rot || 0) + a * 180 / Math.PI;
+      if (e.shiftKey) deg = Math.round(deg / 15) * 15; L.rot = Math.round(((deg + 540) % 360 - 180) * 10) / 10;
+    } else if (d.mode === 'draw') {
+      if (L.kind === 'line') { L.x = (d.start.x + p.x) / 2; L.y = (d.start.y + p.y) / 2; L.w = Math.hypot(p.x - d.start.x, p.y - d.start.y); L.rot = Math.atan2(p.y - d.start.y, p.x - d.start.x) * 180 / Math.PI; }
+      else { var w = Math.abs(p.x - d.start.x), hh = Math.abs(p.y - d.start.y); if (e.shiftKey) w = hh = Math.max(w, hh); L.w = w; L.h = hh; L.x = d.start.x + (p.x > d.start.x ? w : -w) / 2; L.y = d.start.y + (p.y > d.start.y ? hh : -hh) / 2; }
+    }
+    edDraw(); edLiveProps();
+  }
+  function edUp() {
+    if (ED.stroke) {
+      var s = ED.stroke, c = ED.cv[s.id];
+      if (s.tool === 'brush' && c) { var x = c.getContext('2d'); x.save(); x.globalAlpha = ED.brush.op; if (ED.brush.soft) x.filter = 'blur(' + Math.max(1, ED.brush.size * 0.18) + 'px)'; x.drawImage(ED.tmp, 0, 0); x.restore(); }
+      ED.stroke = null;
+      if (c) { ED.undo.push({ k: 'px', dev: ED.dev, id: s.id, a: s.before, b: copyCanvas(c) }); if (ED.undo.length > 60) ED.undo.shift(); ED.redo = []; ED.dirty = true; edButtons(); edPaintSide(); }
+      edDraw(); return;
+    }
+    var d = ED.drag; ED.drag = null; ED.guide = {};
+    if (!d) return;
+    if (d.mode === 'draw') { var L = edSel(); if (L && L.w < 6 && (L.kind === 'line' || L.h < 6)) { var D = DEVS[ED.dev]; L.w = D.h * 0.3; L.h = L.kind === 'line' ? 8 : D.h * 0.3; } }
+    if (d.before != null) commit(d.before);
+    edOverlay(); edDraw(); edPaintSide();
+  }
+  function edDupLayer(L) {
+    var o = JSON.parse(JSON.stringify(strip(L))); o.id = lid(); o.name = L.name + ' (cópia)';
+    if (L.type === 'image') { ED.img[o.id] = ED.img[L.id]; ED.blob[o.id] = ED.blob[L.id]; }
+    if (L.type === 'paint') ED.cv[o.id] = copyCanvas(ED.cv[L.id]);
+    if (o.x != null && !ED.drag) { o.x += 30; o.y += 30; }
+    edInsert(o); return o;
+  }
+  function edLayerAct(a) {
+    var L = edSel(), ls = edLayers(), before = snap(); if (!L && a !== 'paint') return;
+    var i = ls.indexOf(L);
+    if (a === 'up' && i < ls.length - 1) { ls.splice(i, 1); ls.splice(i + 1, 0, L); }
+    else if (a === 'dn' && i > 0) { ls.splice(i, 1); ls.splice(i - 1, 0, L); }
+    else if (a === 'dup') edDupLayer(L);
+    else if (a === 'del') { ls.splice(i, 1); ED.sel = ''; }
+    else if (a === 'paint') edAddPaint();
+    commit(before); edDraw(); edPaintSide();
+  }
+
+  /* ----- painel da direita: opções da ferramenta, propriedades da camada e lista de camadas ----- */
+  function eRange(k, label, min, max, step, v, fmt) { return '<label class="e-row"><span>' + label + '</span><input type="range" data-lp="' + k + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + v + '" style="--p:' + ((v - min) / (max - min) * 100) + '%"><output>' + (fmt ? fmt(v) : Math.round(v)) + '</output></label>'; }
+  function eColor(k, label, v) {
+    var P = allThemes()[themeKey()] || PRESETS.fofito, sw = [P.a1, P.a2, P.a3, P.o[0], P.o[1], '#ffffff', '#000000'];
+    return '<div class="e-row"><span>' + label + '</span><div class="e-cols"><input type="color" data-lp="' + k + '" value="' + v + '">' + sw.map(function (c) { return '<button class="e-sw" data-sw="' + k + '" data-c="' + c + '" style="--c:' + c + '"></button>'; }).join('') + '</div></div>';
+  }
+  function eToggle(k, label, on) { return '<div class="e-row"><span>' + label + '</span><button class="tg' + (on ? ' on' : '') + '" data-lt="' + k + '"></button></div>'; }
+  function eSeg(k, opts, v) { return '<div class="e-seg">' + opts.map(function (o) { return '<button data-ls="' + k + '" data-v="' + o[0] + '"' + (String(v) === String(o[0]) ? ' class="on"' : '') + '>' + o[1] + '</button>'; }).join('') + '</div>'; }
+  var PCT = function (v) { return Math.round(v * 100) + '%'; }, DEG = function (v) { return Math.round(v) + '°'; };
+  function edPaintSide() {
+    if (!ED || !ED.open) return;
+    var L = edSel(), t = ED.tool, h = '', B = ED.brush;
+    if (t === 'brush') h += '<h5>Pincel</h5>' + eColor('b.color', 'Cor', B.color) + eRange('b.size', 'Tamanho', 1, 300, 1, B.size) + eRange('b.op', 'Opacidade', 0.05, 1, 0.05, B.op, PCT) + eToggle('b.soft', 'Ponta macia', B.soft);
+    else if (t === 'eraser') h += '<h5>Borracha</h5>' + eRange('x.size', 'Tamanho', 1, 300, 1, ED.eraser.size) + eRange('x.op', 'Força', 0.05, 1, 0.05, ED.eraser.op, PCT) + eToggle('x.soft', 'Ponta macia', ED.eraser.soft);
+    else if (t === 'shape') h += '<h5>Forma</h5>' + eSeg('shape', [['rect', 'Retângulo'], ['ellipse', 'Elipse'], ['line', 'Linha']], ED.shape) + eColor('b.color', 'Cor', B.color) + '<p class="e-note">Arraste na tela para desenhar. Com Shift fica quadrado ou redondo.</p>';
+    else if (t === 'text') h += '<h5>Texto</h5><p class="e-note">Clique na tela onde o texto vai ficar.</p>';
+    else if (t === 'pick') h += '<h5>Conta-gotas</h5><p class="e-note">Clique na tela para pegar uma cor para o pincel.</p><div class="e-row"><span>Cor do pincel</span><i class="e-chip" style="--c:' + B.color + '"></i></div>';
+    else if (t === 'fill') h += '<h5>Degradê e cor</h5><div class="e-btns"><button class="e-btn" data-add="solid">Cor sólida</button><button class="e-btn" data-add="linear">Degradê</button><button class="e-btn" data-add="radial">Degradê redondo</button></div>';
+    if (L) {
+      h += '<h5>Camada</h5><input class="e-txt" data-lp="name" value="' + esc(L.name) + '" maxlength="30">' + eRange('op', 'Opacidade', 0, 1, 0.01, L.op, PCT) +
+        '<div class="e-row"><span>Mistura</span><select data-lp="blend">' + BLENDS.map(function (b) { return '<option value="' + b[0] + '"' + (L.blend === b[0] ? ' selected' : '') + '>' + b[1] + '</option>'; }).join('') + '</select></div>';
+      if (L.type === 'text') {
+        h += '<textarea class="e-txt" data-lp="text" rows="3">' + esc(L.text) + '</textarea>' +
+          '<div class="e-row"><span>Fonte</span><select data-lp="font">' + FONTS.concat(['Fonte do PC']).filter(Boolean).map(function (f) { return '<option value="' + esc(f) + '"' + (L.font === f ? ' selected' : '') + ' style="font-family:\'' + esc(f) + '\'">' + (f === 'Bricolage Grotesque' ? 'Concord' : f) + '</option>'; }).join('') + '</select></div>' +
+          eRange('size', 'Tamanho', 8, 600, 1, L.size) + eSeg('weight', [[400, 'Normal'], [600, 'Médio'], [700, 'Negrito']], L.weight) + eSeg('align', [['left', 'Esquerda'], ['center', 'Centro'], ['right', 'Direita']], L.align) +
+          eColor('color', 'Cor', L.color) + eRange('stroke', 'Contorno', 0, 40, 1, L.stroke || 0) + (L.stroke ? eColor('strokeColor', 'Cor do contorno', L.strokeColor || '#000000') : '') + eToggle('shadow', 'Sombra', !!L.shadow) + eToggle('italic', 'Itálico', !!L.italic) + eRange('rot', 'Girar', -180, 180, 1, L.rot || 0, DEG);
+      } else if (L.type === 'image') {
+        h += eRange('rot', 'Girar', -180, 180, 1, L.rot || 0, DEG) + '<div class="e-btns"><button class="e-btn" data-do="flip">Espelhar</button><button class="e-btn" data-do="center">Centralizar</button><button class="e-btn" data-do="fit">Caber na tela</button><button class="e-btn" data-do="cover">Cobrir a tela</button><button class="e-btn" data-do="ratio">Proporção original</button></div>';
+      } else if (L.type === 'shape') {
+        h += eColor('color', 'Cor', L.color) + (L.kind === 'rect' ? eRange('r', 'Cantos', 0, 400, 1, L.r || 0) : '') + (L.kind !== 'line' ? eRange('stroke', 'Borda', 0, 60, 1, L.stroke || 0) + (L.stroke ? eColor('strokeColor', 'Cor da borda', L.strokeColor || '#ffffff') : '') : eRange('h', 'Espessura', 1, 120, 1, L.h)) +
+          eRange('rot', 'Girar', -180, 180, 1, L.rot || 0, DEG) + '<div class="e-btns"><button class="e-btn" data-do="center">Centralizar</button><button class="e-btn" data-do="cover">Cobrir a tela</button></div>';
+      } else if (L.type === 'fill') {
+        h += eSeg('kind', [['solid', 'Cor'], ['linear', 'Degradê'], ['radial', 'Redondo']], L.kind) + eColor('c1', L.kind === 'solid' ? 'Cor' : 'Cor 1', L.c1) + (L.kind !== 'solid' ? eColor('c2', 'Cor 2', L.c2) : '') + (L.kind === 'linear' ? eRange('ang', 'Ângulo', 0, 360, 1, L.ang || 0, DEG) : '') +
+          (L.kind === 'radial' ? eRange('cx', 'Centro (lado)', 0, 1, 0.01, L.cx == null ? 0.5 : L.cx, PCT) + eRange('cy', 'Centro (altura)', 0, 1, 0.01, L.cy == null ? 0.5 : L.cy, PCT) : '');
+      } else if (L.type === 'paint') {
+        h += '<p class="e-note">Pinte com o pincel. Com a ferramenta Mover você arrasta a pintura inteira.</p><div class="e-btns"><button class="e-btn" data-do="clear">Limpar pintura</button><button class="e-btn" data-do="reset">Voltar ao lugar</button></div>';
+      }
+    } else if (t === 'move' || t === 'hand') h += '<h5>Fundo</h5><p class="e-note">Clique numa camada na tela ou na lista para mexer nela. Alt + arrastar duplica. Ctrl + roda do mouse dá zoom, espaço + arrastar move a tela.</p>';
+    var op = ED.el.querySelector('.e-opts'), sc = op.scrollTop, act = document.activeElement, keep = act && op.contains(act) && act.dataset.lp;
+    if (keep === 'text' || keep === 'name') { edLayersList(); return; } // não atrapalha quem está digitando
+    op.innerHTML = h; op.scrollTop = sc; edLayersList();
+  }
+  // durante o arraste: só atualiza os números, sem refazer o painel
+  function edLiveProps() {
+    var L = edSel(); if (!L) return;
+    ['rot', 'size', 'h'].forEach(function (k) { var i = ED.el.querySelector('[data-lp="' + k + '"]'); if (i && L[k] != null) { i.value = L[k]; var o = i.nextElementSibling; if (o) o.textContent = k === 'rot' ? DEG(L[k]) : Math.round(L[k]); i.style.setProperty('--p', ((L[k] - i.min) / (i.max - i.min) * 100) + '%'); } });
+  }
+  var THUMBS = {};
+  function edLayersList() {
+    var ls = edLayers().slice().reverse(), D = DEVS[ED.dev], tw = 52, th = Math.round(52 * D.h / D.w);
+    if (th > 52) { th = 52; tw = Math.round(52 * D.w / D.h); }
+    var box = ED.el.querySelector('.e-list');
+    box.innerHTML = ls.map(function (L) {
+      var kind = { image: 'Imagem', text: 'Texto', paint: 'Pintura', shape: 'Forma', fill: L.kind === 'solid' ? 'Cor' : 'Degradê' }[L.type];
+      return '<div class="e-ly' + (L.id === ED.sel ? ' on' : '') + (L.vis ? '' : ' off') + '" data-ly="' + L.id + '" draggable="true"><button class="e-vi" data-vis="' + L.id + '" title="' + (L.vis ? 'Esconder' : 'Mostrar') + '">' + (L.vis ? EIC.eye : EIC.eyeOff) + '</button>' +
+        '<canvas class="e-th" width="' + tw + '" height="' + th + '" data-th="' + L.id + '"></canvas><span class="e-ln"><b>' + esc(L.name) + '</b><small>' + kind + (L.op < 1 ? ', ' + Math.round(L.op * 100) + '%' : '') + '</small></span>' +
+        '<button class="e-vi" data-lock="' + L.id + '" title="' + (L.lock ? 'Destravar' : 'Travar') + '">' + (L.lock ? EIC.lock : EIC.unlock) + '</button></div>';
+    }).join('') || '<p class="e-note">Nenhuma camada.</p>';
+    box.querySelectorAll('canvas[data-th]').forEach(function (c) {
+      var L = edLayers().find(function (x) { return x.id === c.dataset.th; }); if (!L) return; var x = c.getContext('2d');
+      x.save(); x.scale(c.width / D.w, c.height / D.h); var v = L.vis, o = L.op, bl = L.blend; L.vis = true; L.op = 1; L.blend = 'source-over'; renderTo(x, [L], D.w, D.h); L.vis = v; L.op = o; L.blend = bl; x.restore();
+    });
+  }
+  function edButtons() { if (!ED) return; ED.el.querySelector('[data-e="undo"]').disabled = !ED.undo.length; ED.el.querySelector('[data-e="redo"]').disabled = !ED.redo.length; }
+  function edProp(k, v, live) {
+    var L = edSel();
+    if (k.indexOf('b.') === 0) { ED.brush[k.slice(2)] = v; return; }
+    if (k.indexOf('x.') === 0) { ED.eraser[k.slice(2)] = v; return; }
+    if (k === 'shape') { ED.shape = v; edPaintSide(); return; }
+    if (!L) return;
+    if (ED.pend == null) ED.pend = snap();
+    L[k] = v; edDraw();
+    if (!live) { var b = ED.pend; ED.pend = null; commit(b); }
+  }
+  function edDo(a) {
+    var L = edSel(); if (!L) return; var D = DEVS[ED.dev], before = snap();
+    if (a === 'flip') L.flip = !L.flip;
+    else if (a === 'center') { L.x = D.w / 2; L.y = D.h / 2; }
+    else if (a === 'fit' || a === 'cover') { var b = bounds(L); if (b) { var r = Math.abs(b.w) / Math.abs(b.h), s = a === 'cover' ? Math.max(D.w / r, D.h) : Math.min(D.w / r, D.h); if (L.type === 'text') L.size *= s / Math.abs(b.h); else { L.h = s; L.w = s * r; } L.x = D.w / 2; L.y = D.h / 2; L.rot = 0; } }
+    else if (a === 'ratio' && L.type === 'image') { var im = ED.img[L.id]; if (im) L.h = L.w * im.height / im.width; }
+    else if (a === 'clear' && L.type === 'paint') { var c = ED.cv[L.id], bc = copyCanvas(c); c.getContext('2d').clearRect(0, 0, c.width, c.height); ED.undo.push({ k: 'px', dev: ED.dev, id: L.id, a: bc, b: copyCanvas(c) }); ED.redo = []; ED.dirty = true; edButtons(); }
+    else if (a === 'reset' && L.type === 'paint') { L.dx = 0; L.dy = 0; }
+    commit(before); edDraw(); edPaintSide();
+  }
+  function edExport() {
+    var D = DEVS[ED.dev], c = edNewCanvas(D.w, D.h); renderTo(c.getContext('2d'), edLayers(), D.w, D.h);
+    canvasBlob(c, 'image/png').then(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = (ED.el.querySelector('.e-name').value || 'fundo') + ' - ' + D.n + '.png'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000); toast('Imagem baixada'); });
+  }
+
+  function edBuild() {
+    ED = { open: false, tool: 'move', z: 1, pan: { x: 0, y: 0 }, brush: { color: '#ffffff', size: 18, op: 1, soft: false }, eraser: { size: 40, op: 1, soft: false }, shape: 'rect', guide: {}, undo: [], redo: [] };
+    var el = ED.el = document.createElement('div'); el.id = 'cc-ed';
+    el.innerHTML = '<div class="e-top"><button class="e-ib" data-e="exit" title="Sair do editor">' + EIC.back + '</button><input class="e-name" maxlength="40" placeholder="Nome do fundo">' +
+      '<div class="e-seg e-devs">' + Object.keys(DEVS).map(function (k) { return '<button data-dev="' + k + '">' + DEVS[k].n + '</button>'; }).join('') + '</div><span class="e-sp"></span>' +
+      '<button class="e-ib" data-e="undo" title="Desfazer (Ctrl+Z)">' + EIC.undo + '</button><button class="e-ib" data-e="redo" title="Refazer (Ctrl+Y)">' + EIC.redo + '</button>' +
+      '<div class="e-zoom"><button data-e="zout" title="Menos zoom">−</button><button class="e-zv" data-e="zfit" title="Ajustar à tela">100%</button><button data-e="zin" title="Mais zoom">+</button></div>' +
+      '<button class="e-btn" data-e="export">Baixar imagem</button><button class="e-btn" data-e="save">Salvar</button><button class="e-btn pri" data-e="use">Usar como fundo</button></div>' +
+      '<div class="e-main"><div class="e-tools">' + ETOOLS.map(function (t) { return '<button data-tool="' + t[0] + '" title="' + t[1] + ' (' + t[2] + ')">' + EIC[t[0]] + '<span>' + t[1] + '</span></button>'; }).join('') + '</div>' +
+      '<div class="e-stage"><div class="e-board"><canvas></canvas><i class="e-gv"></i><i class="e-gh"></i><div class="e-sel"><i class="e-h" data-h="nw"></i><i class="e-h" data-h="ne"></i><i class="e-h" data-h="sw"></i><i class="e-h" data-h="se"></i><i class="e-h" data-h="n"></i><i class="e-h" data-h="s"></i><i class="e-h" data-h="e"></i><i class="e-h" data-h="w"></i><i class="e-h" data-h="rot"></i></div></div>' +
+      '<div class="e-empty"><b>Esta versão ainda está vazia</b><p>Comece copiando o que você fez em outra versão, ajustado ao tamanho desta tela.</p><div class="e-btns"><button class="e-btn pri" data-copy="pc">Copiar do PC</button><button class="e-btn" data-copy="tab">Copiar do tablet</button><button class="e-btn" data-copy="cel">Copiar do celular</button><button class="e-btn" data-copy="">Começar do zero</button></div></div></div>' +
+      '<div class="e-side"><div class="e-opts"></div><div class="e-layers"><div class="e-lh"><b>Camadas</b><span><button class="e-ib s" data-la="paint" title="Nova pintura">' + EIC.paint + '</button><button class="e-ib s" data-la="dup" title="Duplicar">' + EIC.dup + '</button><button class="e-ib s" data-la="up" title="Subir">' + EIC.up + '</button><button class="e-ib s" data-la="dn" title="Descer">' + EIC.dn + '</button><button class="e-ib s" data-la="del" title="Apagar">' + EIC.trash + '</button></span></div><div class="e-list"></div></div></div></div>';
+    document.body.appendChild(el);
+    ED.cvEl = el.querySelector('.e-board canvas'); ED.ctx = ED.cvEl.getContext('2d', { willReadFrequently: false });
+    var stage = el.querySelector('.e-stage');
+    stage.addEventListener('pointerdown', function (e) { if (e.target.closest('.e-empty')) return; edDown(e); });
+    stage.addEventListener('pointermove', edMove);
+    stage.addEventListener('pointerup', edUp); stage.addEventListener('pointercancel', edUp);
+    stage.addEventListener('wheel', function (e) { e.preventDefault(); var r = stage.getBoundingClientRect(); if (e.ctrlKey || e.metaKey) edZoom(Math.exp(-e.deltaY * 0.0022), e.clientX - r.left, e.clientY - r.top); else { ED.pan.x -= e.shiftKey ? e.deltaY : e.deltaX; ED.pan.y -= e.shiftKey ? 0 : e.deltaY; edBoard(); } }, { passive: false });
+    stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var a = b.dataset.e;
+      if (a === 'exit') edClose(false);
+      else if (a === 'undo') edUndo(false); else if (a === 'redo') edUndo(true);
+      else if (a === 'zin') edZoom(1.25); else if (a === 'zout') edZoom(0.8); else if (a === 'zfit') edFit();
+      else if (a === 'save') edSave().then(function () {}, function () {});
+      else if (a === 'use') edSave().then(function (out) { wallUse(out.id); edClose(true); }, function () {});
+      else if (a === 'export') edExport();
+      else if (b.dataset.dev) edSetDev(b.dataset.dev);
+      else if (b.dataset.copy != null) { if (b.dataset.copy && b.dataset.copy !== ED.dev && ED.p.devs[b.dataset.copy].layers.length) edCopyFrom(b.dataset.copy); else { el.querySelector('.e-empty').classList.remove('on'); if (!b.dataset.copy) { var bf = snap(); var P = allThemes()[themeKey()] || PRESETS.fofito; edDev().layers.push({ id: lid(), type: 'fill', name: 'Degradê', vis: true, lock: false, op: 1, blend: 'source-over', kind: 'linear', c1: P.o[0], c2: P.bg[0], ang: 35 }); commit(bf); edDraw(); } else toast('Essa versão também está vazia'); } }
+      else if (b.dataset.tool) edSetTool(b.dataset.tool);
+      else if (b.dataset.la) edLayerAct(b.dataset.la);
+      else if (b.dataset.vis) { var bf2 = snap(), L = edLayers().find(function (x) { return x.id === b.dataset.vis; }); if (L) { L.vis = !L.vis; commit(bf2); edDraw(); } }
+      else if (b.dataset.lock) { var bf3 = snap(), L2 = edLayers().find(function (x) { return x.id === b.dataset.lock; }); if (L2) { L2.lock = !L2.lock; commit(bf3); edOverlay(); } }
+      else if (b.dataset.add) edAddFill(b.dataset.add);
+      else if (b.dataset.do) edDo(b.dataset.do);
+      else if (b.dataset.ls) edProp(b.dataset.ls, b.dataset.ls === 'weight' ? +b.dataset.v : b.dataset.v), edPaintSide();
+      else if (b.dataset.lt) { var k = b.dataset.lt; if (k.indexOf('.') > 0) { var o = k[0] === 'b' ? ED.brush : ED.eraser; o[k.slice(2)] = !o[k.slice(2)]; } else { var L3 = edSel(); if (L3) edProp(k, !L3[k]); } edPaintSide(); }
+      else if (b.dataset.sw) { edProp(b.dataset.sw, b.dataset.c); edPaintSide(); }
+    });
+    el.addEventListener('click', function (e) { var r = e.target.closest('[data-ly]'); if (!r || e.target.closest('button')) return; ED.sel = r.dataset.ly; if (ED.tool !== 'move' && ED.tool !== 'brush' && ED.tool !== 'eraser') edSetTool('move'); else edPaintSide(); edOverlay(); });
+    el.addEventListener('dblclick', function (e) { var r = e.target.closest('[data-ly]'); if (r) { ED.sel = r.dataset.ly; edPaintSide(); var n = el.querySelector('[data-lp="name"]'); if (n) { n.focus(); n.select(); } } });
+    // arrastar camadas na lista para mudar a ordem
+    el.addEventListener('dragstart', function (e) { var r = e.target.closest('[data-ly]'); if (!r) return; ED.dragLy = r.dataset.ly; e.dataTransfer.effectAllowed = 'move'; });
+    el.addEventListener('dragover', function (e) { if (ED.dragLy && e.target.closest('[data-ly]')) e.preventDefault(); });
+    el.addEventListener('drop', function (e) {
+      var r = e.target.closest('[data-ly]');
+      if (ED.dragLy && r) { e.preventDefault(); var ls = edLayers(), from = ls.findIndex(function (x) { return x.id === ED.dragLy; }), to = ls.findIndex(function (x) { return x.id === r.dataset.ly; }); if (from >= 0 && to >= 0 && from !== to) { var bf = snap(), L = ls.splice(from, 1)[0]; ls.splice(to, 0, L); commit(bf); edDraw(); } }
+      ED.dragLy = null;
+    });
+    el.addEventListener('input', function (e) {
+      var t = e.target, k = t.dataset.lp; if (!k) return;
+      if (t.type === 'range') { var v = +t.value; t.style.setProperty('--p', ((v - t.min) / (t.max - t.min) * 100) + '%'); var o = t.nextElementSibling; if (o) o.textContent = /op$|^op|cx|cy/.test(k) ? PCT(v) : /rot|ang/.test(k) ? DEG(v) : Math.round(v); edProp(k, v, true); }
+      else if (t.type === 'color') edProp(k, t.value, true);
+      else if (k === 'text' || k === 'name') { edProp(k, t.value, true); if (k === 'name') { var r = el.querySelector('.e-ly.on b'); if (r) r.textContent = t.value; } }
+      else if (t.tagName === 'SELECT') { if (k === 'font' && t.value === 'Fonte do PC') loadCustomFont(); edProp(k, t.value); edLayersList(); }
+    });
+    el.addEventListener('change', function (e) { var k = e.target.dataset.lp; if (k && ED.pend != null) { var b = ED.pend; ED.pend = null; commit(b); } });
+    window.addEventListener('resize', function () { if (ED.open) edFit(); });
+    edSetTool('move');
+  }
+
+  // as teclas, colar e soltar arquivos são pegos antes do Discord (registrados logo no começo)
+  function edListen() {
+    // colar imagem e soltar arquivos direto no editor (não vai para o chat do Discord)
+    window.addEventListener('paste', function (e) {
+      if (!ED || !ED.open) return; e.stopPropagation();
+      var items = (e.clipboardData && e.clipboardData.items) || []; for (var i = 0; i < items.length; i++) if (items[i].type.indexOf('image/') === 0) { e.preventDefault(); edAddImage(items[i].getAsFile()); }
+    }, true);
+    ['dragenter', 'dragover', 'drop'].forEach(function (ev) { window.addEventListener(ev, function (e) {
+      if (!ED || !ED.open || ED.dragLy) return; e.stopPropagation(); e.preventDefault();
+      if (ev === 'drop' && e.dataTransfer) [].forEach.call(e.dataTransfer.files || [], function (f) { edAddImage(f); });
+    }, true); });
+    window.addEventListener('keydown', function (e) {
+      if (!ED || !ED.open) return;
+      e.stopPropagation(); // o Discord não pode pegar as teclas enquanto o editor está aberto
+      var typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== 'range' && e.target.type !== 'color';
+      var ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+      if (ctrl && k === 'z' && !typing) { e.preventDefault(); edUndo(e.shiftKey); return; }
+      if (ctrl && k === 'y' && !typing) { e.preventDefault(); edUndo(true); return; }
+      if (ctrl && k === 's') { e.preventDefault(); edSave().then(function () {}, function () {}); return; }
+      if (ctrl && k === 'd' && !typing) { e.preventDefault(); edLayerAct('dup'); return; }
+      if (ctrl && (k === '=' || k === '+')) { e.preventDefault(); edZoom(1.25); return; }
+      if (ctrl && k === '-') { e.preventDefault(); edZoom(0.8); return; }
+      if (ctrl && k === '0') { e.preventDefault(); edFit(); return; }
+      if (typing || ctrl) return;
+      if (e.key === ' ') { e.preventDefault(); if (!ED.space) { ED.space = true; ED.el.querySelector('.e-stage').classList.add('pan'); } return; }
+      if (e.key === 'Escape') { if (ED.sel) { ED.sel = ''; edPaintSide(); edOverlay(); } else edClose(false); return; }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && ED.sel) { e.preventDefault(); edLayerAct('del'); return; }
+      if (e.key === '[') { ED.brush.size = Math.max(1, Math.round(ED.brush.size * 0.85)); ED.eraser.size = Math.max(1, Math.round(ED.eraser.size * 0.85)); edPaintSide(); return; }
+      if (e.key === ']') { ED.brush.size = Math.min(300, Math.round(ED.brush.size * 1.18) + 1); ED.eraser.size = Math.min(300, Math.round(ED.eraser.size * 1.18) + 1); edPaintSide(); return; }
+      var L = edSel();
+      if (L && /^Arrow/.test(e.key) && L.x != null) { e.preventDefault(); var st = e.shiftKey ? 10 : 1, bf = snap(); if (e.key === 'ArrowLeft') L.x -= st; if (e.key === 'ArrowRight') L.x += st; if (e.key === 'ArrowUp') L.y -= st; if (e.key === 'ArrowDown') L.y += st; commit(bf); edDraw(); return; }
+      var t = ETOOLS.find(function (x) { return x[2].toLowerCase() === k; }); if (t) { e.preventDefault(); edSetTool(t[0]); }
+    }, true);
+    window.addEventListener('keyup', function (e) { if (!ED || !ED.open) return; e.stopPropagation(); if (e.key === ' ') { ED.space = false; ED.el.querySelector('.e-stage').classList.remove('pan'); } }, true);
+    window.addEventListener('keypress', function (e) { if (ED && ED.open) e.stopPropagation(); }, true);
+  }
+
   /* ---------- começo ---------- */
-  style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme();
+  style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
@@ -921,20 +1590,27 @@
     setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
+  // troca de tela na hora (sem esperar o Discord mexer na página): o Início entra sem mostrar a lista de amigos antes
+  function onRoute() { if (!document.body) return; watchScreen(); homeTick(); requestAnimationFrame(homeTick); }
+  ['pushState', 'replaceState'].forEach(function (m) { var o = history[m]; history[m] = function () { var r = o.apply(this, arguments); setTimeout(onRoute, 0); return r; }; });
+  window.addEventListener('popstate', function () { setTimeout(onRoute, 0); });
   function ready() {
     splash(); aura(); mountWin(); applyTheme(); parallax(); LAST_THEME = themeKey(); fallbackSheets(); badge();
     new MutationObserver(badge).observe(document.querySelector('title') || document.head, { childList: true, subtree: true, characterData: true });
     if (window.ccInfo) window.ccInfo().then(function (i) { if (i) { INFO.ver = i.ver; INFO.mats = i.mats || INFO.mats; INFO.update = i.update; if (!INFO.mats[CFG.mat]) { CFG.mat = 'aura'; save(); } applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); } }).catch(function () {});
     win('state'); restoreZoom();
     setTimeout(function () { homeTick(); if (window.ccDump) window.ccDump('diagnostico', '<!-- ' + JSON.stringify(diag()) + ' -->').catch(function () {}); }, 30000);
+    setTimeout(function () { (window.requestIdleCallback || setTimeout)(dumpCSS, { timeout: 10000 }); }, 15000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
   window.addEventListener('resize', function () { win('state'); });
   window.__ccUpdateReady = function (v) { INFO.update = v; toast('Versão nova do Concord pronta. Ela entra quando você fechar e abrir.'); if (PANEL && PANEL.classList.contains('on')) paintPanel(); };
   window.__ccToggle = togglePanel;
+  window.__ccChecked = function (m) { toast(m); };
+  window.__ccEditor = function (id) { togglePanel(false); edOpen(id || ''); };
   // pele nova baixada com o Concord aberto: troca os estilos na hora
   window.__ccReskin = function (base, ours) {
-    CC.css.base = base; CC.css.ours = ours;
+    CC.css.base = base; CC.css.ours = ours; setTimeout(function () { toast('Pele do Concord atualizada'); }, 300);
     if (STY.adopted) { STY.adopted[0].replaceSync(base); STY.adopted[2].replaceSync(ours); } else { style('base', base); style('ours', ours); }
   };
 })();
