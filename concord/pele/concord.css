@@ -623,7 +623,7 @@ html.cc-mica .guilds__5e434, html.cc-mica .sidebarList__5e434, html.cc-mica .pan
 
 /* ================= Perfil do Concord =================
    O cartão (prévia no editor e cartão ao lado do cartão do Discord) e o estilo do nome no chat. */
-.cc-pc { position: relative; width: 300px; max-width: 100%; border-radius: 22px; overflow: hidden; color: #f2f3f8; isolation: isolate; text-align: left;
+.cc-pc { position: relative; width: 100%; border-radius: 22px; overflow: hidden; color: #f2f3f8; isolation: isolate; text-align: left;
   font-family: var(--cc-font), 'gg sans', system-ui, sans-serif; background: var(--pf); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 18px 50px -18px rgba(0,0,0,.7); }
 .cc-pc * { box-sizing: border-box; }
 .cc-pc .pc-bn { height: 104px; background: center / cover no-repeat; }
@@ -643,13 +643,6 @@ html.cc-mica .guilds__5e434, html.cc-mica .sidebarList__5e434, html.cc-mica .pan
 .cc-pc .pc-i svg { width: 15px; height: 15px; color: var(--d); }
 .cc-pc .pc-i em { font-style: normal; }
 .cc-pc .pc-bio { margin: 10px 0 0; font-size: 13.5px; line-height: 1.45; color: rgba(242,243,248,.82); white-space: pre-wrap; overflow-wrap: anywhere; }
-
-/* ao lado do cartão do Discord */
-.cc-pc.cc-pop { position: fixed; z-index: 100000; opacity: 0; transform: translateY(8px) scale(.97); transform-origin: top left;
-  transition: opacity .22s var(--cc-out), transform .38s var(--cc-spring); pointer-events: auto; }
-.cc-pc.cc-pop.on { opacity: 1; transform: none; }
-.cc-pc.cc-pop.sheet { left: 50% !important; top: auto !important; bottom: 12px; width: min(340px, calc(100vw - 24px)); transform: translate(-50%, 16px); }
-.cc-pc.cc-pop.sheet.on { transform: translate(-50%, 0); }
 
 /* nome com estilo (cartão e chat) */
 [data-ccn="normal"] { color: var(--n1) !important; }
@@ -716,3 +709,78 @@ html.cc-lite [data-ccn][data-cca], html.cc-still [data-ccn][data-cca] { animatio
   #cc-panel .pf-fontes { grid-template-columns: repeat(2, 1fr); }
 }
 #cc-panel .tabbar button { flex: 1 0 auto; padding: 0 9px; height: 36px; }
+
+/* cartão vivo: moldura, luz, inclinar e partículas */
+.cc-pcw { position: relative; width: 300px; max-width: 100%; transform: perspective(900px) var(--tilt, none); transition: transform .5s var(--cc-spring); transform-style: preserve-3d; --mx: 50%; --my: 30%; }
+.cc-pcw[data-tilt]:hover { transition: transform .12s linear; }
+.cc-pcw .pc-luz { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: var(--lf, .5); z-index: 3; }
+.cc-pcw[data-luz="segue"] .pc-luz { background: radial-gradient(circle at var(--mx) var(--my), color-mix(in srgb, var(--lc) 70%, transparent), transparent 55%); }
+.cc-pcw[data-luz="holofote"] .pc-luz { background: radial-gradient(ellipse 70% 90% at 50% -12%, color-mix(in srgb, var(--lc) 80%, transparent), transparent 62%); }
+.cc-pcw[data-luz="aurora"] .pc-luz { background: radial-gradient(60% 50% at 20% 20%, color-mix(in srgb, var(--lc) 70%, transparent), transparent 70%), radial-gradient(60% 50% at 80% 70%, color-mix(in srgb, var(--d) 70%, transparent), transparent 70%); background-size: 200% 200%; animation: cc-aurora 9s ease-in-out infinite alternate; }
+.cc-pcw[data-luz="pulso"] .pc-luz { background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--lc) 70%, transparent), transparent 60%); animation: cc-pulsoluz 3.2s ease-in-out infinite; }
+@keyframes cc-aurora { to { background-position: 100% 100%, 0 0; } }
+@keyframes cc-pulsoluz { 50% { opacity: calc(var(--lf, .5) * .35); } }
+.cc-pcw .pc-mold { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.cc-pcw .pc-mold .mr { position: absolute; inset: -3px; border-radius: 25px; display: none; }
+.cc-pcw .pc-mold .mc { position: absolute; width: 96px; height: 96px; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+.cc-pcw .pc-mold .mc svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.cc-pcw .mc.tl { left: -22px; top: -22px; } .cc-pcw .mc.tr { right: -22px; top: -22px; } .cc-pcw .mc.bl { left: -22px; bottom: -22px; } .cc-pcw .mc.br { right: -22px; bottom: -22px; }
+.cc-pcw:not([data-mold="nenhuma"]) .pc-mold .mr { display: block; padding: 3px; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; background: var(--d); }
+.cc-pcw[data-mold="neon"] .mr { background: conic-gradient(from var(--ang, 0deg), var(--d), #fff, var(--d), transparent 40%, var(--d)) !important; filter: drop-shadow(0 0 8px var(--d)) drop-shadow(0 0 18px var(--d)); animation: cc-giro 4s linear infinite; }
+.cc-pcw[data-mold="aurora"] .mr { background: linear-gradient(120deg, #5ee7d6, #9b7bff, #ff5c9a, #f2c14e, #5ee7d6) 0 0 / 300% 300% !important; filter: blur(.4px) drop-shadow(0 0 12px rgba(155,123,255,.7)); animation: cc-nome 8s linear infinite; }
+.cc-pcw[data-mold="pixel"] .mr { border-radius: 4px; padding: 4px; background: repeating-linear-gradient(90deg, #fff 0 8px, var(--d) 8px 16px) !important; }
+.cc-pcw[data-mold="pixel"] .cc-pc { border-radius: 6px; }
+.cc-pcw[data-mold="flores"] .mr, .cc-pcw[data-mold="coracoes"] .mr { padding: 2px; background: linear-gradient(160deg, #fff, var(--d)) !important; }
+.cc-pcw[data-mold="estrelas"] .mr { padding: 2px; background: linear-gradient(160deg, var(--d), #fff, var(--d)) !important; filter: drop-shadow(0 0 10px var(--d)); }
+.cc-pcw[data-mold="estrelas"] .mc svg polygon { animation: cc-brilha 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cc-pcw[data-mold="estrelas"] .mc svg polygon:nth-child(2) { animation-delay: -1.2s; }
+.cc-pcw[data-mold="gelo"] .mr { background: linear-gradient(160deg, #ffffff, #9fdcff, #3a6fd8) !important; filter: drop-shadow(0 0 10px rgba(159,220,255,.8)); }
+.cc-pcw[data-mold="chamas"] .mr { background: linear-gradient(0deg, #ff3d3d, #ff8a3d, #ffe08a) !important; filter: drop-shadow(0 0 12px rgba(255,120,40,.8)); }
+.cc-pcw[data-mold="coracoes"] .mc { animation: cc-flutua 3.6s ease-in-out infinite; } .cc-pcw[data-mold="coracoes"] .mc.tr, .cc-pcw[data-mold="coracoes"] .mc.bl { animation-delay: -1.8s; }
+.cc-pcw .mf { position: absolute; left: -6px; right: -6px; bottom: -14px; height: 46px; display: block;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='46'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='%23ff3d3d'/%3E%3Cstop offset='.55' stop-color='%23ff8a3d'/%3E%3Cstop offset='1' stop-color='%23ffe08a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 46C2 30 10 26 8 12c8 8 12 14 12 22 2-10 8-14 6-26 10 12 14 22 14 38z' fill='url(%23g)'/%3E%3C/svg%3E") 0 100% / 40px 46px repeat-x;
+  filter: drop-shadow(0 -2px 8px rgba(255,120,40,.7)); animation: cc-chama .9s steps(2) infinite; transform-origin: bottom; }
+@keyframes cc-giro { to { --ang: 360deg; } }
+@property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes cc-brilha { 50% { transform: scale(.6) rotate(20deg); opacity: .6; } }
+@keyframes cc-flutua { 50% { transform: translateY(-6px); } }
+@keyframes cc-chama { 50% { transform: scaleY(.86) translateX(6px); } }
+html.cc-lite .cc-pcw *, html.cc-still .cc-pcw .mf { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .cc-pcw * { animation: none !important; } }
+.cc-pcw .pc-p { position: absolute; z-index: 6; pointer-events: none; display: block; }
+.cc-pcw .pc-p svg { width: 100%; height: 100%; display: block; }
+.cc-pc .pc-acts { display: flex; gap: 8px; margin-top: 14px; }
+.cc-pc .pc-acts button { flex: 1; height: 40px; border-radius: 12px; border: 0; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; color: #f2f3f8; background: rgba(255,255,255,.1); transition: background-color .15s, transform .2s var(--cc-spring); }
+.cc-pc .pc-acts button:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+.cc-pc .pc-acts button.pri { background: var(--d); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+
+/* no lugar do cartão do Discord */
+.cc-oculto { visibility: hidden !important; }
+.cc-pcw.cc-pop { position: absolute; z-index: 20; opacity: 0; transform: translateY(8px) scale(.97); transition: opacity .22s var(--cc-out), transform .4s var(--cc-spring); }
+.cc-pcw.cc-pop.on { opacity: 1; transform: perspective(900px) var(--tilt, none); }
+.cc-pcw.cc-pop.modal { width: 380px; }
+.cc-pcw.cc-pop.mini { left: auto !important; right: 10px; top: 10px !important; width: auto !important; transform: none; cursor: pointer; }
+.cc-pcw.cc-pop.mini > .cc-pc, .cc-pcw.cc-pop.mini > .pc-mold, .cc-pcw.cc-pop.mini > .pc-p { display: none; }
+.cc-pcw.cc-pop.mini::after { content: 'Ver o do Concord'; display: block; height: 34px; line-height: 34px; padding: 0 14px; border-radius: 999px; font: 600 12.5px var(--cc-font), system-ui, sans-serif; color: #fff; background: var(--d); box-shadow: 0 6px 18px -6px var(--d); }
+
+/* editor: molduras e decorações */
+#cc-panel .pf-prev { padding: 18px 0 14px; }
+#cc-panel .pf-molds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#cc-panel .pf-mold { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px 8px; border-radius: 14px; background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); font-size: 12px; font-weight: 600; color: var(--cc-ink2); overflow: hidden; }
+#cc-panel .pf-mold.on { box-shadow: inset 0 0 0 2px var(--cc-a1); color: var(--cc-ink); background: color-mix(in srgb, var(--cc-a1) 12%, transparent); }
+#cc-panel .pf-mold em { font-style: normal; }
+#cc-panel .mini-mold { width: 52px; height: 64px; display: block; transform: none; }
+#cc-panel .mini-mold .cc-pc { display: block; height: 100%; border-radius: 10px; background: var(--pf); }
+#cc-panel .mini-mold .pc-mold .mr { border-radius: 13px; }
+#cc-panel .mini-mold .pc-mold .mc { width: 30px; height: 30px; } #cc-panel .mini-mold .mc.tl { left: -8px; top: -8px; } #cc-panel .mini-mold .mc.tr { right: -8px; top: -8px; } #cc-panel .mini-mold .mc.bl { left: -8px; bottom: -8px; } #cc-panel .mini-mold .mc.br { right: -8px; bottom: -8px; }
+#cc-panel .mini-mold .mf { height: 18px; bottom: -6px; background-size: 16px 18px; }
+#cc-panel .pf-pres { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+#cc-panel .pf-pre { position: relative; height: 72px; border-radius: 14px; overflow: hidden; background: var(--pf); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); text-align: left; transition: transform .2s var(--cc-spring); }
+#cc-panel .pf-pre:hover { transform: translateY(-2px); }
+#cc-panel .pf-pre i { position: absolute; right: 8px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--d); box-shadow: 0 0 8px var(--d); }
+#cc-panel .pf-pre span { position: absolute; left: 8px; bottom: 6px; right: 6px; font-size: 11.5px; font-weight: 700; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.6); line-height: 1.15; }
+#cc-panel .pf-pre b { position: absolute; left: 6px; top: 6px; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: rgba(0,0,0,.45); color: #fff; }
+#cc-panel .pf-pre b svg { width: 12px; height: 12px; }
+#cc-panel .pf-pre.add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: rgba(255,255,255,.05); color: var(--cc-ink2); }
+#cc-panel .pf-pre.add svg { width: 18px; height: 18px; } #cc-panel .pf-pre.add span { position: static; text-shadow: none; color: inherit; text-align: center; }
+@media (max-width: 600px) { #cc-panel .pf-pres { grid-template-columns: repeat(3, 1fr); } }

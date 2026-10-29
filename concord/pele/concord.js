@@ -1640,7 +1640,7 @@
   var INS_LIVRES = ['noite', 'gamer', 'musica', 'arte', 'fofo', 'raio', 'planta', 'estrela'];
   var ESTILOS = [['normal', 'Normal'], ['degrade', 'Degradê'], ['brilho', 'Brilho'], ['neon', 'Neon'], ['arcoiris', 'Arco-íris']];
   var PADROES = [['pontos', 'Pontos'], ['listras', 'Listras'], ['xadrez', 'Xadrez'], ['ondas', 'Ondas'], ['estrelas', 'Estrelas'], ['doodles', 'Desenhos']];
-  function perfilVazio() { return { avatar: null, banner: null, fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', ganhas: [] }; }
+  function perfilVazio() { return { avatar: null, banner: null, fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', moldura: 'nenhuma', luz: { tipo: 'segue', cor: '#ffffff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, ganhas: [] }; }
   function padraoSVG(k, cor) {
     var s = cor.replace('#', '%23'), o = "stroke='" + s + "' stroke-opacity='.32' fill='none' stroke-width='2' stroke-linecap='round'", d = '';
     if (k === 'pontos') d = "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><circle cx='4' cy='4' r='1.8' fill='" + s + "' fill-opacity='.4'/><circle cx='13' cy='13' r='1.8' fill='" + s + "' fill-opacity='.4'/></svg>";
@@ -1672,20 +1672,97 @@
     });
   }
   function insHTML(k) { var i = INS[k]; return i ? '<span class="pc-i" title="' + i[0] + '">' + sv(i[1]) + '<em>' + i[0] + '</em></span>' : ''; }
-  // o cartão do perfil (o mesmo na prévia do editor e no cartão que os outros veem)
-  function cardEl(p, nome, avatar) {
-    p = p || perfilVazio();
-    var el = document.createElement('div'); el.className = 'cc-pc';
+  var MOLDURAS = [['nenhuma', 'Nenhuma'], ['neon', 'Neon'], ['aurora', 'Aurora'], ['pixel', 'Pixel'], ['flores', 'Flores'], ['estrelas', 'Estrelas'], ['chamas', 'Chamas'], ['gelo', 'Gelo'], ['coracoes', 'Corações']];
+  var LUZES = [['nenhuma', 'Sem luz'], ['segue', 'Segue o mouse'], ['aurora', 'Aurora'], ['holofote', 'Holofote'], ['pulso', 'Pulso']];
+  var PARTS = [['nenhuma', 'Nada'], ['estrelas', 'Estrelas'], ['coracoes', 'Corações'], ['faiscas', 'Faíscas'], ['bolhas', 'Bolhas'], ['petalas', 'Pétalas']];
+  // perfis salvos antes de existirem moldura, luz e interação ganham o padrão
+  function completar(p) {
+    var v = perfilVazio(); p = p || {};
+    Object.keys(v).forEach(function (k) { if (p[k] == null) p[k] = v[k]; });
+    if (!p.luz.tipo) p.luz = v.luz; if (!p.interacao || p.interacao.particulas == null) p.interacao = v.interacao;
+    return p;
+  }
+  function flor(x, y, r, c, c2) {
+    var h = '';
+    for (var i = 0; i < 5; i++) { var a = i * 72; h += '<ellipse cx="' + x + '" cy="' + (y - r * 0.62) + '" rx="' + (r * 0.42) + '" ry="' + (r * 0.62) + '" fill="' + c + '" transform="rotate(' + a + ' ' + x + ' ' + y + ')"/>'; }
+    return h + '<circle cx="' + x + '" cy="' + y + '" r="' + (r * 0.32) + '" fill="' + c2 + '"/>';
+  }
+  function estrela(x, y, r, c) { var pts = []; for (var i = 0; i < 10; i++) { var a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * 0.42 : r; pts.push((x + Math.cos(a) * rr).toFixed(1) + ',' + (y + Math.sin(a) * rr).toFixed(1)); } return '<polygon points="' + pts.join(' ') + '" fill="' + c + '"/>'; }
+  function coracao(x, y, s, c) { return '<path transform="translate(' + x + ' ' + y + ') scale(' + s + ')" d="M0 6C-5-1-12 2-10 8c1.5 4 10 9 10 9s8.5-5 10-9C12 2 5-1 0 6z" fill="' + c + '"/>'; }
+  var SVGO = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">';
+  // enfeites dos cantos de cada moldura (desenhos nossos)
+  function moldHTML(k) {
+    var d = 'var(--d)', w = '#ffffff';
+    var c = function (pos, svg) { return '<b class="mc ' + pos + '">' + SVGO + svg + '</svg></b>'; };
+    if (k === 'flores') return c('tl', flor(30, 34, 22, d, '#ffe08a') + flor(62, 18, 13, w, d) + flor(14, 66, 11, w, d)) + c('br', flor(70, 66, 22, d, '#ffe08a') + flor(38, 82, 12, w, d) + flor(86, 34, 10, w, d));
+    if (k === 'estrelas') return c('tl', estrela(28, 30, 16, w) + estrela(60, 14, 7, d)) + c('tr', estrela(72, 26, 10, d) + estrela(44, 12, 5, w)) + c('bl', estrela(26, 74, 9, d)) + c('br', estrela(70, 70, 15, w) + estrela(40, 86, 6, d));
+    if (k === 'coracoes') return c('tl', coracao(28, 18, 1.6, d) + coracao(62, 10, 0.9, w)) + c('tr', coracao(66, 16, 1.1, w)) + c('bl', coracao(24, 60, 1, w)) + c('br', coracao(64, 56, 1.7, d) + coracao(34, 76, 0.8, w));
+    if (k === 'gelo') return c('tl', '<path d="M8 8l22 70 6-48 18 30 4-40 16 18L90 8z" fill="#bfefff" fill-opacity=".85"/><path d="M8 8l22 70M36 30l18 30" stroke="#fff" stroke-width="2" fill="none"/>') + c('tr', '<path d="M92 8L70 70l-6-44-16 24-4-34L8 8z" fill="#bfefff" fill-opacity=".85"/>');
+    if (k === 'chamas') return '<b class="mf"></b>';
+    if (k === 'pixel') return c('tl', '<path d="M0 0h40v12H12v28H0z" fill="' + w + '"/><path d="M12 12h16v8h-8v8h-8z" fill="' + d + '"/>') + c('tr', '<path d="M100 0H60v12h28v28h12z" fill="' + w + '"/><path d="M88 12H72v8h8v8h8z" fill="' + d + '"/>') +
+      c('bl', '<path d="M0 100h40V88H12V60H0z" fill="' + w + '"/>') + c('br', '<path d="M100 100H60V88h28V60h12z" fill="' + w + '"/>');
+    return '';
+  }
+  // o cartão do perfil: o mesmo na prévia do editor e no lugar do cartão do Discord
+  function cardEl(p, nome, avatar, acoes) {
+    p = completar(p ? JSON.parse(JSON.stringify(p)) : perfilVazio());
+    var wr = document.createElement('div'); wr.className = 'cc-pcw';
+    wr.dataset.mold = p.moldura; wr.dataset.luz = p.luz.tipo; if (p.interacao.inclinar) wr.dataset.tilt = '1';
     var ins = (p.insignias || []).filter(function (k) { return INS[k]; });
-    el.innerHTML = '<div class="pc-bn"></div><div class="pc-av"><img alt=""></div><div class="pc-ct"><div class="pc-nm"></div><div class="pc-tag">' + MARK + '<span>Concord</span></div>' +
-      (ins.length ? '<div class="pc-ins">' + ins.map(insHTML).join('') + '</div>' : '') + (p.bio ? '<p class="pc-bio"></p>' : '') + '</div>';
-    el.style.setProperty('--pf', fundoCSS(p.fundo)); el.style.setProperty('--d', p.destaque || '#ff5c7a');
-    var nm = el.querySelector('.pc-nm'); nm.textContent = nome || p.nomeDiscord || 'Você'; nomeStyle(nm, p.nome);
-    if (p.bio) el.querySelector('.pc-bio').textContent = p.bio;
-    var img = el.querySelector('.pc-av img'); if (avatar) img.src = avatar;
+    wr.innerHTML = '<div class="cc-pc"><div class="pc-bn"></div><div class="pc-av"><img alt=""></div><div class="pc-ct"><div class="pc-nm"></div><div class="pc-tag">' + MARK + '<span>Concord</span></div>' +
+      (ins.length ? '<div class="pc-ins">' + ins.map(insHTML).join('') + '</div>' : '') + (p.bio ? '<p class="pc-bio"></p>' : '') +
+      (acoes ? '<div class="pc-acts">' + acoes.map(function (a) { return '<button data-pca="' + a[0] + '"' + (a[2] ? ' class="pri"' : '') + '>' + a[1] + '</button>'; }).join('') + '</div>' : '') +
+      '</div><i class="pc-luz"></i></div><div class="pc-mold"><i class="mr"></i>' + moldHTML(p.moldura) + '</div>';
+    wr.style.setProperty('--pf', fundoCSS(p.fundo)); wr.style.setProperty('--d', p.destaque || '#ff5c7a');
+    wr.style.setProperty('--lc', p.luz.cor); wr.style.setProperty('--lf', p.luz.forca);
+    var nm = wr.querySelector('.pc-nm'); nm.textContent = nome || p.nomeDiscord || 'Você'; nomeStyle(nm, p.nome);
+    if (p.bio) wr.querySelector('.pc-bio').textContent = p.bio;
+    var img = wr.querySelector('.pc-av img'); if (avatar) img.src = avatar;
     if (p.avatar) mediaURL(p.avatar).then(function (d) { if (d) img.src = d; });
-    if (p.banner) mediaURL(p.banner).then(function (d) { if (d) { el.querySelector('.pc-bn').style.backgroundImage = 'url("' + d + '")'; el.classList.add('has-bn'); } });
-    return el;
+    if (p.banner) mediaURL(p.banner).then(function (d) { if (d) { wr.querySelector('.pc-bn').style.backgroundImage = 'url("' + d + '")'; wr.classList.add('has-bn'); } });
+    vivo(wr, p);
+    return wr;
+  }
+  // inclinar, luz que segue o dedo/mouse e partículas
+  function calmo() { return CFG.lite || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function vivo(wr, p) {
+    var card = wr.querySelector('.cc-pc'), raf = 0, last = null;
+    function mover(e) {
+      last = e; if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = 0; var r = wr.getBoundingClientRect(); if (!r.width) return;
+        var x = (last.clientX - r.left) / r.width, y = (last.clientY - r.top) / r.height;
+        wr.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); wr.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+        if (wr.dataset.tilt && !calmo()) wr.style.setProperty('--tilt', 'rotateX(' + ((0.5 - y) * 10).toFixed(2) + 'deg) rotateY(' + ((x - 0.5) * 12).toFixed(2) + 'deg)');
+      });
+    }
+    wr.addEventListener('pointermove', mover);
+    wr.addEventListener('pointerleave', function () { wr.style.removeProperty('--tilt'); wr.style.setProperty('--mx', '50%'); wr.style.setProperty('--my', '30%'); });
+    wr.addEventListener('pointerdown', function (e) { if (e.target.closest('button')) return; mover(e); var r = wr.getBoundingClientRect(); explodir(wr, e.clientX - r.left, e.clientY - r.top, p.interacao.particulas, 12); });
+    if (!PF.quieto) setTimeout(function () { if (wr.isConnected) explodir(wr, 62, 100, p.interacao.particulas, 8); }, 380);
+  }
+  function partSVG(k, c) {
+    if (k === 'estrelas') return SVGO + estrela(50, 50, 46, c) + '</svg>';
+    if (k === 'coracoes') return SVGO + coracao(50, 34, 4, c) + '</svg>';
+    if (k === 'bolhas') return SVGO + '<circle cx="50" cy="50" r="40" fill="none" stroke="' + c + '" stroke-width="8"/><circle cx="36" cy="36" r="8" fill="#fff" fill-opacity=".8"/></svg>';
+    if (k === 'petalas') return SVGO + '<ellipse cx="50" cy="50" rx="24" ry="44" fill="' + c + '"/></svg>';
+    return SVGO + '<circle cx="50" cy="50" r="22" fill="#fff"/><circle cx="50" cy="50" r="46" fill="' + c + '" fill-opacity=".45"/></svg>';
+  }
+  function explodir(wr, x, y, k, n) {
+    if (!k || k === 'nenhuma' || calmo() || !wr.animate) return;
+    var d = getComputedStyle(wr).getPropertyValue('--d').trim() || '#ff5c7a', cores = [d, '#ffffff', d];
+    for (var i = 0; i < n; i++) {
+      var el = document.createElement('i'); el.className = 'pc-p'; var s = 8 + Math.random() * 12;
+      el.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + s + 'px;height:' + s + 'px';
+      el.innerHTML = partSVG(k, cores[i % 3]); wr.appendChild(el);
+      var a = Math.random() * Math.PI * 2, dist = 40 + Math.random() * 70, dx = Math.cos(a) * dist, dy = Math.sin(a) * dist;
+      if (k === 'bolhas') { dx = (Math.random() - 0.5) * 60; dy = -60 - Math.random() * 80; }
+      if (k === 'petalas') { dx = (Math.random() - 0.5) * 120; dy = 40 + Math.random() * 90; }
+      var rot = (Math.random() - 0.5) * 540;
+      el.animate([{ transform: 'translate(-50%,-50%) scale(.3) rotate(0deg)', opacity: 0 }, { offset: 0.15, opacity: 1 },
+        { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(1) rotate(' + rot + 'deg)', opacity: 0 }],
+        { duration: 900 + Math.random() * 700, easing: 'cubic-bezier(.16,1,.3,1)' }).onfinish = (function (e2) { return function () { e2.remove(); }; })(el);
+    }
   }
 
   // ---- perfis dos outros: pede em lote ao servidor e guarda por 10 minutos ----
@@ -1723,8 +1800,8 @@
     }
   }
 
-  // ---- cartão Concord ao lado do cartão do Discord ----
-  var POP = { host: null, id: '', card: null };
+  // ---- o cartão Concord no lugar do cartão do Discord (o do Discord fica num botão) ----
+  var POP = { host: null, id: '', card: null, v: '' };
   function fiberUser(el) {
     var k = null; for (var x in el) { if (x.indexOf('__reactFiber$') === 0) { k = x; break; } }
     for (var f = k && el[k], i = 0; f && i < 60; f = f.return, i++) {
@@ -1743,30 +1820,63 @@
   }
   function popTick(refresh) {
     var host = document.querySelector('.user-profile-popout, .user-profile-modal');
-    if (!host || !window.ccNet) { popClose(); return; }
-    if (host === POP.host && !refresh) { popPlace(); return; }
+    if (POP.card && POP.host && (!POP.host.isConnected || POP.host !== host)) { POP.card.remove(); POP.card = null; POP.host = null; }
+    if (!host || !window.ccNet) { POP.host = null; POP.card = null; POP.id = ''; return; }
     var id = host === POP.host ? POP.id : popUserId(host);
     if (!id) return;
-    var p = perfilDe(id);
-    if (host === POP.host && POP.card && POP.card.dataset.v === String(p && p.v)) { popPlace(); return; }
-    POP.host = host; POP.id = id;
-    if (!p) { if (POP.card) { POP.card.remove(); POP.card = null; } return; }
-    var U = st('User'), u = U && U.getUser(id);
-    var card = cardEl(p, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '');
-    card.classList.add('cc-pop'); card.dataset.v = String(p.v);
+    var p = perfilDe(id), v = p ? String(p.v) : '';
+    if (host === POP.host && !refresh && (POP.card ? POP.card.isConnected : !p)) return;
+    if (host === POP.host && POP.card && POP.card.isConnected && POP.v === v) return;
     if (POP.card) POP.card.remove();
-    POP.card = card; document.body.appendChild(card); popPlace();
+    POP.host = host; POP.id = id; POP.v = v; POP.card = null;
+    if (!p) { host.classList.remove('cc-oculto'); return; }
+    var U = st('User'), u = U && U.getUser(id), me = U && U.getCurrentUser && U.getCurrentUser(), eu = me && me.id === id;
+    var modal = host.classList.contains('user-profile-modal');
+    var acoes = eu ? [['editar', 'Editar perfil', true], ['discord', 'Perfil do Discord']] : [['msg', 'Mensagem', true], ['discord', 'Perfil do Discord']];
+    var card = cardEl(p, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '', acoes);
+    card.classList.add('cc-pop'); if (modal) card.classList.add('modal');
+    var pai = host.parentElement; if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
+    card.style.left = (modal ? host.offsetLeft + Math.max(0, (host.offsetWidth - 380) / 2) : host.offsetLeft) + 'px';
+    card.style.top = (modal ? host.offsetTop + 40 : host.offsetTop) + 'px';
+    if (!modal) card.style.width = Math.max(300, host.offsetWidth) + 'px';
+    if (host.dataset.ccDiscord) card.classList.add('mini'); else host.classList.add('cc-oculto');
+    card.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-pca]'); if (!b) { if (card.classList.contains('mini')) mostrarConcord(); return; }
+      e.stopPropagation(); var a = b.dataset.pca;
+      if (a === 'discord') { host.dataset.ccDiscord = '1'; host.classList.remove('cc-oculto'); card.classList.add('mini'); }
+      else if (a === 'editar') { CFG.tab = 'perfil'; save(); togglePanel(true); }
+      else if (a === 'msg') { host.dataset.ccDiscord = '1'; host.classList.remove('cc-oculto'); card.classList.add('mini'); var t = host.querySelector('[role="textbox"], textarea, input[type="text"]'); if (t) t.focus(); }
+    });
+    function mostrarConcord() { delete host.dataset.ccDiscord; host.classList.add('cc-oculto'); card.classList.remove('mini'); }
+    POP.card = card; pai.appendChild(card);
     requestAnimationFrame(function () { card.classList.add('on'); });
   }
-  function popClose() { if (POP.card) { var c = POP.card; c.classList.remove('on'); setTimeout(function () { c.remove(); }, 260); } POP.card = null; POP.host = null; POP.id = ''; }
-  function popPlace() {
-    var c = POP.card, h = POP.host; if (!c || !h || !h.isConnected) return;
-    var r = h.getBoundingClientRect(), w = Math.min(300, innerWidth - 24), gap = 12, x, y = Math.max(12, Math.min(r.top, innerHeight - c.offsetHeight - 12));
-    c.classList.remove('sheet');
-    if (r.right + gap + w <= innerWidth - 12) x = r.right + gap;
-    else if (r.left - gap - w >= 12) x = r.left - gap - w;
-    else { c.classList.add('sheet'); c.style.left = ''; c.style.top = ''; return; }
-    c.style.left = Math.round(x) + 'px'; c.style.top = Math.round(y) + 'px';
+  function popPlace() {}
+
+  // ---- predefinições de decoração: prontas e as suas (troca rápida) ----
+  var DECOR_K = ['fundo', 'moldura', 'luz', 'interacao', 'destaque', 'nome'];
+  var DECOR_PRONTAS = {
+    girassol: { n: 'Girassol', fundo: { tipo: 'degrade', cores: ['#ffe27a', '#ffb347', '#ff7a59'], angulo: 160, padrao: 'pontos' }, moldura: 'flores', luz: { tipo: 'holofote', cor: '#fff3c4', forca: 0.6 }, interacao: { inclinar: true, particulas: 'petalas' }, destaque: '#f2b63c', nome: { estilo: 'brilho', cores: ['#fff7d6', '#ffb347'], fonte: 'Bricolage Grotesque', animado: false } },
+    noite: { n: 'Noite estrelada', fundo: { tipo: 'padrao', cores: ['#0e1033', '#3b2a7a'], angulo: 180, padrao: 'estrelas' }, moldura: 'estrelas', luz: { tipo: 'aurora', cor: '#9fb8ff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, destaque: '#9b7bff', nome: { estilo: 'degrade', cores: ['#e8e8ff', '#9fb8ff', '#c79bff'], fonte: 'Sora', animado: true } },
+    neon: { n: 'Neon', fundo: { tipo: 'padrao', cores: ['#0b0a14', '#1c0b2e'], angulo: 135, padrao: 'xadrez' }, moldura: 'neon', luz: { tipo: 'segue', cor: '#4fd6e6', forca: 0.7 }, interacao: { inclinar: true, particulas: 'faiscas' }, destaque: '#4fd6e6', nome: { estilo: 'neon', cores: ['#4fd6e6', '#f06fd3'], fonte: 'Space Grotesk', animado: true } },
+    sakura: { n: 'Sakura', fundo: { tipo: 'degrade', cores: ['#ffd1e3', '#ff8fb8', '#c86dd7'], angulo: 150, padrao: 'pontos' }, moldura: 'coracoes', luz: { tipo: 'pulso', cor: '#ffe3ef', forca: 0.5 }, interacao: { inclinar: true, particulas: 'petalas' }, destaque: '#ff5c9a', nome: { estilo: 'degrade', cores: ['#ffffff', '#ffc2da', '#ff5c9a'], fonte: 'Nunito', animado: false } },
+    gelo: { n: 'Gelo', fundo: { tipo: 'padrao', cores: ['#dff6ff', '#7fc8f8', '#3a6fd8'], angulo: 200, padrao: 'ondas' }, moldura: 'gelo', luz: { tipo: 'holofote', cor: '#ffffff', forca: 0.55 }, interacao: { inclinar: true, particulas: 'bolhas' }, destaque: '#5b8cff', nome: { estilo: 'brilho', cores: ['#ffffff', '#7fc8f8'], fonte: 'Outfit', animado: false } },
+    fogo: { n: 'Fogo', fundo: { tipo: 'degrade', cores: ['#2a0a0a', '#8a1f12', '#ff6a2a'], angulo: 0, padrao: 'pontos' }, moldura: 'chamas', luz: { tipo: 'pulso', cor: '#ffb070', forca: 0.65 }, interacao: { inclinar: true, particulas: 'faiscas' }, destaque: '#ff6a2a', nome: { estilo: 'degrade', cores: ['#ffe08a', '#ff8a3d', '#ff3d3d'], fonte: 'Lexend', animado: true } },
+    pixel: { n: 'Pixel', fundo: { tipo: 'padrao', cores: ['#1b2a4a', '#2f5d8a'], angulo: 180, padrao: 'xadrez' }, moldura: 'pixel', luz: { tipo: 'nenhuma', cor: '#ffffff', forca: 0.4 }, interacao: { inclinar: false, particulas: 'estrelas' }, destaque: '#5ee7a6', nome: { estilo: 'normal', cores: ['#5ee7a6'], fonte: 'Space Grotesk', animado: false } },
+    aurora: { n: 'Aurora', fundo: { tipo: 'degrade', cores: ['#0f2a2e', '#1f6f6a', '#6a4fd6'], angulo: 120, padrao: 'pontos' }, moldura: 'aurora', luz: { tipo: 'aurora', cor: '#7cffd4', forca: 0.6 }, interacao: { inclinar: true, particulas: 'bolhas' }, destaque: '#5ee7a6', nome: { estilo: 'arcoiris', cores: ['#ffffff'], fonte: '', animado: true } }
+  };
+  function decorDe(p) { var o = {}; DECOR_K.forEach(function (k) { o[k] = JSON.parse(JSON.stringify(p[k])); }); return o; }
+  function usarDecor(o) { var d = PF.draft; DECOR_K.forEach(function (k) { if (o[k] != null) d[k] = JSON.parse(JSON.stringify(o[k])); }); }
+  function decorTile(k, o, mine) {
+    var cs = o.fundo.cores.length > 1 ? o.fundo.cores : [o.fundo.cores[0], o.fundo.cores[0]], bg = o.fundo.tipo === 'cor' ? cs[0] : 'linear-gradient(' + o.fundo.angulo + 'deg, ' + cs.join(', ') + ')';
+    return '<button class="pf-pre" data-pfpre="' + esc(k) + '"' + (mine ? ' data-mine="1"' : '') + ' style="--pf:' + esc(bg) + ';--d:' + o.destaque + '"><i></i><span>' + esc(o.n) + '</span>' + (mine ? '<b data-pfpdel="' + esc(k) + '" title="Apagar">' + IC.x + '</b>' : '') + '</button>';
+  }
+  function decorHTML() {
+    var mine = CFG.decor || {};
+    return '<h4>Decorações prontas</h4><div class="note">Um toque troca fundo, moldura, luz, partículas e estilo do nome de uma vez.</div><div class="pf-pres">' +
+      Object.keys(DECOR_PRONTAS).map(function (k) { return decorTile(k, DECOR_PRONTAS[k]); }).join('') + '</div>' +
+      '<h4>Suas decorações</h4><div class="pf-pres">' + Object.keys(mine).map(function (k) { return decorTile(k, mine[k], true); }).join('') +
+      '<button class="pf-pre add" data-pfa="decsalvar">' + IC.plus + '<span>Guardar a atual</span></button></div>';
   }
 
   // ---- a própria conta ----
@@ -1781,7 +1891,7 @@
       if (!tem) { PF.carregando = false; PF.conta = null; repintarPerfil(); return; }
       return net('GET', '/concord/eu').then(function (r) {
         PF.carregando = false; PF.conta = r; PF.erro = '';
-        PF.draft = JSON.parse(JSON.stringify(r.perfil || perfilVazio())); PF.sujo = false;
+        PF.draft = completar(JSON.parse(JSON.stringify(r.perfil || perfilVazio()))); PF.sujo = false;
         PF.cache[r.id] = { t: Date.now(), p: r.perfil };
         repintarPerfil(); pintarNomes(true);
       });
@@ -1808,6 +1918,7 @@
     }
     var d = PF.draft, f = d.fundo, n = d.nome, ganhas = d.ganhas || (PF.conta.perfil && PF.conta.perfil.ganhas) || [];
     h += '<div class="pf-prev" id="cc-pf-prev"></div>';
+    h += decorHTML();
     h += '<h4>Imagens</h4><div class="pf-imgs"><div class="pf-img"><b>Avatar</b><small>GIF, PNG, JPG ou WEBP, até 6 MB</small><div class="btns"><button class="btn" data-pfa="pick" data-k="avatar">' + IC.img + ' Trocar</button>' + (d.avatar ? '<button class="btn" data-pfa="tirar" data-k="avatar">Tirar</button>' : '') + '</div></div>' +
       '<div class="pf-img"><b>Banner</b><small>Fica no topo do cartão</small><div class="btns"><button class="btn" data-pfa="pick" data-k="banner">' + IC.img + ' Trocar</button>' + (d.banner ? '<button class="btn" data-pfa="tirar" data-k="banner">Tirar</button>' : '') + '</div></div></div>';
     h += '<h4>Fundo do cartão</h4><div class="seg">' + [['degrade', 'Degradê'], ['cor', 'Cor'], ['padrao', 'Padrão']].map(function (m) { return '<button data-pff="' + m[0] + '"' + (f.tipo === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>';
@@ -1818,6 +1929,11 @@
     if (n.estilo !== 'arcoiris') h += coresHTML('nome', n.cores, n.estilo === 'normal' ? 1 : Math.max(2, n.cores.length));
     if (n.estilo === 'degrade' || n.estilo === 'arcoiris' || n.estilo === 'neon' || n.estilo === 'brilho') h += '<div class="row"><div class="l"><b>Animado</b><small>As cores andam devagar</small></div><button class="tg' + (n.animado ? ' on' : '') + '" data-pfa="animado" role="switch" aria-checked="' + !!n.animado + '"></button></div>';
     h += '<div class="pf-fontes">' + [''].concat(FONTS.filter(Boolean)).map(function (fm) { if (fm) loadFam(fm); return '<button data-pffo="' + esc(fm) + '"' + (n.fonte === fm ? ' class="on"' : '') + ' style="font-family:' + (fm ? "'" + fm + "'" : 'inherit') + '">' + (fm === 'Bricolage Grotesque' ? 'Concord' : fm || 'Igual ao chat') + '</button>'; }).join('') + '</div>';
+    h += '<h4>Moldura</h4><div class="pf-molds">' + MOLDURAS.map(function (m) { return '<button class="pf-mold' + (d.moldura === m[0] ? ' on' : '') + '" data-pfm="' + m[0] + '"><span class="cc-pcw mini-mold" data-mold="' + m[0] + '" style="--d:' + d.destaque + '"><i class="cc-pc" style="--pf:#2a2433"></i><i class="pc-mold"><i class="mr"></i>' + moldHTML(m[0]) + '</i></span><em>' + m[1] + '</em></button>'; }).join('') + '</div>';
+    h += '<h4>Luz</h4>' + chips('pfl', LUZES, d.luz.tipo);
+    if (d.luz.tipo !== 'nenhuma') h += '<div class="pf-cores"><label class="pf-cor" style="--c:' + d.luz.cor + '"><input type="color" data-pflc value="' + d.luz.cor + '"></label></div>' + '<div class="row"><div class="l"><b>Força da luz</b></div><input type="range" data-pflf min="0.1" max="1" step="0.05" value="' + d.luz.forca + '" style="--p:' + (d.luz.forca * 100) + '%"><output>' + Math.round(d.luz.forca * 100) + '%</output></div>';
+    h += '<h4>Interação</h4><div class="row"><div class="l"><b>Cartão inclina</b><small>Acompanha o mouse ou o dedo</small></div><button class="tg' + (d.interacao.inclinar ? ' on' : '') + '" data-pfa="inclinar" role="switch" aria-checked="' + !!d.interacao.inclinar + '"></button></div>' +
+      '<div class="note" style="margin:8px 0 0">Partículas quando alguém abre ou toca no seu cartão</div>' + chips('pfpa', PARTS, d.interacao.particulas);
     h += '<h4>Insígnias <em class="pf-n">' + d.insignias.length + ' de 4</em></h4><div class="pf-ins">' + INS_LIVRES.concat(['fundador', 'pioneiro']).map(function (k) {
       var livre = INS_LIVRES.indexOf(k) >= 0, tem = livre || ganhas.indexOf(k) >= 0, on = d.insignias.indexOf(k) >= 0;
       return '<button class="' + (on ? 'on' : '') + (tem ? '' : ' lock') + '" data-pfi="' + k + '"' + (tem ? '' : ' disabled title="' + (k === 'fundador' ? 'Só a primeira conta do Concord' : 'Das 25 primeiras contas do Concord') + '"') + '>' + sv(INS[k][1]) + '<span>' + INS[k][0] + '</span></button>';
@@ -1834,7 +1950,7 @@
     var b = document.getElementById('cc-pf-prev'); if (!b || !PF.draft) return;
     var U = st('User'), me = U && U.getCurrentUser && U.getCurrentUser();
     var p = JSON.parse(JSON.stringify(PF.draft)); if (PF.draft._av) p.avatar = PF.draft._av; if (PF.draft._bn) p.banner = PF.draft._bn;
-    b.innerHTML = ''; b.appendChild(cardEl(p, me ? nameOf(me) : PF.conta.nome, me ? avatarOf(me, 128) : ''));
+    b.innerHTML = ''; PF.quieto = true; b.appendChild(cardEl(p, me ? nameOf(me) : PF.conta.nome, me ? avatarOf(me, 128) : '')); PF.quieto = false;
   }
   function mexeu(repaint) {
     PF.sujo = true; PF.erro = '';
@@ -1860,6 +1976,7 @@
   function perfilClick(b) {
     if (!Object.keys(b.dataset).some(function (k) { return k.indexOf('pf') === 0; })) return false;
     var d = PF.draft, a = b.dataset.pfa;
+    if (b.dataset.pfpre && window.event && window.event.target && window.event.target.closest('[data-pfpdel]')) { delete (CFG.decor || {})[b.dataset.pfpre]; save(); paintPanel(); toast('Decoração apagada'); return true; }
     if (a === 'entrar') { if (!window.ccEntrar) { toast('Atualize o Concord para entrar'); return true; } PF.entrando = true; PF.erro = ''; window.ccEntrar(); paintPanel(); toast('Abri o login do Discord no navegador'); return true; }
     if (!d) return a != null;
     if (a === 'sair') { if (b.dataset.sure) { if (window.ccSair) window.ccSair(); PF.conta = null; PF.draft = null; paintPanel(); } else { b.dataset.sure = '1'; b.textContent = 'Sair mesmo?'; } return true; }
@@ -1867,7 +1984,7 @@
       PF.salvando = true; paintPanel();
       var body = JSON.parse(JSON.stringify(d)); delete body._av; delete body._bn; delete body.ganhas; delete body.nomeDiscord; delete body.v;
       net('PUT', '/concord/perfil', JSON.stringify(body)).then(function (r) {
-        PF.salvando = false; PF.sujo = false; PF.conta.perfil = r.perfil; var av = d._av, bn = d._bn; PF.draft = JSON.parse(JSON.stringify(r.perfil)); if (av && PF.draft.avatar) PF.draft._av = av; if (bn && PF.draft.banner) PF.draft._bn = bn;
+        PF.salvando = false; PF.sujo = false; PF.conta.perfil = r.perfil; var av = d._av, bn = d._bn; PF.draft = completar(JSON.parse(JSON.stringify(r.perfil))); if (av && PF.draft.avatar) PF.draft._av = av; if (bn && PF.draft.banner) PF.draft._bn = bn;
         PF.cache[PF.conta.id] = { t: Date.now(), p: r.perfil }; paintPanel(); pintarNomes(true); toast('Perfil salvo. Quem usa o Concord já vê.');
       }).catch(function (e) { PF.salvando = false; PF.erro = e.erro || 'Não consegui salvar.'; if (e.status === 401) { PF.conta = null; PF.draft = null; } paintPanel(); });
       return true;
@@ -1886,6 +2003,12 @@
     if (b.dataset.pffo != null) { d.nome.fonte = b.dataset.pffo; mexeu(true); return true; }
     if (b.dataset.pfi) { var k = b.dataset.pfi, i = d.insignias.indexOf(k); if (i >= 0) d.insignias.splice(i, 1); else if (d.insignias.length < 4) d.insignias.push(k); else toast('Até 4 insígnias'); mexeu(true); return true; }
     if (b.dataset.pfd) { d.destaque = b.dataset.pfd; mexeu(true); return true; }
+    if (b.dataset.pfm) { d.moldura = b.dataset.pfm; mexeu(true); return true; }
+    if (b.dataset.pfl) { d.luz.tipo = b.dataset.pfl; mexeu(true); return true; }
+    if (b.dataset.pfpa) { d.interacao.particulas = b.dataset.pfpa; mexeu(true); var pv = document.querySelector('#cc-pf-prev .cc-pcw'); if (pv) explodir(pv, 150, 120, d.interacao.particulas, 14); return true; }
+    if (a === 'inclinar') { d.interacao.inclinar = !d.interacao.inclinar; mexeu(true); return true; }
+    if (a === 'decsalvar') { var nm = prompt('Nome da decoração', 'Minha decoração'); if (!nm) return true; var o = decorDe(d); o.n = nm.slice(0, 24); CFG.decor = CFG.decor || {}; CFG.decor['d' + Date.now().toString(36)] = o; save(); paintPanel(); toast('Decoração guardada'); return true; }
+    if (b.dataset.pfpre) { var src = b.dataset.mine ? (CFG.decor || {})[b.dataset.pfpre] : DECOR_PRONTAS[b.dataset.pfpre]; if (src) { usarDecor(src); mexeu(true); var pv2 = document.querySelector('#cc-pf-prev .cc-pcw'); if (pv2) explodir(pv2, 150, 120, d.interacao.particulas, 16); } return true; }
     return false;
   }
   function perfilInput(t) {
@@ -1894,6 +2017,8 @@
     if (t.dataset.pfr) { d.fundo.angulo = +t.value; t.style.setProperty('--p', (+t.value / 3.6) + '%'); var o = t.nextElementSibling; if (o) o.textContent = t.value + '°'; mexeu(false); return true; }
     if (t.dataset.pfb != null) { d.bio = t.value.slice(0, 190); var c = document.getElementById('cc-pf-bion'); if (c) c.textContent = d.bio.length + '/190'; mexeu(false); return true; }
     if (t.dataset.pfdi != null) { d.destaque = t.value; mexeu(false); return true; }
+    if (t.dataset.pflc != null) { d.luz.cor = t.value; t.parentNode.style.setProperty('--c', t.value); mexeu(false); return true; }
+    if (t.dataset.pflf != null) { d.luz.forca = +t.value; t.style.setProperty('--p', (+t.value * 100) + '%'); var o2 = t.nextElementSibling; if (o2) o2.textContent = Math.round(+t.value * 100) + '%'; mexeu(false); return true; }
     return false;
   }
   function pfTick() { if (!window.ccNet) return; pintarNomes(false); popTick(false); }
