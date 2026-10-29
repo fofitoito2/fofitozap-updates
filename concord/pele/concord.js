@@ -3415,6 +3415,8 @@
     if (estreito() && !CEL.lista) { CEL.lista = true; CEL.forcou = true; flag('cc-lista', true); return true; }
     return false;
   };
+  // sinal de vida para o Concord do PC (se a página travar ou cair por 1 minuto, ele recarrega)
+  setInterval(function () { if (window.ccVivo) try { window.ccVivo(); } catch (e) {} }, 10000);
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
