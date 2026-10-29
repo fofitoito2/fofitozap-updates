@@ -1638,9 +1638,9 @@
     pioneiro: ['Pioneiro', '<path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/>']
   };
   var INS_LIVRES = ['noite', 'gamer', 'musica', 'arte', 'fofo', 'raio', 'planta', 'estrela'];
-  var ESTILOS = [['normal', 'Normal'], ['degrade', 'Degradê'], ['brilho', 'Brilho'], ['neon', 'Neon'], ['arcoiris', 'Arco-íris']];
+  var ESTILOS = [['normal', 'Normal'], ['degrade', 'Degradê'], ['brilho', 'Brilho'], ['neon', 'Neon'], ['arcoiris', 'Arco-íris'], ['toon', 'Desenho'], ['pop', 'Pop'], ['brilhante', 'Brilhante'], ['prisma', 'Prisma'], ['glitch', 'Glitch'], ['contorno', 'Contorno']];
   var PADROES = [['pontos', 'Pontos'], ['listras', 'Listras'], ['xadrez', 'Xadrez'], ['ondas', 'Ondas'], ['estrelas', 'Estrelas'], ['doodles', 'Desenhos']];
-  function perfilVazio() { return { avatar: null, banner: null, fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', moldura: 'nenhuma', luz: { tipo: 'segue', cor: '#ffffff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, ganhas: [] }; }
+  function perfilVazio() { return { avatar: null, banner: null, placa: 'doce', efeito: 'coracoes', decoracao: 'gato', placa: 'aurora', efeito: 'bolhas', decoracao: 'orbita', fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', moldura: 'nenhuma', luz: { tipo: 'segue', cor: '#ffffff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, placa: 'nenhuma', efeito: 'nenhum', decoracao: 'nenhuma', ganhas: [] }; }
   function padraoSVG(k, cor) {
     var s = cor.replace('#', '%23'), o = "stroke='" + s + "' stroke-opacity='.32' fill='none' stroke-width='2' stroke-linecap='round'", d = '';
     if (k === 'pontos') d = "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><circle cx='4' cy='4' r='1.8' fill='" + s + "' fill-opacity='.4'/><circle cx='13' cy='13' r='1.8' fill='" + s + "' fill-opacity='.4'/></svg>";
@@ -1709,7 +1709,7 @@
     var wr = document.createElement('div'); wr.className = 'cc-pcw';
     wr.dataset.mold = p.moldura; wr.dataset.luz = p.luz.tipo; if (p.interacao.inclinar) wr.dataset.tilt = '1';
     var ins = (p.insignias || []).filter(function (k) { return INS[k]; });
-    wr.innerHTML = '<div class="cc-pc"><div class="pc-bn"></div><div class="pc-av"><img alt=""></div><div class="pc-ct"><div class="pc-nm"></div><div class="pc-tag">' + MARK + '<span>Concord</span></div>' +
+    wr.innerHTML = '<div class="cc-pc"><div class="pc-bn"></div><i class="pc-ef" data-ef="' + p.efeito + '"></i><button class="pc-zoom" title="Ver grande">' + sv('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>') + '</button><div class="pc-av"><img alt=""><b class="pc-dec" data-dec="' + p.decoracao + '">' + decorAvatar(p.decoracao) + '</b></div><div class="pc-ct"><div class="pc-nm"></div><div class="pc-tag">' + MARK + '<span>Concord</span></div>' +
       (ins.length ? '<div class="pc-ins">' + ins.map(insHTML).join('') + '</div>' : '') + (p.bio ? '<p class="pc-bio"></p>' : '') +
       (acoes ? '<div class="pc-acts">' + acoes.map(function (a) { return '<button data-pca="' + a[0] + '"' + (a[2] ? ' class="pri"' : '') + '>' + a[1] + '</button>'; }).join('') + '</div>' : '') +
       '</div><i class="pc-luz"></i></div><div class="pc-mold"><i class="mr"></i>' + moldHTML(p.moldura) + '</div>';
@@ -1720,6 +1720,7 @@
     var img = wr.querySelector('.pc-av img'); if (avatar) img.src = avatar;
     if (p.avatar) mediaURL(p.avatar).then(function (d) { if (d) img.src = d; });
     if (p.banner) mediaURL(p.banner).then(function (d) { if (d) { wr.querySelector('.pc-bn').style.backgroundImage = 'url("' + d + '")'; wr.classList.add('has-bn'); } });
+    wr.querySelector('.pc-zoom').addEventListener('click', function (e) { e.stopPropagation(); if (wr.classList.contains('grande')) { fecharGrande(); return; } ampliar(p, nm.textContent, img.src); });
     vivo(wr, p);
     return wr;
   }
@@ -1800,6 +1801,53 @@
     }
   }
 
+  // ---- mais coisas do perfil: fontes do nome, placa do nome, efeito e enfeite do avatar ----
+  var NOME_FONTES = ['Pacifico', 'Lobster', 'Bungee', 'Press Start 2P', 'Monoton', 'Righteous', 'Permanent Marker', 'Caveat Brush', 'Orbitron', 'Creepster', 'Fredoka', 'Chewy', 'Bebas Neue', 'Rubik Glitch', 'Silkscreen', 'Cinzel Decorative', 'Audiowide', 'Satisfy'];
+  var PLACAS = [['nenhuma', 'Nenhuma'], ['cor', 'Cor do cartão'], ['aurora', 'Aurora'], ['estrelas', 'Estrelas'], ['chamas', 'Chamas'], ['ondas', 'Ondas'], ['neon', 'Neon'], ['doce', 'Doce'], ['pixel', 'Pixel'], ['cristal', 'Cristal']];
+  var EFEITOS = [['nenhum', 'Nenhum'], ['neve', 'Neve'], ['brilhos', 'Brilhos'], ['coracoes', 'Corações'], ['confete', 'Confete'], ['vagalumes', 'Vaga-lumes'], ['chuva', 'Chuva'], ['bolhas', 'Bolhas']];
+  var DECORS = [['nenhuma', 'Nenhum'], ['halo', 'Auréola'], ['orbita', 'Órbita'], ['gato', 'Gatinho'], ['coroa', 'Coroa'], ['flores', 'Flores'], ['chifres', 'Chifrinhos'], ['fones', 'Fones']];
+  function decorAvatar(k) {
+    var d = 'var(--d)', w = '#ffffff', s = '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">';
+    if (k === 'halo') return s + '<ellipse cx="60" cy="10" rx="30" ry="8" fill="none" stroke="#ffe08a" stroke-width="5"/><ellipse cx="60" cy="10" rx="30" ry="8" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/></svg>';
+    if (k === 'orbita') return s + '<g class="orb"><circle cx="60" cy="60" r="57" fill="none" stroke="' + d + '" stroke-width="1.5" stroke-dasharray="3 6"/>' + estrela(60, 3, 7, w) + estrela(117, 60, 5, d) + '<circle cx="12" cy="94" r="4" fill="' + w + '"/></g></svg>';
+    if (k === 'gato') return s + '<path d="M18 34L22 2l26 20z" fill="' + d + '"/><path d="M102 34L98 2 72 22z" fill="' + d + '"/><path d="M24 26l2-16 13 10z M96 26l-2-16-13 10z" fill="#ffc2da"/></svg>';
+    if (k === 'coroa') return s + '<path d="M34 22l8-18 10 12 8-14 8 14 10-12 8 18z" fill="#ffd36e" stroke="#c98a1a" stroke-width="2"/><circle cx="60" cy="14" r="3" fill="' + d + '"/></svg>';
+    if (k === 'flores') return s + flor(18, 96, 14, d, '#ffe08a') + flor(36, 110, 9, w, d) + flor(104, 22, 11, w, d) + '</svg>';
+    if (k === 'chifres') return s + '<path d="M30 30C20 16 22 4 30 0c-2 10 6 18 12 22z" fill="#ff4d6d"/><path d="M90 30c10-14 8-26 0-30 2 10-6 18-12 22z" fill="#ff4d6d"/></svg>';
+    if (k === 'fones') return s + '<path d="M14 66V58a46 46 0 0 1 92 0v8" fill="none" stroke="' + d + '" stroke-width="7" stroke-linecap="round"/><rect x="4" y="60" width="20" height="30" rx="8" fill="' + d + '"/><rect x="96" y="60" width="20" height="30" rx="8" fill="' + d + '"/></svg>';
+    return '';
+  }
+  // placa do nome na lista de membros e de conversas (só de quem tem perfil do Concord)
+  function pintarPlacas() {
+    var els = document.querySelectorAll('.member__5d473, .channel__972a0.dm__972a0');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], img = el.querySelector('img[src*="/avatars/"]'), m = img && /\/avatars\/(\d{5,25})\//.exec(img.src), id = m ? m[1] : '';
+      var p = id ? perfilDe(id) : null, k = p && p.placa && p.placa !== 'nenhuma' ? p.placa : '';
+      if ((el.dataset.ccplaca || '') !== k) { if (k) el.dataset.ccplaca = k; else delete el.dataset.ccplaca; }
+      if (k) el.style.setProperty('--d', p.destaque || '#ff5c7a'); else el.style.removeProperty('--d');
+    }
+  }
+  // ver o cartão grande (edição e perfil dos outros)
+  function ampliar(p, nome, avatar) {
+    fecharGrande();
+    var ov = document.createElement('div'); ov.id = 'cc-grande';
+    ov.innerHTML = '<button class="gx" title="Fechar">' + IC.x + '</button><div class="gw"></div><div class="gn">Toque fora do cartão para fechar</div>';
+    var card = cardEl(p, nome, avatar); card.classList.add('grande');
+    ov.querySelector('.gw').appendChild(card); document.body.appendChild(ov);
+    var fit = function () { var h = card.offsetHeight || 420, z = Math.max(1, Math.min(1.7, (innerHeight - 110) / h, (innerWidth - 40) / 300)); card.style.zoom = z.toFixed(3); };
+    fit(); setTimeout(fit, 250);
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.gx') || e.target.classList.contains('gw')) fecharGrande(); });
+    requestAnimationFrame(function () { ov.classList.add('on'); });
+  }
+  function fecharGrande() { var o = document.getElementById('cc-grande'); if (o) { o.classList.remove('on'); setTimeout(function () { o.remove(); }, 250); } }
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('cc-grande')) { e.stopPropagation(); fecharGrande(); } }, true);
+  // decide rápido o que mostrar quando um cartão do Discord abre (sem o do Discord piscar antes)
+  var POP_RAF = 0;
+  new MutationObserver(function () {
+    if (POP_RAF || !window.ccNet) return;
+    POP_RAF = requestAnimationFrame(function () { POP_RAF = 0; if (document.querySelector('.user-profile-popout:not([data-ccd]), .user-profile-modal:not([data-ccd])')) popTick(true); });
+  }).observe(document, { childList: true, subtree: true });
+
   // ---- o cartão Concord no lugar do cartão do Discord (o do Discord fica num botão) ----
   var POP = { host: null, id: '', card: null, v: '' };
   function fiberUser(el) {
@@ -1823,8 +1871,12 @@
     if (POP.card && POP.host && (!POP.host.isConnected || POP.host !== host)) { POP.card.remove(); POP.card = null; POP.host = null; }
     if (!host || !window.ccNet) { POP.host = null; POP.card = null; POP.id = ''; return; }
     var id = host === POP.host ? POP.id : popUserId(host);
-    if (!id) return;
+    if (!host.dataset.ccw) host.dataset.ccw = String(Date.now());
+    var esperou = Date.now() - (+host.dataset.ccw);
+    if (!id) { if (esperou > 900) host.dataset.ccd = '1'; else setTimeout(function () { popTick(true); }, 300); return; }
     var p = perfilDe(id), v = p ? String(p.v) : '';
+    if (p === undefined) { if (esperou > 1200) host.dataset.ccd = '1'; else setTimeout(function () { popTick(true); }, 300); return; }
+    if (!p) { host.dataset.ccd = '1'; }
     if (host === POP.host && !refresh && (POP.card ? POP.card.isConnected : !p)) return;
     if (host === POP.host && POP.card && POP.card.isConnected && POP.v === v) return;
     if (POP.card) POP.card.remove();
@@ -1840,6 +1892,7 @@
     card.style.top = (modal ? host.offsetTop + 40 : host.offsetTop) + 'px';
     if (!modal) card.style.width = Math.max(300, host.offsetWidth) + 'px';
     if (host.dataset.ccDiscord) card.classList.add('mini'); else host.classList.add('cc-oculto');
+    host.dataset.ccd = '1';
     card.addEventListener('click', function (e) {
       var b = e.target.closest('[data-pca]'); if (!b) { if (card.classList.contains('mini')) mostrarConcord(); return; }
       e.stopPropagation(); var a = b.dataset.pca;
@@ -1854,15 +1907,15 @@
   function popPlace() {}
 
   // ---- predefinições de decoração: prontas e as suas (troca rápida) ----
-  var DECOR_K = ['fundo', 'moldura', 'luz', 'interacao', 'destaque', 'nome'];
+  var DECOR_K = ['fundo', 'moldura', 'luz', 'interacao', 'destaque', 'nome', 'placa', 'efeito', 'decoracao'];
   var DECOR_PRONTAS = {
-    girassol: { n: 'Girassol', fundo: { tipo: 'degrade', cores: ['#ffe27a', '#ffb347', '#ff7a59'], angulo: 160, padrao: 'pontos' }, moldura: 'flores', luz: { tipo: 'holofote', cor: '#fff3c4', forca: 0.6 }, interacao: { inclinar: true, particulas: 'petalas' }, destaque: '#f2b63c', nome: { estilo: 'brilho', cores: ['#fff7d6', '#ffb347'], fonte: 'Bricolage Grotesque', animado: false } },
-    noite: { n: 'Noite estrelada', fundo: { tipo: 'padrao', cores: ['#0e1033', '#3b2a7a'], angulo: 180, padrao: 'estrelas' }, moldura: 'estrelas', luz: { tipo: 'aurora', cor: '#9fb8ff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, destaque: '#9b7bff', nome: { estilo: 'degrade', cores: ['#e8e8ff', '#9fb8ff', '#c79bff'], fonte: 'Sora', animado: true } },
-    neon: { n: 'Neon', fundo: { tipo: 'padrao', cores: ['#0b0a14', '#1c0b2e'], angulo: 135, padrao: 'xadrez' }, moldura: 'neon', luz: { tipo: 'segue', cor: '#4fd6e6', forca: 0.7 }, interacao: { inclinar: true, particulas: 'faiscas' }, destaque: '#4fd6e6', nome: { estilo: 'neon', cores: ['#4fd6e6', '#f06fd3'], fonte: 'Space Grotesk', animado: true } },
+    girassol: { n: 'Girassol', placa: 'doce', efeito: 'brilhos', decoracao: 'flores', fundo: { tipo: 'degrade', cores: ['#ffe27a', '#ffb347', '#ff7a59'], angulo: 160, padrao: 'pontos' }, moldura: 'flores', luz: { tipo: 'holofote', cor: '#fff3c4', forca: 0.6 }, interacao: { inclinar: true, particulas: 'petalas' }, destaque: '#f2b63c', nome: { estilo: 'brilho', cores: ['#fff7d6', '#ffb347'], fonte: 'Bricolage Grotesque', animado: false } },
+    noite: { n: 'Noite estrelada', placa: 'estrelas', efeito: 'vagalumes', decoracao: 'orbita', fundo: { tipo: 'padrao', cores: ['#0e1033', '#3b2a7a'], angulo: 180, padrao: 'estrelas' }, moldura: 'estrelas', luz: { tipo: 'aurora', cor: '#9fb8ff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, destaque: '#9b7bff', nome: { estilo: 'degrade', cores: ['#e8e8ff', '#9fb8ff', '#c79bff'], fonte: 'Sora', animado: true } },
+    neon: { n: 'Neon', placa: 'neon', efeito: 'chuva', decoracao: 'fones', fundo: { tipo: 'padrao', cores: ['#0b0a14', '#1c0b2e'], angulo: 135, padrao: 'xadrez' }, moldura: 'neon', luz: { tipo: 'segue', cor: '#4fd6e6', forca: 0.7 }, interacao: { inclinar: true, particulas: 'faiscas' }, destaque: '#4fd6e6', nome: { estilo: 'neon', cores: ['#4fd6e6', '#f06fd3'], fonte: 'Space Grotesk', animado: true } },
     sakura: { n: 'Sakura', fundo: { tipo: 'degrade', cores: ['#ffd1e3', '#ff8fb8', '#c86dd7'], angulo: 150, padrao: 'pontos' }, moldura: 'coracoes', luz: { tipo: 'pulso', cor: '#ffe3ef', forca: 0.5 }, interacao: { inclinar: true, particulas: 'petalas' }, destaque: '#ff5c9a', nome: { estilo: 'degrade', cores: ['#ffffff', '#ffc2da', '#ff5c9a'], fonte: 'Nunito', animado: false } },
-    gelo: { n: 'Gelo', fundo: { tipo: 'padrao', cores: ['#dff6ff', '#7fc8f8', '#3a6fd8'], angulo: 200, padrao: 'ondas' }, moldura: 'gelo', luz: { tipo: 'holofote', cor: '#ffffff', forca: 0.55 }, interacao: { inclinar: true, particulas: 'bolhas' }, destaque: '#5b8cff', nome: { estilo: 'brilho', cores: ['#ffffff', '#7fc8f8'], fonte: 'Outfit', animado: false } },
-    fogo: { n: 'Fogo', fundo: { tipo: 'degrade', cores: ['#2a0a0a', '#8a1f12', '#ff6a2a'], angulo: 0, padrao: 'pontos' }, moldura: 'chamas', luz: { tipo: 'pulso', cor: '#ffb070', forca: 0.65 }, interacao: { inclinar: true, particulas: 'faiscas' }, destaque: '#ff6a2a', nome: { estilo: 'degrade', cores: ['#ffe08a', '#ff8a3d', '#ff3d3d'], fonte: 'Lexend', animado: true } },
-    pixel: { n: 'Pixel', fundo: { tipo: 'padrao', cores: ['#1b2a4a', '#2f5d8a'], angulo: 180, padrao: 'xadrez' }, moldura: 'pixel', luz: { tipo: 'nenhuma', cor: '#ffffff', forca: 0.4 }, interacao: { inclinar: false, particulas: 'estrelas' }, destaque: '#5ee7a6', nome: { estilo: 'normal', cores: ['#5ee7a6'], fonte: 'Space Grotesk', animado: false } },
+    gelo: { n: 'Gelo', placa: 'cristal', efeito: 'neve', decoracao: 'halo', fundo: { tipo: 'padrao', cores: ['#dff6ff', '#7fc8f8', '#3a6fd8'], angulo: 200, padrao: 'ondas' }, moldura: 'gelo', luz: { tipo: 'holofote', cor: '#ffffff', forca: 0.55 }, interacao: { inclinar: true, particulas: 'bolhas' }, destaque: '#5b8cff', nome: { estilo: 'brilho', cores: ['#ffffff', '#7fc8f8'], fonte: 'Outfit', animado: false } },
+    fogo: { n: 'Fogo', placa: 'chamas', efeito: 'brilhos', decoracao: 'chifres', fundo: { tipo: 'degrade', cores: ['#2a0a0a', '#8a1f12', '#ff6a2a'], angulo: 0, padrao: 'pontos' }, moldura: 'chamas', luz: { tipo: 'pulso', cor: '#ffb070', forca: 0.65 }, interacao: { inclinar: true, particulas: 'faiscas' }, destaque: '#ff6a2a', nome: { estilo: 'degrade', cores: ['#ffe08a', '#ff8a3d', '#ff3d3d'], fonte: 'Lexend', animado: true } },
+    pixel: { n: 'Pixel', placa: 'pixel', efeito: 'confete', decoracao: 'coroa', fundo: { tipo: 'padrao', cores: ['#1b2a4a', '#2f5d8a'], angulo: 180, padrao: 'xadrez' }, moldura: 'pixel', luz: { tipo: 'segue', cor: '#ffffff', forca: 0.35 }, interacao: { inclinar: true, particulas: 'estrelas' }, destaque: '#5ee7a6', nome: { estilo: 'normal', cores: ['#5ee7a6'], fonte: 'Space Grotesk', animado: false } },
     aurora: { n: 'Aurora', fundo: { tipo: 'degrade', cores: ['#0f2a2e', '#1f6f6a', '#6a4fd6'], angulo: 120, padrao: 'pontos' }, moldura: 'aurora', luz: { tipo: 'aurora', cor: '#7cffd4', forca: 0.6 }, interacao: { inclinar: true, particulas: 'bolhas' }, destaque: '#5ee7a6', nome: { estilo: 'arcoiris', cores: ['#ffffff'], fonte: '', animado: true } }
   };
   function decorDe(p) { var o = {}; DECOR_K.forEach(function (k) { o[k] = JSON.parse(JSON.stringify(p[k])); }); return o; }
@@ -1917,7 +1970,7 @@
       return h;
     }
     var d = PF.draft, f = d.fundo, n = d.nome, ganhas = d.ganhas || (PF.conta.perfil && PF.conta.perfil.ganhas) || [];
-    h += '<div class="pf-prev" id="cc-pf-prev"></div>';
+    h += '<div class="pf-prev" id="cc-pf-prev"></div><div class="btns pf-grande"><button class="btn" data-pfa="grande">' + sv('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>') + ' Ver em tela grande</button></div>';
     h += decorHTML();
     h += '<h4>Imagens</h4><div class="pf-imgs"><div class="pf-img"><b>Avatar</b><small>GIF, PNG, JPG ou WEBP, até 6 MB</small><div class="btns"><button class="btn" data-pfa="pick" data-k="avatar">' + IC.img + ' Trocar</button>' + (d.avatar ? '<button class="btn" data-pfa="tirar" data-k="avatar">Tirar</button>' : '') + '</div></div>' +
       '<div class="pf-img"><b>Banner</b><small>Fica no topo do cartão</small><div class="btns"><button class="btn" data-pfa="pick" data-k="banner">' + IC.img + ' Trocar</button>' + (d.banner ? '<button class="btn" data-pfa="tirar" data-k="banner">Tirar</button>' : '') + '</div></div></div>';
@@ -1928,12 +1981,15 @@
     h += '<h4>Nome</h4>' + chips('pfn', ESTILOS, n.estilo);
     if (n.estilo !== 'arcoiris') h += coresHTML('nome', n.cores, n.estilo === 'normal' ? 1 : Math.max(2, n.cores.length));
     if (n.estilo === 'degrade' || n.estilo === 'arcoiris' || n.estilo === 'neon' || n.estilo === 'brilho') h += '<div class="row"><div class="l"><b>Animado</b><small>As cores andam devagar</small></div><button class="tg' + (n.animado ? ' on' : '') + '" data-pfa="animado" role="switch" aria-checked="' + !!n.animado + '"></button></div>';
-    h += '<div class="pf-fontes">' + [''].concat(FONTS.filter(Boolean)).map(function (fm) { if (fm) loadFam(fm); return '<button data-pffo="' + esc(fm) + '"' + (n.fonte === fm ? ' class="on"' : '') + ' style="font-family:' + (fm ? "'" + fm + "'" : 'inherit') + '">' + (fm === 'Bricolage Grotesque' ? 'Concord' : fm || 'Igual ao chat') + '</button>'; }).join('') + '</div>';
+    h += '<div class="pf-fontes">' + [''].concat(FONTS.filter(Boolean), NOME_FONTES).map(function (fm) { if (fm) loadFam(fm); return '<button data-pffo="' + esc(fm) + '"' + (n.fonte === fm ? ' class="on"' : '') + ' style="font-family:' + (fm ? "'" + fm + "'" : 'inherit') + '">' + (fm === 'Bricolage Grotesque' ? 'Concord' : fm || 'Igual ao chat') + '</button>'; }).join('') + '</div>';
     h += '<h4>Moldura</h4><div class="pf-molds">' + MOLDURAS.map(function (m) { return '<button class="pf-mold' + (d.moldura === m[0] ? ' on' : '') + '" data-pfm="' + m[0] + '"><span class="cc-pcw mini-mold" data-mold="' + m[0] + '" style="--d:' + d.destaque + '"><i class="cc-pc" style="--pf:#2a2433"></i><i class="pc-mold"><i class="mr"></i>' + moldHTML(m[0]) + '</i></span><em>' + m[1] + '</em></button>'; }).join('') + '</div>';
     h += '<h4>Luz</h4>' + chips('pfl', LUZES, d.luz.tipo);
     if (d.luz.tipo !== 'nenhuma') h += '<div class="pf-cores"><label class="pf-cor" style="--c:' + d.luz.cor + '"><input type="color" data-pflc value="' + d.luz.cor + '"></label></div>' + '<div class="row"><div class="l"><b>Força da luz</b></div><input type="range" data-pflf min="0.1" max="1" step="0.05" value="' + d.luz.forca + '" style="--p:' + (d.luz.forca * 100) + '%"><output>' + Math.round(d.luz.forca * 100) + '%</output></div>';
     h += '<h4>Interação</h4><div class="row"><div class="l"><b>Cartão inclina</b><small>Acompanha o mouse ou o dedo</small></div><button class="tg' + (d.interacao.inclinar ? ' on' : '') + '" data-pfa="inclinar" role="switch" aria-checked="' + !!d.interacao.inclinar + '"></button></div>' +
       '<div class="note" style="margin:8px 0 0">Partículas quando alguém abre ou toca no seu cartão</div>' + chips('pfpa', PARTS, d.interacao.particulas);
+    h += '<h4>Efeito no cartão</h4>' + chips('pfe', EFEITOS, d.efeito);
+    h += '<h4>Enfeite do avatar</h4>' + chips('pfdc', DECORS, d.decoracao);
+    h += '<h4>Placa do nome</h4><div class="note">Aparece atrás do seu nome na lista de membros e nas conversas, para quem usa o Concord.</div><div class="pf-placas">' + PLACAS.map(function (x) { return '<button class="pf-placa' + (d.placa === x[0] ? ' on' : '') + '" data-pfpl="' + x[0] + '"><span data-ccplaca="' + x[0] + '" style="--d:' + d.destaque + '"><i></i><b>' + x[1] + '</b></span></button>'; }).join('') + '</div>';
     h += '<h4>Insígnias <em class="pf-n">' + d.insignias.length + ' de 4</em></h4><div class="pf-ins">' + INS_LIVRES.concat(['fundador', 'pioneiro']).map(function (k) {
       var livre = INS_LIVRES.indexOf(k) >= 0, tem = livre || ganhas.indexOf(k) >= 0, on = d.insignias.indexOf(k) >= 0;
       return '<button class="' + (on ? 'on' : '') + (tem ? '' : ' lock') + '" data-pfi="' + k + '"' + (tem ? '' : ' disabled title="' + (k === 'fundador' ? 'Só a primeira conta do Concord' : 'Das 25 primeiras contas do Concord') + '"') + '>' + sv(INS[k][1]) + '<span>' + INS[k][0] + '</span></button>';
@@ -2004,6 +2060,10 @@
     if (b.dataset.pfi) { var k = b.dataset.pfi, i = d.insignias.indexOf(k); if (i >= 0) d.insignias.splice(i, 1); else if (d.insignias.length < 4) d.insignias.push(k); else toast('Até 4 insígnias'); mexeu(true); return true; }
     if (b.dataset.pfd) { d.destaque = b.dataset.pfd; mexeu(true); return true; }
     if (b.dataset.pfm) { d.moldura = b.dataset.pfm; mexeu(true); return true; }
+    if (b.dataset.pfe) { d.efeito = b.dataset.pfe; mexeu(true); return true; }
+    if (b.dataset.pfdc) { d.decoracao = b.dataset.pfdc; mexeu(true); return true; }
+    if (b.dataset.pfpl) { d.placa = b.dataset.pfpl; mexeu(true); return true; }
+    if (a === 'grande') { var pv0 = JSON.parse(JSON.stringify(d)); if (d._av) pv0.avatar = d._av; if (d._bn) pv0.banner = d._bn; var U0 = st('User'), me0 = U0 && U0.getCurrentUser && U0.getCurrentUser(); ampliar(pv0, me0 ? nameOf(me0) : PF.conta.nome, me0 ? avatarOf(me0, 128) : ''); return true; }
     if (b.dataset.pfl) { d.luz.tipo = b.dataset.pfl; mexeu(true); return true; }
     if (b.dataset.pfpa) { d.interacao.particulas = b.dataset.pfpa; mexeu(true); var pv = document.querySelector('#cc-pf-prev .cc-pcw'); if (pv) explodir(pv, 150, 120, d.interacao.particulas, 14); return true; }
     if (a === 'inclinar') { d.interacao.inclinar = !d.interacao.inclinar; mexeu(true); return true; }
@@ -2021,7 +2081,7 @@
     if (t.dataset.pflf != null) { d.luz.forca = +t.value; t.style.setProperty('--p', (+t.value * 100) + '%'); var o2 = t.nextElementSibling; if (o2) o2.textContent = Math.round(+t.value * 100) + '%'; mexeu(false); return true; }
     return false;
   }
-  function pfTick() { if (!window.ccNet) return; pintarNomes(false); popTick(false); }
+  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); pintarNomes(false); pintarPlacas(); popTick(false); }
   window.addEventListener('resize', function () { popPlace(); });
 
   /* ---------- começo ---------- */
