@@ -891,3 +891,19 @@ html.cc-lite #cc-pf-float.on, html.cc-still #cc-pf-float.on { animation: none; }
 .username_c19a55[data-cc-ap] { font-size: 0 !important; }
 .username_c19a55[data-cc-ap]::after { content: attr(data-cc-ap); font-size: 1rem; }
 #cc-panel .pf-ap { width: 100%; height: 42px; font-size: 15px; margin-bottom: 6px; }
+
+/* call: quadros de quem usa Concord com o perfil (fundo, banner, cor) e nome em pílula de vidro */
+html.cc-style .tile__2f4f7[data-cc-tile] .background_fb62e2 { background: var(--cc-tbn, none) center / cover no-repeat, var(--pf) !important; }
+html.cc-style .tile__2f4f7[data-cc-tile] .background_fb62e2::after { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 70% at 50% 50%, transparent, rgba(8,6,12,.45)); pointer-events: none; }
+html.cc-style .tile__2f4f7[data-cc-tile] .avatarWrapper_fb62e2 { border-radius: 50%; box-shadow: 0 0 0 4px var(--d), 0 10px 30px -6px color-mix(in srgb, var(--d) 70%, transparent); position: relative; z-index: 1; }
+html.cc-style .tile__2f4f7[data-cc-tile] .tileChild__2f4f7 { box-shadow: 0 18px 40px -20px rgba(0,0,0,.7), inset 0 0 0 1px color-mix(in srgb, var(--d) 45%, transparent); }
+html.cc-style .overlayBottom__2f4f7 .experimentOverlayTitle__2f4f7, html.cc-style .overlayTitleText__2f4f7 { padding: 4px 12px !important; border-radius: 999px !important; background: rgba(10,8,14,.5) !important;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-weight: 600; }
+html.cc-style .callContainer_cb9592 .topControls_bfe55a .headerBar__49508 { margin: 10px; border-radius: 18px !important; background: color-mix(in srgb, var(--cc-bg1) 60%, transparent) !important; border: 1px solid rgba(255,255,255,.08) !important; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+html.cc-style .leftTrayIcon_cb9592, html.cc-style .rightTrayIcon_cb9592 { width: 44px !important; height: 44px !important; border-radius: 14px !important; background: rgba(255,255,255,.07) !important; transition: background-color .15s, transform .2s var(--cc-spring); }
+html.cc-style .leftTrayIcon_cb9592:hover, html.cc-style .rightTrayIcon_cb9592:hover { background: rgba(255,255,255,.13) !important; transform: translateY(-2px); }
+@media (max-width: 700px) {
+  html.cc-style .centerControls_bfe55a .wrapper__1405b { gap: 6px !important; padding: 6px !important; }
+  html.cc-style .centerButton_f1ceac { width: 44px !important; height: 44px !important; min-width: 44px !important; }
+  html.cc-style .buttonSection__1405b + .buttonSection__1405b { padding-left: 6px !important; }
+}

@@ -906,6 +906,27 @@
     }
   }, true);
 
+  /* ---------- compartilhar tela sem o som do próprio Concord ----------
+     O som do sistema inclui as vozes da call: ia junto na transmissão, voltava duplicado e estourava os ouvidos.
+     Com restrictOwnAudio o Chromium tira o som do próprio app; onde isso não existe, a tela vai sem som. */
+  (function () {
+    var MD = navigator.mediaDevices; if (!MD || !MD.getDisplayMedia || MD.__ccGdm) return; MD.__ccGdm = 1;
+    var orig = MD.getDisplayMedia.bind(MD);
+    MD.getDisplayMedia = function (c) {
+      c = Object.assign({}, c || {});
+      var sup = {}; try { sup = MD.getSupportedConstraints() || {}; } catch (e) {}
+      if (c.audio) {
+        var a = typeof c.audio === 'object' ? Object.assign({}, c.audio) : {};
+        if (sup.restrictOwnAudio) a.restrictOwnAudio = true;
+        a.suppressLocalAudioPlayback = false; a.echoCancellation = true; c.audio = a;
+      }
+      return orig(c).then(function (s) {
+        if (!sup.restrictOwnAudio) s.getAudioTracks().forEach(function (t) { t.stop(); s.removeTrack(t); });
+        return s;
+      });
+    };
+  })();
+
   /* ---------- esconder Nitro, Loja, Missões, presente e baixar app ---------- */
   function cleanAds() {
     var hide = function (el) { if (el && !el.dataset.ccHid) { el.dataset.ccHid = '1'; el.style.setProperty('display', 'none', 'important'); } };
@@ -1788,7 +1809,7 @@
     net('GET', '/concord/perfis?ids=' + ids.join(',')).then(function (r) {
       var got = (r && r.perfis) || {}, t = Date.now();
       ids.forEach(function (id) { PF.cache[id] = { t: t, p: got[id] || null }; });
-      pintarNomes(true); popTick(true);
+      pintarNomes(true); pintarPlacas(); pintarTiles(); popTick(true);
     }).catch(function () { var t = Date.now() - 5e5; ids.forEach(function (id) { if (!PF.cache[id]) PF.cache[id] = { t: t, p: null }; }); });
   }
 
@@ -2126,7 +2147,21 @@
     if (t.dataset.pflf != null) { d.luz.forca = +t.value; t.style.setProperty('--p', (+t.value * 100) + '%'); var o2 = t.nextElementSibling; if (o2) o2.textContent = Math.round(+t.value * 100) + '%'; mexeu(false); return true; }
     return false;
   }
-  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); pintarNomes(false); pintarPlacas(); popTick(false); }
+  // na call, o quadro de quem usa Concord ganha o fundo, o banner, a cor e o nome do perfil
+  function pintarTiles() {
+    var ts = document.querySelectorAll('.tile__2f4f7');
+    for (var i = 0; i < ts.length; i++) {
+      var t = ts[i], img = t.querySelector('img[src*="/avatars/"]'), m = img && /\/avatars\/(\d{5,25})\//.exec(img.src), id = m ? m[1] : '';
+      var p = id ? perfilDe(id) : null, k = p ? id + ':' + p.v : '';
+      if ((t.dataset.ccTile || '') === k) continue;
+      if (!p) { delete t.dataset.ccTile; t.style.removeProperty('--pf'); t.style.removeProperty('--cc-tbn'); continue; }
+      t.dataset.ccTile = k; var pp = completar(JSON.parse(JSON.stringify(p)));
+      t.style.setProperty('--pf', fundoCSS(pp.fundo)); t.style.setProperty('--d', pp.destaque);
+      (function (t, pp) { if (pp.banner) mediaURL(pp.banner).then(function (d) { if (d) t.style.setProperty('--cc-tbn', 'url("' + d + '")'); }); else t.style.removeProperty('--cc-tbn'); })(t, pp);
+      var nm = t.querySelector('.experimentOverlayTitle__2f4f7, .overlayTitleText__2f4f7'); if (nm) { nomeStyle(nm, pp.nome); nm.classList.add('cc-nm'); }
+    }
+  }
+  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); pintarNomes(false); pintarPlacas(); pintarTiles(); popTick(false); }
   window.addEventListener('resize', function () { popPlace(); if (PF.draft) pfPreview(); });
 
   /* ---------- começo ---------- */
