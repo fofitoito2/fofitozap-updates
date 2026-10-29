@@ -46,10 +46,10 @@ html, body { overflow: hidden !important; }
 @keyframes cc-pop { from { opacity: 0; transform: scale(.95) translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes cc-swap { from { opacity: .2; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes cc-side { from { opacity: .2; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
-html.cc-anim li[data-cc-in] { animation: cc-msg .45s var(--cc-out) both; }
-html.cc-anim .menu_c1e9c4 { animation: cc-pop .2s var(--cc-out) both; transform-origin: top left; }
-html.cc-anim.cc-swap .messagesWrapper__36d07 { animation: cc-swap .45s var(--cc-out) both; }
-html.cc-anim.cc-gswap .sidebarList__5e434 .scroller__629e4, html.cc-anim.cc-gswap .sidebarList__5e434 .scroller__99e7c { animation: cc-side .42s var(--cc-out) both; }
+html.cc-anim li[data-cc-in] { animation: cc-msg .45s var(--cc-out) backwards; }
+html.cc-anim .menu_c1e9c4 { animation: cc-pop .2s var(--cc-out) backwards; transform-origin: top left; }
+html.cc-anim.cc-swap .messagesWrapper__36d07 { animation: cc-swap .45s var(--cc-out) backwards; }
+html.cc-anim.cc-gswap .sidebarList__5e434 .scroller__629e4, html.cc-anim.cc-gswap .sidebarList__5e434 .scroller__99e7c { animation: cc-side .42s var(--cc-out) backwards; }
 html.cc-anim .blobContainer_e5445c { transition: transform .3s var(--cc-spring); }
 html.cc-anim .blobContainer_e5445c:hover { transform: translateY(-2px) scale(1.07); }
 html.cc-anim .link__2ea32, html.cc-anim .interactive__972a0 { transition: background-color .15s, transform .22s var(--cc-spring) !important; }
@@ -305,9 +305,9 @@ html.cc-style input[type="range"] { accent-color: var(--accent-2); }
 #cc-home .gd span { font-size: 11.5px; color: var(--text-3); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #cc-home .gd .badge { position: absolute; top: 4px; right: 8px; }
 #cc-home .empty { padding: 18px; text-align: center; color: var(--text-4); font-size: 13px; }
-html.cc-anim #cc-home.in .sc > * { animation: cc-swap .55s var(--cc-out) both; }
+html.cc-anim #cc-home.in .sc > * { animation: cc-swap .55s var(--cc-out) backwards; }
 html.cc-anim #cc-home.in .sc > *:nth-child(2) { animation-delay: .06s; } html.cc-anim #cc-home.in .sc > *:nth-child(3) { animation-delay: .12s; }
-html.cc-anim #cc-home.in .fr { animation: cc-swap .5s var(--cc-out) both; animation-delay: calc(var(--i, 0) * 25ms + .12s); }
+html.cc-anim #cc-home.in .fr { animation: cc-swap .5s var(--cc-out) backwards; animation-delay: calc(var(--i, 0) * 25ms + .12s); }
 #cc-homeback { position: fixed; z-index: 61; display: none; height: 36px; padding: 0 16px 0 12px; border-radius: 999px; align-items: center; gap: 8px; font: 600 13px var(--cc-font), system-ui, sans-serif;
   color: var(--text-1); background: var(--cc-float); border: 1px solid color-mix(in srgb, var(--accent-2) 50%, transparent); box-shadow: 0 10px 26px -10px rgba(0,0,0,.6); cursor: pointer; }
 #cc-homeback.on { display: inline-flex; }
@@ -359,7 +359,7 @@ html.cc-tfade:root { transition: --bg-4 .6s ease, --bg-3 .6s ease, --bg-2 .6s ea
 #cc-panel .tabbar button:hover { color: var(--cc-ink); background: rgba(255,255,255,.05); }
 #cc-panel .tabbar button.on { color: var(--cc-ink); background: rgba(255,255,255,.1); }
 #cc-panel .bd { border-top: 1px solid rgba(255,255,255,.06); }
-#cc-panel .bd > * { animation: cc-up .3s var(--cc-out) both; }
+#cc-panel .bd > * { animation: cc-up .3s var(--cc-out) backwards; }
 #cc-panel .th.add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.18); box-shadow: none; color: var(--cc-ink2); }
 #cc-panel .th.add svg { width: 18px; height: 18px; }
 #cc-panel .th.add span { position: static; color: var(--cc-ink2); text-shadow: none; font-size: 12px; }
@@ -383,7 +383,7 @@ html.cc-tfade:root { transition: --bg-4 .6s ease, --bg-3 .6s ease, --bg-2 .6s ea
 /* Início: a lista do Discord fica escondida por baixo, e carregamento com brilho */
 html.cc-home-on .page__5e434 > * { visibility: hidden !important; }
 #cc-home { background: radial-gradient(70% 60% at 85% 0%, color-mix(in srgb, var(--cc-o2) 55%, transparent), transparent 70%), radial-gradient(60% 50% at 0% 100%, color-mix(in srgb, var(--cc-o1) 55%, transparent), transparent 70%), var(--cc-float) !important; }
-#cc-home.on { animation: cc-fadein .35s var(--cc-out) both; }
+#cc-home.on { animation: cc-fadein .35s var(--cc-out) backwards; }
 @keyframes cc-fadein { from { opacity: 0; } to { opacity: 1; } }
 #cc-home .sk { border-radius: 14px; background: linear-gradient(100deg, rgba(255,255,255,.05) 30%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 70%); background-size: 300% 100%; animation: cc-shine 1.4s ease-in-out infinite; }
 @keyframes cc-shine { from { background-position: 100% 0; } to { background-position: 0 0; } }
@@ -511,7 +511,7 @@ html.cc-lay .container_c8ffbb:not(:hover):not(.cc-open) .membersGroup_c8ffbb::af
 html.cc-edon #cc-home, html.cc-edon #cc-homeback { display: none !important; }
 #cc-ed { position: fixed; inset: 0; z-index: 150000; display: none; flex-direction: column; color: var(--cc-ink); font: 14px var(--cc-font), 'gg sans', system-ui, sans-serif;
   background: radial-gradient(70% 60% at 10% 0%, color-mix(in srgb, var(--cc-o1) 70%, transparent), transparent 70%), radial-gradient(60% 60% at 100% 100%, color-mix(in srgb, var(--cc-o2) 70%, transparent), transparent 70%), var(--cc-bg0); }
-#cc-ed.on { display: flex; animation: cc-fadein .25s var(--cc-out) both; }
+#cc-ed.on { display: flex; animation: cc-fadein .25s var(--cc-out) backwards; }
 #cc-ed * { box-sizing: border-box; }
 #cc-ed button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 #cc-ed button:disabled { opacity: .35; cursor: default; }
@@ -609,7 +609,7 @@ html.cc-edon #cc-home, html.cc-edon #cc-homeback { display: none !important; }
 #cc-ed .e-ln { flex: 1; min-width: 0; }
 #cc-ed .e-ln b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #cc-ed .e-ln small { font-size: 11.5px; color: var(--cc-ink3); }
-#cc-ed .e-ask { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(0,0,0,.5); animation: cc-fadein .2s both; }
+#cc-ed .e-ask { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(0,0,0,.5); animation: cc-fadein .2s backwards; }
 #cc-ed .e-askb { width: min(420px, calc(100vw - 32px)); padding: 22px; border-radius: 18px; background: var(--cc-glass); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 70px rgba(0,0,0,.6); }
 #cc-ed .e-askb b { font: 700 18px var(--cc-brand); } #cc-ed .e-askb p { color: var(--cc-ink2); margin: 6px 0 18px; line-height: 1.45; }
 #cc-ed .e-askr { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
@@ -890,6 +890,8 @@ html.cc-lite #cc-pf-float.on, html.cc-still #cc-pf-float.on { animation: none; }
 /* nome do Concord no lugar do nome do Discord (no chat, só para quem usa Concord) */
 .username_c19a55[data-cc-ap] { font-size: 0 !important; }
 .username_c19a55[data-cc-ap]::after { content: attr(data-cc-ap); font-size: 1rem; }
+/* nome do Concord com estilo de degradê: o degradê precisa estar no próprio texto novo (antes ficava invisível) */
+.username_c19a55[data-cc-ap][data-ccn]::after { background: inherit; background-size: inherit; background-position: inherit; -webkit-background-clip: text; background-clip: text; animation: inherit; }
 #cc-panel .pf-ap { width: 100%; height: 42px; font-size: 15px; margin-bottom: 6px; }
 
 /* call: quadros de quem usa Concord com o perfil (fundo, banner, cor) e nome em pílula de vidro */
@@ -1147,7 +1149,7 @@ html.cc-cel .cc-pc .pc-ef { animation-duration: 14s !important; }
 }
 html.cc-cel #cc-grande .pp-i { background: var(--cc-float); }
 #cc-vercc { position: fixed; top: 14px; right: 70px; z-index: 100005; height: 38px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer; font: 600 13px var(--cc-font), system-ui, sans-serif; color: #fff;
-  background: var(--accent-2); box-shadow: 0 10px 26px -8px color-mix(in srgb, var(--accent-2) 70%, transparent); animation: cc-pop .3s var(--cc-out) both; }
+  background: var(--accent-2); box-shadow: 0 10px 26px -8px color-mix(in srgb, var(--accent-2) 70%, transparent); animation: cc-pop .3s var(--cc-out) backwards; }
 
 /* ================= call de servidor: tela cheia que funciona e o palco novo ================= */
 html.cc-fs [data-cc-fsanc] { transform: none !important; filter: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; contain: none !important; perspective: none !important; will-change: auto !important; clip-path: none !important; }
@@ -1168,11 +1170,11 @@ html.cc-style .tile__2f4f7[data-cc-vz] button:hover { background: color-mix(in s
 #cc-salabtn { position: fixed; right: 20px; bottom: 96px; z-index: 1004; display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 12px; border-radius: 999px; border: 0; cursor: pointer;
   font: 600 13.5px var(--cc-font), system-ui, sans-serif; color: var(--text-1); background: color-mix(in srgb, var(--cc-bg1) 82%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-2) 45%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-  animation: cc-pop .35s var(--cc-out) both; transition: transform .25s var(--cc-spring); text-align: left; }
+  animation: cc-pop .35s var(--cc-out) backwards; transition: transform .25s var(--cc-spring); text-align: left; }
 #cc-salabtn:hover { transform: translateY(-2px); }
 #cc-salabtn svg { width: 26px; height: 26px; padding: 5px; border-radius: 50%; background: var(--accent-2); color: var(--cc-aink); flex: none; box-sizing: content-box; }
 #cc-salabtn small { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-4); }
-#cc-salabtn.chama { box-shadow: inset 0 0 0 2px var(--accent-2), 0 0 0 6px color-mix(in srgb, var(--accent-2) 22%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); animation: cc-pop .35s var(--cc-out) both, cc-chama-sala 1.8s ease-in-out infinite; }
+#cc-salabtn.chama { box-shadow: inset 0 0 0 2px var(--accent-2), 0 0 0 6px color-mix(in srgb, var(--accent-2) 22%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); animation: cc-pop .35s var(--cc-out) backwards, cc-chama-sala 1.8s ease-in-out infinite; }
 @keyframes cc-chama-sala { 50% { box-shadow: inset 0 0 0 2px var(--accent-2), 0 0 0 12px color-mix(in srgb, var(--accent-2) 0%, transparent), 0 14px 34px -12px rgba(0,0,0,.7); } }
 html.cc-fs #cc-salabtn { bottom: 110px; }
 #cc-sala { position: fixed; inset: 28px; z-index: 100002; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 10px; padding: 14px; border-radius: 26px; color: var(--text-1);
@@ -1239,7 +1241,7 @@ html.cc-cel #cc-sala, html.cc-cel #cc-salabtn { -webkit-backdrop-filter: none; b
 #cc-grande .mu-acts svg { width: 16px; height: 16px; }
 #cc-grande .mu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 4px 2px 8px; }
 #cc-grande .mu-n { position: relative; padding: 12px 12px 10px; border-radius: 6px 6px 14px 6px; min-height: 96px; display: flex; flex-direction: column; gap: 8px; color: #241d2b; background: var(--c);
-  transform: rotate(var(--r)); box-shadow: 0 10px 20px -10px rgba(0,0,0,.6); animation: cc-mu .5s var(--cc-spring) both; animation-delay: calc(var(--i) * 30ms); transition: transform .25s var(--cc-spring); }
+  transform: rotate(var(--r)); box-shadow: 0 10px 20px -10px rgba(0,0,0,.6); animation: cc-mu .5s var(--cc-spring) backwards; animation-delay: calc(var(--i) * 30ms); transition: transform .25s var(--cc-spring); }
 #cc-grande .mu-n:hover { transform: rotate(0deg) scale(1.04); z-index: 2; }
 @keyframes cc-mu { from { opacity: 0; transform: rotate(var(--r)) translateY(12px) scale(.9); } }
 #cc-grande .mu-n[data-f="fita"]::before { content: ''; position: absolute; top: -8px; left: 50%; width: 52px; height: 16px; transform: translateX(-50%) rotate(-3deg); background: rgba(255,255,255,.55); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
@@ -1269,7 +1271,7 @@ html.cc-cel #cc-sala, html.cc-cel #cc-salabtn { -webkit-backdrop-filter: none; b
 .mu-des .mu-tela { border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
 .mu-des canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
 #cc-apk { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 100006; display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 8px 0 14px; border-radius: 999px; border: 0;
-  font: 600 13.5px var(--cc-font), system-ui, sans-serif; color: var(--cc-aink); background: var(--accent-2); box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--accent-2) 70%, transparent); text-align: left; animation: cc-pop .35s var(--cc-out) both; }
+  font: 600 13.5px var(--cc-font), system-ui, sans-serif; color: var(--cc-aink); background: var(--accent-2); box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--accent-2) 70%, transparent); text-align: left; animation: cc-pop .35s var(--cc-out) backwards; }
 #cc-apk > svg { width: 22px; height: 22px; }
 #cc-apk small { display: block; font-size: 11.5px; font-weight: 500; opacity: .75; }
 #cc-apk i { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.14); margin-left: 4px; }
@@ -1293,3 +1295,25 @@ li[data-cc-a]:not([data-cc-vivo]):not(:hover) [data-ccn], li[data-cc-a]:not([dat
 [data-ccplaca]:not(:hover)::after, [data-ccplaca]:not(:hover)::before { animation-play-state: paused !important; }
 html:not(.cc-pausa) #cc-panel [data-ccplaca]::after, html:not(.cc-pausa) #cc-panel [data-ccplaca]::before { animation-play-state: running !important; }
 html.cc-vfsem [data-cc-vf] { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+[data-ccn="contorno"]::after { -webkit-text-fill-color: transparent; }
+
+/* ================= Gráficos: Alto, Médio, Baixo, Mínimo ================= */
+#cc-panel .seg.seg5 { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
+#cc-panel .seg.seg5 button { font-size: 12.5px; }
+/* Médio: nada de enfeite se mexendo e nada de desfoque ao vivo (o vidro dos painéis é o assado) */
+html.cc-g-medio [data-ccn], html.cc-g-medio [data-ccn]::before, html.cc-g-medio [data-ccn]::after,
+html.cc-g-medio [data-ccplaca]::before, html.cc-g-medio [data-ccplaca]::after,
+html.cc-g-medio .cc-pc .pc-ef, html.cc-g-medio .cc-pcw .pc-luz, html.cc-g-medio .cc-pcw .pc-mold *, html.cc-g-medio .cc-pc .pc-dec *,
+html.cc-g-medio #cc-pf-float.on, html.cc-g-medio #cc-home .sk, html.cc-g-medio #cc-salabtn.chama, html.cc-g-medio #cc-aura i { animation: none !important; }
+html.cc-g-medio *, html.cc-g-medio *::before, html.cc-g-medio *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.cc-g-medio .tileChild__2f4f7, html.cc-g-medio #cc-home .fr, html.cc-g-medio #cc-home .row { transition: none !important; }
+/* Baixo: fundo sólido, sem animação, sem sombra, sem enfeites do Discord */
+html.cc-g-baixo *, html.cc-g-baixo *::before, html.cc-g-baixo *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; animation-delay: 0s !important;
+  transition-duration: .001s !important; transition-delay: 0s !important; box-shadow: none !important; }
+html.cc-g-baixo .nameplated__91a9d [class*="videoContainer_"], html.cc-g-baixo [class*="avatarDecoration"], html.cc-g-baixo [class*="profileEffects"] { display: none !important; }
+html.cc-g-baixo .cc-pc .pc-ef, html.cc-g-baixo .cc-pcw .pc-luz, html.cc-g-baixo .cc-pc .pc-dec, html.cc-g-baixo .pc-p { display: none !important; }
+html.cc-g-baixo #cc-aura { display: none !important; }
+html.cc-g-baixo .cc-pcw { transform: none !important; }
+/* Mínimo: ainda sem placas */
+html.cc-g-minimo [data-ccplaca]::before, html.cc-g-minimo [data-ccplaca]::after { display: none !important; }
+html.cc-g-minimo [data-ccn] { text-shadow: none !important; }

@@ -22,7 +22,15 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Bricolage Grotesque', 'Onest', 'Space Grotesk', 'Sora', 'Manrope', 'DM Sans', 'Urbanist', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true, fluida: true, levevideo: true, celzoom: 0.86 };
+  /* gráficos: Alto (tudo), Médio, Baixo e Mínimo desligam cada vez mais coisas que pesam; Automático escolhe pelo aparelho */
+  function GR() {
+    var g = CFG.graf || 'auto';
+    if (g === 'auto') { var cel = !!window.__ccCel, peq = Math.min(screen.width || 9999, screen.height || 9999) < 600; g = !cel ? 'alto' : peq ? 'baixo' : 'medio'; }
+    if (CFG.lite && (g === 'alto' || g === 'medio')) g = 'baixo';
+    return g;
+  }
+  function MAT() { var g = GR(); return (g === 'baixo' || g === 'minimo') ? 'solid' : CFG.mat; }
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true, fluida: true, levevideo: true, celzoom: 0.86, graf: 'auto' };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -55,7 +63,7 @@
   function themeKey() { return placeTheme() || CFG.preset; }
   function themeCSS() {
     var P = allThemes()[themeKey()] || PRESETS.fofito, a1 = placeTheme() ? P.a1 : (CFG.accent || P.a1), a3 = P.a3;
-    var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = mix(mix(P.w, P.o[1], 0.22), a1, CFG.style ? +CFG.tint : 0);
+    var solid = MAT() === 'solid', op = solid ? 1 : +CFG.op, w = mix(mix(P.w, P.o[1], 0.22), a1, CFG.style ? +CFG.tint : 0);
     var aink = lum(a1) > 0.45 ? '#0b0c10' : '#ffffff';
     var ink = '#f2f3f8';
     var floatA = solid || window.__ccCel ? 1 : Math.max(op, 0.84);
@@ -64,7 +72,7 @@
       '--cc-a1': a1, '--cc-a2': P.a2, '--cc-a3': a3, '--cc-aink': aink, '--cc-ink': ink, '--cc-ink2': 'rgba(242,243,248,.74)', '--cc-ink3': 'rgba(242,243,248,.5)',
       '--cc-dood': DOOD, '--cc-wall1': rgba(mix(w, P.o[0], 0.32), op), '--cc-wall2': rgba(mix(w, P.o[1], 0.22), op), '--cc-wall3': rgba(mix(w, P.o[2], 0.32), op),
       '--cc-bub-in': 'rgba(255,255,255,.075)', '--cc-bub-me': rgba(a1, 0.24),
-      '--cc-glass': rgba(mix(w, '#ffffff', 0.03), solid || window.__ccCel ? 0.98 : 0.78), '--cc-font': CFG.font ? "'" + CFG.font + "'" : "'gg sans'",
+      '--cc-glass': rgba(mix(w, '#ffffff', 0.03), solid || window.__ccCel || GR() !== 'alto' ? 0.98 : 0.78), '--cc-font': CFG.font ? "'" + CFG.font + "'" : "'gg sans'",
       '--text-0': aink, '--text-1': ink, '--text-2': 'rgba(242,243,248,.88)', '--text-3': 'rgba(242,243,248,.76)', '--text-4': 'rgba(242,243,248,.52)', '--text-5': 'rgba(242,243,248,.34)',
       '--bg-1': rgba(mix(w, '#ffffff', 0.12), Math.min(1, op + 0.18)), '--bg-2': rgba(mix(w, '#ffffff', 0.075), Math.min(1, op + 0.12)),
       '--bg-3': rgba(mix(w, '#ffffff', 0.035), op), '--bg-4': rgba(w, op),
@@ -75,8 +83,8 @@
     v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid || window.__ccCel ? 1 : 0.95);
     v['--cc-side-w'] = (+CFG.sideW || 272) + 'px';
     // acrílico e mica: uma folha de vidro só, tingida por igual (antes os vãos entre os painéis viravam barras claras)
-    if (CFG.mat === 'mica') v['--cc-sheet'] = rgba(P.bg[0], Math.max(0.28, op * 0.7)); // tinge a cor do Windows com o fundo do tema (antes ficava cinza lavado)
-    if (CFG.mat === 'acrylic') {
+    if (MAT() === 'mica') v['--cc-sheet'] = rgba(P.bg[0], Math.max(0.28, op * 0.7)); // tinge a cor do Windows com o fundo do tema (antes ficava cinza lavado)
+    if (MAT() === 'acrylic') {
       v['--cc-sheet'] = rgba(w, Math.max(0.15, op * 0.92));
       v['--bg-4'] = 'rgba(255,255,255,.035)'; v['--bg-3'] = 'rgba(255,255,255,.05)'; v['--bg-2'] = 'rgba(255,255,255,.075)'; v['--bg-1'] = 'rgba(255,255,255,.11)';
       v['--cc-wall1'] = rgba(mix(w, P.o[0], 0.4), 0.22); v['--cc-wall2'] = rgba(mix(w, P.o[1], 0.3), 0.16); v['--cc-wall3'] = rgba(mix(w, P.o[2], 0.4), 0.22);
@@ -127,7 +135,7 @@
     var css = themeCSS();
     if (STY.adopted) STY.adopted[1].replaceSync(css); else style('theme', css);
     marks(); if (typeof PX !== 'undefined') parallax();
-    if (window.ccMat) window.ccMat(CFG.mat === 'acrylic' || CFG.mat === 'mica' ? CFG.mat : 'none').catch(function () {});
+    if (window.ccMat) window.ccMat(MAT() === 'acrylic' || MAT() === 'mica' ? MAT() : 'none').catch(function () {});
     paintWall(); if (typeof assarAura === 'function') setTimeout(assarAura, 0);
   }
 
@@ -135,8 +143,8 @@
   // (o Discord troca as classes do <html> quando a janela ganha ou perde o foco: por isso TODAS as nossas, inclusive as de estado, voltam aqui)
   var HASBAR = false, FLAGS = {};
   function wantMarks() {
-    var w = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-glass': CFG.mat === 'acrylic', 'cc-mica': CFG.mat === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
-      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite, 'cc-hasbar': HASBAR,
+    var w = { 'cc-on': true, 'cc-aura': MAT() === 'aura' || MAT() === 'wall', 'cc-solid': MAT() === 'solid', 'cc-glass': MAT() === 'acrylic', 'cc-mica': MAT() === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion || GR() !== 'alto',
+      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood) && GR() !== 'baixo' && GR() !== 'minimo', 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite || GR() === 'baixo' || GR() === 'minimo', 'cc-g-medio': GR() !== 'alto', 'cc-g-baixo': GR() === 'baixo' || GR() === 'minimo', 'cc-g-minimo': GR() === 'minimo', 'cc-hasbar': HASBAR,
       'cc-lay': CFG.layout === 'palco', 'cc-homecfg': !!CFG.home, 'cc-cel': !!window.__ccCel };
     Object.keys(FLAGS).forEach(function (k) { w[k] = FLAGS[k]; });
     return w;
@@ -328,6 +336,13 @@
     } else if (tab === 'som') {
       h += '<h4>Chamadas</h4>' + range('boost', 'Volume das vozes', 'Aumenta o som de todo mundo, até 300%', 0.5, 3, 0.05, FMT.pct);
     } else if (tab === 'telas') {
+      var GRS = [['auto', 'Automático'], ['alto', 'Alto'], ['medio', 'Médio'], ['baixo', 'Baixo'], ['minimo', 'Mínimo']], GDESC = {
+        alto: 'Tudo ligado: vidro, bolhas, nomes e placas animados, partículas, efeitos e sombras.',
+        medio: 'Bolhas e vidro continuam (desenhados uma vez só). Nomes, placas e efeitos ficam parados, metade das partículas, placas de vídeo do Discord paradas.',
+        baixo: 'Fundo sólido nas cores do tema, sem vidro, sem animações nem sombras, sem partículas, sem desenhos no chat e sem as placas de vídeo e enfeites do Discord.',
+        minimo: 'O Baixo e ainda sem placas e sem os quadros de perfil na call. A pele confere a página menos vezes. Para celular fraco.' };
+      h += '<h4>Gráficos</h4><div class="seg seg5">' + GRS.map(function (m) { return '<button data-gr="' + m[0] + '"' + ((CFG.graf || 'auto') === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="note" style="margin-top:8px">' + ((CFG.graf || 'auto') === 'auto' ? 'Automático está usando o <b>' + { alto: 'Alto', medio: 'Médio', baixo: 'Baixo', minimo: 'Mínimo' }[GR()] + '</b> neste aparelho (PC no Alto, tablet no Médio, celular no Baixo). ' : '') + GDESC[GR()] + '</div>';
       h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível') +
         '<h4>Transmissões</h4>' + toggle('fluida', 'Transmissão fluida', 'Sua tela vai com até 60 quadros por segundo; se a internet ou o PC apertarem, cai a nitidez, não a fluidez') + toggle('levevideo', 'Leve com vídeo na tela', 'Enquanto tem transmissão ou câmera aberta, tira o vidro desfocado e as bolhas para o vídeo não travar') +
         (window.__ccCel ? '<h4>Celular</h4>' + range('celzoom', 'Tamanho das coisas', 'Menor cabe mais na tela', 0.7, 1, 0.02, FMT.pct) : '') +
@@ -359,6 +374,7 @@
     else if (a === 'walluse') { wallUse(b.dataset.id); }
     else if (a === 'walldel') { if (b.dataset.sure) { DB.del(b.dataset.id).then(function () { if (CFG.wallId === b.dataset.id) { delete CFG.wallId; save(); applyTheme(); } paintPanel(); toast('Fundo apagado'); }); } else { b.dataset.sure = '1'; b.textContent = 'Apagar mesmo?'; } }
     else if (b.dataset.lay) { set('layout', b.dataset.lay, true); }
+    else if (b.dataset.gr) { set('graf', b.dataset.gr, true); toast('Gráficos: ' + b.textContent); }
     else if (a === 'wallpick') pickWall();
     else if (a === 'fontpc') pickFont();
     else if (a === 'enew') { var base = allThemes()[themeKey()] || PRESETS.fofito; var t = JSON.parse(JSON.stringify(base)); t.n = 'Meu tema'; EDIT = { key: '', t: t, prev: CFG.preset, tmp: newId() }; CFG.mine = CFG.mine || {}; CFG.mine[EDIT.tmp] = EDIT.t; CFG.preset = EDIT.tmp; applyTheme(); paintPanel(); }
@@ -970,7 +986,7 @@
      3) Animações enfeite param com a janela sem foco ou parada há um tempo, e tudo para com a janela escondida. */
   var AURA = { k: '', url: '', blur: '', fazendo: false, ruido: null };
   function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
-  function auraAssavel() { return (CFG.mat === 'aura') && !CFG.motion; }
+  function auraAssavel() { return (MAT() === 'aura') && (!CFG.motion || GR() !== 'alto'); }
   function corRGB(c, a) { var d = document.createElement('canvas').getContext('2d'); d.fillStyle = c || '#000'; var f = d.fillStyle; if (a == null) return f; if (f[0] === '#') { var n = parseInt(f.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; } return f.replace(/rgba?\(([^)]+)\)/, function (m, x) { var p = x.split(',').slice(0, 3); return 'rgba(' + p.join(',') + ',' + a + ')'; }); }
   function desenharAura(cx, W, H, comRuido) {
     var b0 = cssVar('--cc-bg0'), b1 = cssVar('--cc-bg1'), orbs = +cssVar('--cc-orbs') || 0.6;
@@ -1014,7 +1030,7 @@
   function vidroTick(varrer) {
     var assado = document.documentElement.classList.contains('cc-auraimg') && AURA.blur && !CFG.lite;
     // acrílico e mica: atrás dos painéis só tem o vidro do Windows (a página é transparente), o desfoque deles não muda nada na tela
-    var semVidro = (CFG.mat === 'acrylic' || CFG.mat === 'mica') && !window.__ccCel;
+    var semVidro = (MAT() === 'acrylic' || MAT() === 'mica') && !window.__ccCel;
     flag('cc-vfsem', semVidro && !assado);
     if (!assado && !semVidro) { if (VF.els.length) vidroLimpar(); return; }
     if (varrer || Date.now() - VF.t > 4000) {
@@ -1067,7 +1083,7 @@
     var on = false;
     if (CFG.levevideo !== false) {
       var vs = document.getElementsByTagName('video');
-      for (var i = 0; i < vs.length && !on; i++) { var v = vs[i]; if (v.readyState >= 2 && !v.paused && v.offsetWidth > 140) on = true; }
+      for (var i = 0; i < vs.length && !on; i++) { var v = vs[i]; if (v.readyState >= 2 && !v.paused && v.offsetWidth > 140 && !v.closest('.member__5d473, .channel__972a0, .nameplated__91a9d, [class*="nameplate"]')) on = true; }
     }
     flag('cc-video', on);
   }
@@ -1115,7 +1131,7 @@
     if (Math.abs(PX.tx - PX.x) > 0.3 || Math.abs(PX.ty - PX.y) > 0.3) PX.raf = requestAnimationFrame(pxStep);
   }
   function parallax() {
-    var want = !!CFG.parallax && !CFG.lite && (CFG.mat === 'aura' || CFG.mat === 'wall' || CFG.mat === 'mica');
+    var want = !!CFG.parallax && !CFG.lite && (MAT() === 'aura' || MAT() === 'wall' || MAT() === 'mica');
     if (want === PX.on) return; PX.on = want;
     if (want) window.addEventListener('mousemove', pxMove, { passive: true });
     else { window.removeEventListener('mousemove', pxMove); var a = document.getElementById('cc-aura'); if (a) a.style.transform = ''; }
@@ -1188,7 +1204,7 @@
   var WALL = { id: '', url: '' };
   function paintWall() {
     var a = document.getElementById('cc-aura'); if (!a) return;
-    var on = CFG.mat === 'wall' && !!(CFG.wallId || CFG.wall);
+    var on = MAT() === 'wall' && !!(CFG.wallId || CFG.wall);
     a.classList.toggle('wall', on);
     if (CFG.wallId) {
       if (WALL.id !== CFG.wallId) {
@@ -1954,7 +1970,7 @@
         raf = 0; var r = wr.getBoundingClientRect(); if (!r.width) return;
         var x = (last.clientX - r.left) / r.width, y = (last.clientY - r.top) / r.height;
         wr.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); wr.style.setProperty('--my', (y * 100).toFixed(1) + '%');
-        if (wr.dataset.tilt && !calmo()) wr.style.setProperty('--tilt', 'rotateX(' + ((0.5 - y) * 10).toFixed(2) + 'deg) rotateY(' + ((x - 0.5) * 12).toFixed(2) + 'deg)');
+        if (wr.dataset.tilt && !calmo() && (GR() === 'alto' || GR() === 'medio')) wr.style.setProperty('--tilt', 'rotateX(' + ((0.5 - y) * 10).toFixed(2) + 'deg) rotateY(' + ((x - 0.5) * 12).toFixed(2) + 'deg)');
       });
     }
     wr.addEventListener('pointermove', mover);
@@ -1971,7 +1987,8 @@
     return SVGO + '<circle cx="50" cy="50" r="22" fill="#fff"/><circle cx="50" cy="50" r="46" fill="' + c + '" fill-opacity=".45"/></svg>';
   }
   function explodir(wr, x, y, k, n) {
-    if (!k || k === 'nenhuma' || calmo() || !wr.animate) return;
+    if (!k || k === 'nenhuma' || calmo() || !wr.animate || GR() === 'baixo' || GR() === 'minimo') return;
+    if (GR() === 'medio') n = Math.ceil(n / 2);
     var d = getComputedStyle(wr).getPropertyValue('--d').trim() || '#ff5c7a', cores = [d, '#ffffff', d];
     for (var i = 0; i < n; i++) {
       var el = document.createElement('i'); el.className = 'pc-p'; var s = 8 + Math.random() * 12;
@@ -2577,6 +2594,7 @@
   }
   // na call, o quadro de quem usa Concord ganha o fundo, o banner, a cor e o nome do perfil
   function pintarTiles() {
+    if (GR() === 'minimo') return;
     var ts = document.querySelectorAll('.tile__2f4f7');
     for (var i = 0; i < ts.length; i++) {
       var t = ts[i], img = t.querySelector('img[src*="/avatars/"]'), m = img && /\/avatars\/(\d{5,25})\//.exec(img.src), id = m ? m[1] : '';
@@ -3396,18 +3414,24 @@
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
+  // as placas animadas do próprio Discord (vídeo atrás do nome na lista de membros): no Médio ficam paradas, no Baixo somem
+  function placasDiscord() {
+    if (GR() === 'alto') return;
+    var vs = document.querySelectorAll('.nameplated__91a9d video, [class*="videoContainer_"] > video');
+    for (var i = 0; i < vs.length; i++) { var v = vs[i]; if (!v.paused) v.pause(); if (!v.dataset.ccPara) { v.dataset.ccPara = '1'; v.autoplay = false; v.addEventListener('play', function () { if (GR() !== 'alto') this.pause(); }); } }
+  }
   var pend = false, TEMPOS = {};
   // tudo que a pele confere quando o Discord mexe na página (cada parte cronometrada: dá para ver o que pesa em window.__ccTempos)
   function tickTudo() {
     [['vidro', function () { vidroTick(false); }], ['celZoom', celZoom], ['splash', splash], ['aura', function () { aura(); if (!AURA.k && auraAssavel()) assarAura(); }], ['win', mountWin], ['mine', tagMine], ['perfil', pfTick], ['cel', celTick],
-     ['cheia', cheiaTick], ['call', callTick], ['home', homeTick], ['ads', function () { if (Date.now() - (TEMPOS._ads || 0) > 1500) { TEMPOS._ads = Date.now(); cleanAds(); } }], ['splashCheck', splashCheck], ['dm', dmAside], ['tela', watchScreen]].forEach(function (x) {
+     ['cheia', cheiaTick], ['call', callTick], ['home', homeTick], ['ads', function () { if (Date.now() - (TEMPOS._ads || 0) > 1500) { TEMPOS._ads = Date.now(); cleanAds(); } }], ['splashCheck', splashCheck], ['dm', dmAside], ['tela', watchScreen], ['placasDiscord', placasDiscord]].forEach(function (x) {
       var t = performance.now(); try { x[1](); } catch (e) {} var d = performance.now() - t, o = TEMPOS[x[0]] || (TEMPOS[x[0]] = { n: 0, ms: 0, max: 0 }); o.n++; o.ms += d; if (d > o.max) o.max = d;
     });
   }
   window.__ccTempos = function () { var r = {}; Object.keys(TEMPOS).forEach(function (k) { if (k[0] === '_') return; var o = TEMPOS[k]; r[k] = { media: +(o.ms / o.n).toFixed(2), max: +o.max.toFixed(1), n: o.n }; }); return r; };
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body && PAUSA.visivel && !document.hidden) { tickTudo(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, window.__ccCel ? 450 : 250); // no celular, menos vezes: o Discord mexe na página o tempo todo
+    setTimeout(function () { pend = false; place(); if (document.body && PAUSA.visivel && !document.hidden) { tickTudo(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, GR() === 'minimo' ? 900 : window.__ccCel ? 450 : 250); // no celular, menos vezes: o Discord mexe na página o tempo todo
   });
   mo.observe(document, { childList: true, subtree: true });
   // troca de tela na hora (sem esperar o Discord mexer na página): o Início entra sem mostrar a lista de amigos antes
