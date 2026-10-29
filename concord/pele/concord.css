@@ -143,16 +143,16 @@ html:not(.cc-solid) [class*="scroller_"]::-webkit-scrollbar-thumb { background-c
 html, body { overflow: hidden !important; }
 
 /* fundo do chat: degradê do tema com os desenhinhos do FofitoZap */
-html.cc-style [class*="chatContent_"] { background-image: var(--cc-dood), linear-gradient(160deg, var(--cc-wall1), var(--cc-wall2) 55%, var(--cc-wall3)); background-size: 420px, 100% 100%; background-attachment: local, scroll; }
-html.cc-style:not(.cc-dood) [class*="chatContent_"] { background-image: linear-gradient(160deg, var(--cc-wall1), var(--cc-wall2) 55%, var(--cc-wall3)); background-size: 100% 100%; }
+html.cc-style [class*="messagesWrapper_"] { background-color: transparent !important; background-image: var(--cc-dood), linear-gradient(160deg, var(--cc-wall1), var(--cc-wall2) 55%, var(--cc-wall3)) !important; background-size: 420px, 100% 100% !important; }
+html.cc-style:not(.cc-dood) [class*="messagesWrapper_"] { background-image: linear-gradient(160deg, var(--cc-wall1), var(--cc-wall2) 55%, var(--cc-wall3)) !important; background-size: 100% 100% !important; }
 
 /* mensagens em balões */
-html.cc-bub [id^="message-content-"]:not(:empty) { display: inline-block; max-width: min(100%, 760px); padding: 6px 12px 7px; margin-top: 3px; border-radius: 16px;
+html.cc-bub [class*="contents_"] > [id^="message-content-"]:not(:empty) { display: inline-block; width: auto; max-width: min(100%, 760px); padding: 6px 12px 7px !important; margin: 3px 0 0 !important; text-indent: 0; border-radius: 16px;
   background: var(--cc-bub-in); border: 1px solid rgba(255,255,255,.06); box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px -12px rgba(0,0,0,.6); line-height: 1.42; }
-html.cc-bub [class*="groupStart_"] [id^="message-content-"]:not(:empty) { border-top-left-radius: 6px; }
-html.cc-bub li[data-cc-me] [id^="message-content-"]:not(:empty) { background: var(--cc-bub-me); border-color: rgba(255,255,255,.1); }
+html.cc-bub [class*="groupStart_"] [class*="contents_"] > [id^="message-content-"]:not(:empty) { border-top-left-radius: 6px; }
+html.cc-bub li[data-cc-me] [class*="contents_"] > [id^="message-content-"]:not(:empty) { background: var(--cc-bub-me); border-color: rgba(255,255,255,.1); }
 html.cc-bub li[data-cc-me] [id^="message-username-"] { color: var(--accent-1) !important; }
-html.cc-bub [class*="mentioned_"] [id^="message-content-"]:not(:empty) { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent-new) 70%, transparent), 0 6px 18px -10px color-mix(in srgb, var(--accent-new) 50%, transparent); }
+html.cc-bub [class*="mentioned_"] [class*="contents_"] > [id^="message-content-"]:not(:empty) { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent-new) 70%, transparent), 0 6px 18px -10px color-mix(in srgb, var(--accent-new) 50%, transparent); }
 html.cc-bub [id^="message-content-"] [class*="codeContainer_"], html.cc-bub [id^="message-content-"] pre { max-width: 100%; }
 html.cc-style [id^="message-username-"] { font-weight: 600; }
 html.cc-style [id^="message-accessories-"] img, html.cc-style [id^="message-accessories-"] video { border-radius: 14px; }
@@ -169,7 +169,7 @@ html.cc-style [class*="modeSelected_"] [class*="link_"], html.cc-style [class*="
 html.cc-style [class*="modeSelected_"] [class*="link_"] [class*="icon_"] { color: var(--accent-2) !important; }
 
 /* barrinha do servidor aberto na coluna da esquerda: na cor do tema, com brilho */
-html.cc-style [class*="guilds_"] [class*="pill_"] [class*="item_"] { background: var(--accent-2) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--accent-2) 70%, transparent); }
+html.cc-style [class*="guilds_"] [class*="listItem_"] > [class*="wrapper_"] > span[class*="item_"] { background: var(--accent-2) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--accent-2) 70%, transparent); }
 
 /* títulos e números */
 html.cc-style [class*="subtitleContainer_"] [class*="titleWrapper_"] svg, html.cc-style [class*="subtitleContainer_"] h1 svg { color: var(--accent-2); }
@@ -179,3 +179,49 @@ html.cc-style [class*="numberBadge_"], html.cc-style [class*="mentionsBadge_"] {
 html:not(.cc-solid) [class*="standardSidebarView_"] { background: transparent !important; }
 html:not(.cc-solid) [class*="sidebarRegion_"], html:not(.cc-solid) [class*="contentRegion_"] { background: var(--bg-4) !important; -webkit-backdrop-filter: blur(var(--blur-amount)); backdrop-filter: blur(var(--blur-amount)); }
 html.cc-style [class*="chatContent_"] { background-color: transparent !important; }
+
+/* ---------------- estilo ReApps, parte 2 ---------------- */
+/* coluna de servidores: ícones arredondados (não mais o formato do Discord) e o aberto com anel na cor do tema */
+html.cc-style [class*="guilds_"] svg[class*="svg_"] > mask { display: none; }
+html.cc-style [class*="guilds_"] foreignObject { mask: none !important; }
+html.cc-style [class*="guilds_"] foreignObject > div, html.cc-style [class*="guilds_"] foreignObject img { border-radius: 15px !important; overflow: hidden; transition: border-radius .3s var(--cc-spring), box-shadow .25s, transform .25s var(--cc-spring); }
+html.cc-style [class*="guilds_"] [class*="blobContainer_"]:hover foreignObject > div { border-radius: 12px !important; }
+html.cc-style [class*="guilds_"] [class*="blobContainer_"][class*="selected_"] foreignObject > div { border-radius: 12px !important; box-shadow: inset 0 0 0 2px var(--accent-2), inset 0 0 12px color-mix(in srgb, var(--accent-2) 45%, transparent); }
+html.cc-style [class*="guilds_"] [class*="listItem_"] > [class*="wrapper_"] > span[class*="item_"] { width: 4px; border-radius: 0 4px 4px 0; }
+
+/* lista de canais e conversas: linhas mais macias */
+html.cc-style [class*="sidebarList_"] [class*="link_"], html.cc-style [class*="channel_"][class*="interactive_"] { border-radius: 10px !important; transition: background-color .15s, transform .2s var(--cc-spring); }
+html.cc-style [class*="sidebarList_"] [class*="containerDefault_"] [class*="name_"] { letter-spacing: 0; }
+
+/* cabeçalho do chat colado no painel das mensagens, por cima do fundo */
+html.cc-style [class*="chat_"] > [class*="subtitleContainer_"] { margin-bottom: 0 !important; border-bottom: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important;
+  background: color-mix(in srgb, var(--cc-wall1) 100%, transparent) !important; position: relative; z-index: 2; }
+html.cc-style [class*="chat_"]:has(> [class*="subtitleContainer_"]) [class*="messagesWrapper_"] { border-top: 0 !important; border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; }
+html.cc-style [class*="chatGradient_"] { display: none !important; }
+
+/* datas no meio do chat: pílula, como no FofitoZap */
+html.cc-style [class*="divider_"][class*="hasContent_"] { border-top: 0 !important; justify-content: center; }
+html.cc-style [class*="divider_"][class*="hasContent_"]::before, html.cc-style [class*="divider_"][class*="hasContent_"]::after { display: none !important; }
+html.cc-style [class*="divider_"][class*="hasContent_"] > span[class*="content_"] { position: relative; margin: 0 auto; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--text-2);
+  background: color-mix(in srgb, var(--bg-2) 80%, transparent); border: 1px solid var(--border); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+/* barrinha de ações ao passar o mouse numa mensagem e reações */
+html.cc-style [class*="buttonContainer_"] [class*="wrapper_"][role="group"], html.cc-style [class*="buttonContainer_"] > div[class*="buttons_"] > div {
+  border-radius: 12px !important; background: var(--bg-floating) !important; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--border) !important; box-shadow: 0 8px 22px -10px rgba(0,0,0,.6); }
+html.cc-style [class*="reaction_"] { border-radius: 999px !important; }
+html.cc-style [class*="reaction_"][class*="reactionMe_"] { background: color-mix(in srgb, var(--accent-2) 20%, transparent) !important; border-color: color-mix(in srgb, var(--accent-2) 60%, transparent) !important; }
+html.cc-style [class*="embedFull_"] { border-radius: 14px !important; border-left-color: var(--accent-2) !important; }
+html.cc-style [class*="repliedMessage_"] [class*="repliedTextPreview_"] { opacity: .85; }
+
+/* caixa de digitar: botões do lado direito acendem na cor do tema */
+html.cc-style [class*="channelTextArea_"] [class*="buttons_"] [class*="button_"]:hover { color: var(--accent-2) !important; }
+
+/* seu perfil lá embaixo: cartão com anel na cor do tema */
+html.cc-style [class*="panels_"] [class*="avatarWrapper_"] img, html.cc-style [class*="panels_"] [class*="avatar_"] img { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-2) 70%, transparent); border-radius: 50%; }
+
+/* tirar o que é propaganda do Discord (Nitro, Loja, Missões, presente, baixar app) */
+html.cc-clean li:has(> div > a[href="/store"]), html.cc-clean li:has(> div > a[href="/shop"]), html.cc-clean li:has(> div > a[href^="/quest-home"]),
+html.cc-clean [class*="channel_"]:has(a[href="/store"]), html.cc-clean [class*="channel_"]:has(a[href="/shop"]), html.cc-clean [class*="channel_"]:has(a[href^="/quest-home"]),
+html.cc-clean [class*="listItem_"]:has([data-list-item-id="guildsnav___app-download-button"]),
+html.cc-clean [class*="channelTextArea_"] [class*="buttons_"] > [class*="container_"]:has([class*="trinketsIcon_"]),
+html.cc-clean [class*="channelTextArea_"] .app-launcher-entrypoint { display: none !important; }

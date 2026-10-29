@@ -22,7 +22,7 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Onest', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true, style: true, bub: true, dood: true, tint: 0.06 };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true, style: true, bub: true, dood: true, tint: 0.06, clean: true };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -48,14 +48,14 @@
 
   function themeCSS() {
     var P = PRESETS[CFG.preset] || PRESETS.fofito, a1 = CFG.accent || P.a1, a3 = P.a3;
-    var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = mix(P.w, a1, CFG.style ? +CFG.tint : 0);
+    var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = mix(mix(P.w, P.o[1], 0.22), a1, CFG.style ? +CFG.tint : 0);
     var aink = lum(a1) > 0.45 ? '#0b0c10' : '#ffffff';
     var ink = '#f2f3f8';
     var floatA = solid ? 1 : Math.max(op, 0.84);
     var v = {
       '--cc-bg0': P.bg[0], '--cc-bg1': P.bg[1], '--cc-o1': P.o[0], '--cc-o2': P.o[1], '--cc-o3': P.o[2], '--cc-orbs': CFG.orbs, '--cc-noise': NOISE,
       '--cc-a1': a1, '--cc-a2': P.a2, '--cc-a3': a3, '--cc-aink': aink, '--cc-ink': ink, '--cc-ink2': 'rgba(242,243,248,.74)', '--cc-ink3': 'rgba(242,243,248,.5)',
-      '--cc-dood': DOOD, '--cc-wall1': rgba(mix(w, P.o[0], 0.42), op), '--cc-wall2': rgba(mix(w, P.o[1], 0.3), op), '--cc-wall3': rgba(mix(w, P.o[2], 0.42), op),
+      '--cc-dood': DOOD, '--cc-wall1': rgba(mix(w, P.o[0], 0.32), op), '--cc-wall2': rgba(mix(w, P.o[1], 0.22), op), '--cc-wall3': rgba(mix(w, P.o[2], 0.32), op),
       '--cc-bub-in': 'rgba(255,255,255,.075)', '--cc-bub-me': rgba(a1, 0.24),
       '--cc-glass': rgba(mix(w, '#ffffff', 0.03), solid ? 0.98 : 0.78), '--cc-font': CFG.font ? "'" + CFG.font + "'" : "'gg sans'",
       '--text-0': aink, '--text-1': ink, '--text-2': 'rgba(242,243,248,.88)', '--text-3': 'rgba(242,243,248,.76)', '--text-4': 'rgba(242,243,248,.52)', '--text-5': 'rgba(242,243,248,.34)',
@@ -119,7 +119,7 @@
     var h = document.documentElement; if (!h) return;
     watchHtml();
     var want = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
-      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-hasbar': HASBAR };
+      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-clean': !!CFG.clean, 'cc-hasbar': HASBAR };
     Object.keys(want).forEach(function (c) { if (h.classList.contains(c) !== want[c]) h.classList.toggle(c, want[c]); });
   }
   var htmlWatched = false;
@@ -238,7 +238,7 @@
     if (CFG.style) h += toggle('bub', 'Mensagens em balões', 'As suas ficam na cor de destaque') + toggle('dood', 'Desenhos no fundo do chat', '') + range('tint', 'Cor do tema nos painéis', 'Quanto a cor de destaque tinge os painéis', 0, 0.25, 0.01, FMT.pct);
     h += '<h4>Formas</h4>' + range('radius', 'Cantos', '', 0, 24, 1, FMT.px) + range('gap', 'Espaço entre painéis', '', 0, 20, 1, FMT.px);
     h += '<h4>Fonte</h4><div class="fonts">' + FONTS.map(function (f) { return '<button data-f="' + esc(f) + '"' + (CFG.font === f ? ' class="on"' : '') + ' style="font-family:' + (f ? "'" + f + "'" : "'gg sans'") + '">' + (f || 'Padrão do Discord') + '</button>'; }).join('') + '</div>';
-    h += '<h4>Detalhes</h4>' + toggle('anim', 'Animações', 'Mensagens, menus e listas se movendo') + toggle('chatbar', 'Barra de mensagem solta', 'A caixa de digitar fica separada do chat') + toggle('small', 'Painel de usuário compacto', 'Seu perfil lá embaixo ocupa menos espaço');
+    h += '<h4>Detalhes</h4>' + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('anim', 'Animações', 'Mensagens, menus e listas se movendo') + toggle('chatbar', 'Barra de mensagem solta', 'A caixa de digitar fica separada do chat') + toggle('small', 'Painel de usuário compacto', 'Seu perfil lá embaixo ocupa menos espaço');
     var bd = PANEL.querySelector('.bd'), st = bd.scrollTop; bd.innerHTML = h; bd.scrollTop = st;
     PANEL.querySelector('[data-a="update"]').hidden = !INFO.update;
   }
@@ -349,12 +349,29 @@
   /* ---------- esqueleto da tela (só a estrutura, sem textos, nomes nem imagens) ----------
      O Concord guarda em dados/estrutura para ajustar a pele quando o Discord muda. */
   var DUMPED = {};
-  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable'];
+  var KEEP = ['class', 'id', 'role', 'aria-hidden', 'aria-selected', 'aria-expanded', 'aria-checked', 'type', 'contenteditable', 'href', 'data-list-item-id', 'aria-label', 'data-cc-r'];
+  function visibleEdge(cs) {
+    var b = ['Top', 'Right', 'Bottom', 'Left'].some(function (k) { return parseFloat(cs['border' + k + 'Width']) > 0 && cs['border' + k + 'Style'] !== 'none' && !/rgba\(.*, 0\)$|transparent/.test(cs['border' + k + 'Color']); });
+    return b || (cs.boxShadow && cs.boxShadow !== 'none') || (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0);
+  }
   function skeleton() {
+    var marked = [];
+    document.body.querySelectorAll('*').forEach(function (el) {
+      if (el.closest('svg') && el.tagName !== 'svg') return;
+      var cs = getComputedStyle(el); if (cs.display === 'none' || !visibleEdge(cs)) return;
+      var r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
+      el.setAttribute('data-cc-r', Math.round(r.left) + ',' + Math.round(r.top) + ',' + Math.round(r.width) + ',' + Math.round(r.height) + ' op=' + cs.opacity + ' vis=' + cs.visibility + ' z=' + cs.zIndex + ' b=' + cs.borderTopWidth + ' ' + cs.borderTopColor + ' sh=' + (cs.boxShadow || '').slice(0, 40));
+      marked.push(el);
+    });
     var root = document.body.cloneNode(true);
+    marked.forEach(function (el) { el.removeAttribute('data-cc-r'); });
     root.querySelectorAll('#cc-panel, #cc-aura, #cc-toast, script, style, link, svg *, iframe').forEach(function (n) { n.remove(); });
     (function walk(el) {
-      for (var i = el.attributes.length - 1; i >= 0; i--) { var a = el.attributes[i].name; if (KEEP.indexOf(a) < 0) el.removeAttribute(a); }
+      for (var i = el.attributes.length - 1; i >= 0; i--) {
+        var a = el.attributes[i].name;
+        if (KEEP.indexOf(a) < 0 || (a === 'aria-label' && el.tagName !== 'BUTTON' && el.getAttribute('role') !== 'button')) el.removeAttribute(a);
+        else if (a === 'href' || a === 'data-list-item-id' || a === 'aria-label') el.setAttribute(a, el.getAttribute(a).replace(/\d{6,}/g, '#'));
+      }
       if (el.id) el.id = el.id.replace(/\d{6,}/g, '#');
       var seen = {}, kids = Array.prototype.slice.call(el.childNodes);
       kids.forEach(function (c) {
@@ -366,7 +383,7 @@
         walk(c);
       });
     })(root);
-    return '<!-- Concord ' + INFO.ver + ' | ' + location.pathname.replace(/\d{6,}/g, '#') + ' | ' + new Date().toISOString() + ' -->\n' + root.outerHTML;
+    return '<!-- Concord ' + INFO.ver + ' | ' + location.pathname.replace(/\d{6,}/g, '#') + ' | ' + new Date().toISOString() + ' | tela ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + ' -->\n' + root.outerHTML;
   }
   function screenKind() {
     if (document.querySelector('[class*="standardSidebarView_"]')) return 'configuracoes';
@@ -380,8 +397,8 @@
   }
   function dump(force) {
     var k = screenKind();
-    if (!window.ccDump || (DUMPED[k] && !force) || k === 'entrar') return;
-    DUMPED[k] = 1;
+    if (!window.ccDump || (DUMPED[k] && Date.now() - DUMPED[k] < 120000 && !force) || k === 'entrar') return;
+    DUMPED[k] = Date.now();
     try { window.ccDump(force ? 'manual-' + k : k, skeleton()).catch(function () {}); if (force) toast('Estrutura da tela guardada'); } catch (e) {}
   }
   var dumpT = null, lastPath = '';
@@ -391,6 +408,24 @@
     clearTimeout(dumpT); dumpT = setTimeout(function () { dump(false); }, 4000);
   }
   document.addEventListener('keydown', function (e) { if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { e.preventDefault(); dump(true); } }, true);
+
+  /* ---------- zoom (Ctrl + roda do mouse, Ctrl + / -): o Concord lembra e volta com ele ---------- */
+  var DPI = 1, ZOOM_OK = false;
+  function curZoom() { return Math.round(devicePixelRatio / DPI * 100); }
+  var zoomT = null;
+  window.addEventListener('resize', function () {
+    if (!ZOOM_OK) return;
+    clearTimeout(zoomT); zoomT = setTimeout(function () { try { LS && LS.setItem('concord.zoom', String(curZoom())); } catch (e) {} }, 700);
+  });
+  function restoreZoom() {
+    if (!window.ccDpi) { ZOOM_OK = true; return; }
+    window.ccDpi().then(function (d) {
+      DPI = d || 1;
+      var saved = 0; try { saved = +(LS && LS.getItem('concord.zoom')) || 0; } catch (e) {}
+      if (saved && Math.abs(saved - curZoom()) > 3 && window.ccZoom) window.ccZoom(saved, true).catch(function () {});
+      setTimeout(function () { ZOOM_OK = true; }, 2500);
+    }).catch(function () { ZOOM_OK = true; });
+  }
 
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme();
@@ -405,7 +440,7 @@
     aura(); mountWin(); applyTheme(); fallbackSheets(); badge();
     new MutationObserver(badge).observe(document.querySelector('title') || document.head, { childList: true, subtree: true, characterData: true });
     if (window.ccInfo) window.ccInfo().then(function (i) { if (i) { INFO.ver = i.ver; INFO.mats = i.mats || INFO.mats; INFO.update = i.update; if (!INFO.mats[CFG.mat]) { CFG.mat = 'aura'; save(); } applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); } }).catch(function () {});
-    win('state');
+    win('state'); restoreZoom();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
   window.addEventListener('resize', function () { win('state'); });
