@@ -1051,3 +1051,115 @@ html.cc-cel #cc-aura i { animation: none !important; }
 html.cc-cel .cc-pcw { transition: none; }
 html.cc-cel [data-ccplaca]::after { animation: none !important; }
 @media (pointer: coarse) { .cc-pc .pc-zoom { opacity: 1; } }
+
+/* ================= vídeo na tela: sem vidro desfocado, sem bolhas e sem misturas por cima (o vídeo travava a 2 fps) ================= */
+html.cc-video *, html.cc-video *::before, html.cc-video *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.cc-video #cc-aura i { animation: none !important; will-change: auto !important; }
+html.cc-video #cc-aura b { display: none !important; }
+html.cc-video .callContainer_cb9592 .pc-ef, html.cc-video .callContainer_cb9592 .pc-luz, html.cc-video [data-ccplaca]::after { animation: none !important; display: none !important; }
+html.cc-video .callContainer_cb9592 video { will-change: auto; }
+html.cc-video .wrapper__1405b, html.cc-video .callContainer_cb9592 .topControls_bfe55a .headerBar__49508 { background: color-mix(in srgb, var(--cc-bg1) 88%, transparent) !important; }
+
+/* ================= celular, parte 2 ================= */
+/* configurações do Discord: menu na tela toda, página na tela toda, voltar entre os dois */
+html.cc-estreito.cc-set [data-cc-side], html.cc-estreito.cc-set [data-cc-main] { flex: 1 1 100% !important; width: 100% !important; max-width: none !important; min-width: 0 !important; }
+html.cc-estreito.cc-set [data-cc-side] > * { width: 100% !important; max-width: none !important; min-width: 0 !important; }
+html.cc-estreito.cc-set:not(.cc-setmain) [data-cc-main] { display: none !important; }
+html.cc-estreito.cc-set.cc-setmain [data-cc-side] { display: none !important; }
+html.cc-estreito.cc-set [data-cc-main] { overflow-x: hidden !important; }
+html.cc-estreito.cc-set [data-cc-main] > * { max-width: 100% !important; min-width: 0 !important; }
+html.cc-estreito.cc-set:not(.cc-setmain) #cc-voltar { display: none !important; }
+html.cc-estreito.cc-setmain #cc-voltar { display: grid !important; top: 10px; left: 10px; z-index: 100002; }
+html.cc-estreito.cc-setmain [data-cc-main] { padding-top: 46px !important; }
+/* Início estreito: sem relógio gigante, herói compacto, espaço pro botão voltar */
+html.cc-estreito #cc-home .sc { padding: 60px 14px 28px; }
+html.cc-estreito #cc-home .hero { padding: 14px 16px; gap: 12px; border-radius: 18px; }
+html.cc-estreito #cc-home .hero .me { width: 52px; height: 52px; }
+html.cc-estreito #cc-home .hero h1 { font-size: 20px; overflow-wrap: anywhere; }
+html.cc-estreito #cc-home .hero p { font-size: 13px; }
+html.cc-estreito #cc-home .hero .clock { display: none; }
+html.cc-estreito #cc-home .acts { margin: 12px 0 18px; gap: 6px; }
+html.cc-estreito #cc-home .chip { height: 36px; padding: 0 12px; }
+html.cc-estreito #cc-home .friends { grid-template-columns: 1fr; gap: 8px; }
+html.cc-estreito #cc-home .fr { padding: 10px; }
+html.cc-estreito #cc-home .grid { gap: 14px; }
+/* propaganda do app do Discord no topo (ocupa espaço e não serve no Concord) */
+html.cc-clean [data-cc-baixe] { display: none !important; }
+/* celular mais leve: nomes e placas animados só dentro do cartão aberto; bolhas sem camada própria */
+html.cc-cel [data-ccn][data-cca]:not(.cc-pc [data-ccn]) { animation: none !important; }
+html.cc-cel #cc-aura i { will-change: auto !important; }
+html.cc-cel #cc-aura b { display: none !important; }
+html.cc-cel .cc-pc .pc-ef { animation-duration: 14s !important; }
+
+/* ================= fundo do perfil com foto, GIF ou vídeo (camadas) ================= */
+.cc-pc .pc-fm { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; border-radius: inherit; }
+.cc-pc .pc-fm > i { position: absolute; inset: 0; }
+.cc-pc .pc-fm .fm-m img, .cc-pc .pc-fm .fm-m video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--fx) var(--fy);
+  transform: scale(var(--fz)); transform-origin: var(--fx) var(--fy); filter: blur(var(--fb)); display: block; }
+.cc-pc .pc-fm .fm-c { background: var(--fg); opacity: var(--fc); }
+.cc-pc .pc-fm .fm-p { background: var(--fp); opacity: .9; }
+.cc-pc .pc-fm .fm-v { background: radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(0,0,0,var(--fv)) 100%), rgba(0,0,0,var(--fe)); }
+.cc-pcw.has-fm .cc-pc { background: #120e18; }
+
+/* ================= perfil completo (no lugar do perfil grande do Discord) ================= */
+.cc-sumido { opacity: 0 !important; pointer-events: none !important; }
+.cc-sumido * { visibility: hidden !important; }
+#cc-grande.cc-perfil { justify-content: center; padding: 28px; overflow-y: auto; }
+#cc-grande.cc-perfil.fora { display: none; }
+#cc-grande .pp { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 28px; width: min(1080px, 100%); transform: scale(.95) translateY(10px); transition: transform .5s var(--cc-spring); }
+#cc-grande.on .pp { transform: none; }
+#cc-grande .pp-c { flex: none; display: flex; justify-content: center; }
+#cc-grande .pp-c .cc-pcw { width: 330px; }
+#cc-grande .pp-i { box-sizing: border-box; flex: 1 1 360px; max-width: 460px; min-width: 0; max-height: calc(100vh - 80px); overflow-y: auto; padding: 18px; border-radius: 24px; color: var(--text-1);
+  font-family: var(--cc-font), 'gg sans', system-ui, sans-serif; background: color-mix(in srgb, var(--cc-bg1) 80%, transparent); border: 1px solid rgba(255,255,255,.09);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3); backdrop-filter: blur(22px) saturate(1.3); box-shadow: 0 24px 60px -24px rgba(0,0,0,.8); scrollbar-width: thin; }
+#cc-grande .pp-acts { display: flex; gap: 8px; margin-bottom: 14px; }
+#cc-grande .pp-acts button { flex: 1; height: 42px; border-radius: 13px; border: 0; cursor: pointer; font: 600 14px var(--cc-font), system-ui, sans-serif; color: var(--text-1); background: rgba(255,255,255,.08); transition: transform .2s var(--cc-spring), background-color .15s; }
+#cc-grande .pp-acts button:hover { background: rgba(255,255,255,.13); }
+#cc-grande .pp-acts button:active { transform: scale(.96); }
+#cc-grande .pp-acts .pri { background: var(--accent-2); color: var(--cc-aink); }
+#cc-grande .pp-ds { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 14px; }
+#cc-grande .pp-d { padding: 11px 13px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); }
+#cc-grande .pp-d small { display: block; font-size: 11.5px; color: var(--text-4); margin-bottom: 3px; }
+#cc-grande .pp-d b { font-size: 14.5px; font-weight: 600; }
+#cc-grande section { margin-top: 14px; }
+#cc-grande section h5 { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+#cc-grande section h5 i { font-style: normal; font-weight: 500; color: var(--text-5); }
+#cc-grande .pp-cx { display: flex; flex-wrap: wrap; gap: 6px; }
+#cc-grande .pp-cxi { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07); color: var(--text-1); text-decoration: none; font-size: 13px; max-width: 100%; }
+#cc-grande a.pp-cxi:hover { border-color: color-mix(in srgb, var(--accent-2) 55%, transparent); }
+#cc-grande .pp-cxi em { font-style: normal; font-size: 11.5px; color: var(--text-4); }
+#cc-grande .pp-cxi b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cc-grande .pp-cxi svg { width: 14px; height: 14px; color: var(--accent-2); flex: none; }
+#cc-grande .pp-sv, #cc-grande .pp-am { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+#cc-grande .pp-sv button, #cc-grande .pp-am button { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 2px; border: 0; background: none; color: var(--text-2); cursor: pointer; border-radius: 12px; transition: transform .2s var(--cc-spring), background-color .15s; min-width: 0; }
+#cc-grande .pp-sv button:hover, #cc-grande .pp-am button:hover { background: rgba(255,255,255,.06); transform: translateY(-2px); }
+#cc-grande .pp-sv img, #cc-grande .pp-sv span { width: 44px; height: 44px; border-radius: 14px; object-fit: cover; display: grid; place-items: center; background: rgba(255,255,255,.08); font: 700 13px var(--cc-font), system-ui, sans-serif; }
+#cc-grande .pp-am img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,.08); }
+#cc-grande .pp-sv em, #cc-grande .pp-am em { font-style: normal; font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cc-grande .pp-nt { margin: 0; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); font-size: 13.5px; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+#cc-grande .pp-vz { font-size: 13px; color: var(--text-4); padding: 6px 2px; }
+@media (max-width: 819px) {
+  #cc-grande.cc-perfil { justify-content: flex-start; padding: 70px 16px 24px; }
+  #cc-grande .pp { flex-direction: column; gap: 14px; }
+  #cc-grande .pp-c .cc-pcw { width: min(330px, calc(100vw - 32px)); }
+  #cc-grande .pp-i { max-height: none; overflow: visible; width: 100%; max-width: 520px; flex: none; }
+}
+html.cc-cel #cc-grande .pp-i { background: var(--cc-float); }
+#cc-vercc { position: fixed; top: 14px; right: 70px; z-index: 100005; height: 38px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer; font: 600 13px var(--cc-font), system-ui, sans-serif; color: #fff;
+  background: var(--accent-2); box-shadow: 0 10px 26px -8px color-mix(in srgb, var(--accent-2) 70%, transparent); animation: cc-pop .3s var(--cc-out) both; }
+
+/* ================= call de servidor: tela cheia que funciona e o palco novo ================= */
+html.cc-fs [data-cc-fsanc] { transform: none !important; filter: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; contain: none !important; perspective: none !important; will-change: auto !important; clip-path: none !important; }
+html.cc-fs .wrapper_cb9592.fullScreen_cb9592 { position: fixed !important; inset: 0 !important; margin: 0 !important; width: 100vw !important; height: 100vh !important; max-height: none !important; min-height: 0 !important; max-width: none !important; z-index: 100000 !important; border-radius: 0 !important; }
+html.cc-fs .wrapper_cb9592.fullScreen_cb9592 .callContainer_cb9592 { border-radius: 0 !important; border: 0 !important; height: 100% !important; }
+html.cc-fs #cc-voltar, html.cc-fs #cc-home, html.cc-fs #cc-homeback { display: none !important; }
+/* palco: os quadros respiram, quem fala ganha brilho na cor do tema, vídeo com cantos redondos */
+html.cc-style .callContainer_cb9592 .tile__2f4f7 { transition: transform .35s var(--cc-spring), box-shadow .25s; }
+html.cc-style .callContainer_cb9592 [class*="speaking"].border__2f4f7, html.cc-style .callContainer_cb9592 .border__2f4f7[class*="speaking"] { box-shadow: inset 0 0 0 3px var(--accent-2), 0 0 0 2px color-mix(in srgb, var(--accent-2) 35%, transparent), 0 0 34px -4px var(--accent-2) !important; border-color: transparent !important; }
+html.cc-style .callContainer_cb9592 .tile__2f4f7 video { border-radius: 22px; }
+/* quadro de convidar / escolher atividade: vidro tracejado com a nossa cor, sem a arte do Discord */
+html.cc-style .tile__2f4f7[data-cc-vz] .tileChild__2f4f7, html.cc-style .tile__2f4f7[data-cc-vz] > div { background: linear-gradient(140deg, color-mix(in srgb, var(--accent-2) 14%, transparent), rgba(255,255,255,.03)) !important; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-2) 30%, transparent) !important; border-radius: 22px !important; }
+html.cc-style .tile__2f4f7[data-cc-vz] img, html.cc-style .tile__2f4f7[data-cc-vz] [class*="art"], html.cc-style .tile__2f4f7[data-cc-vz] [class*="illustration"] { opacity: .0 !important; }
+html.cc-style .tile__2f4f7[data-cc-vz] button { border-radius: 999px !important; height: 40px !important; padding: 0 16px !important; background: rgba(255,255,255,.08) !important; border: 1px solid rgba(255,255,255,.1) !important; color: var(--text-1) !important; font-weight: 600 !important; transition: transform .2s var(--cc-spring), background-color .15s !important; }
+html.cc-style .tile__2f4f7[data-cc-vz] button:hover { background: color-mix(in srgb, var(--accent-2) 28%, transparent) !important; transform: translateY(-2px); }

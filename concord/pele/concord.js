@@ -22,7 +22,7 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Bricolage Grotesque', 'Onest', 'Space Grotesk', 'Sora', 'Manrope', 'DM Sans', 'Urbanist', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true, fluida: true, levevideo: true, celzoom: 0.86 };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -58,13 +58,13 @@
     var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = mix(mix(P.w, P.o[1], 0.22), a1, CFG.style ? +CFG.tint : 0);
     var aink = lum(a1) > 0.45 ? '#0b0c10' : '#ffffff';
     var ink = '#f2f3f8';
-    var floatA = solid ? 1 : Math.max(op, 0.84);
+    var floatA = solid || window.__ccCel ? 1 : Math.max(op, 0.84);
     var v = {
       '--cc-bg0': P.bg[0], '--cc-bg1': P.bg[1], '--cc-o1': P.o[0], '--cc-o2': P.o[1], '--cc-o3': P.o[2], '--cc-orbs': CFG.orbs, '--cc-noise': NOISE,
       '--cc-a1': a1, '--cc-a2': P.a2, '--cc-a3': a3, '--cc-aink': aink, '--cc-ink': ink, '--cc-ink2': 'rgba(242,243,248,.74)', '--cc-ink3': 'rgba(242,243,248,.5)',
       '--cc-dood': DOOD, '--cc-wall1': rgba(mix(w, P.o[0], 0.32), op), '--cc-wall2': rgba(mix(w, P.o[1], 0.22), op), '--cc-wall3': rgba(mix(w, P.o[2], 0.32), op),
       '--cc-bub-in': 'rgba(255,255,255,.075)', '--cc-bub-me': rgba(a1, 0.24),
-      '--cc-glass': rgba(mix(w, '#ffffff', 0.03), solid ? 0.98 : 0.78), '--cc-font': CFG.font ? "'" + CFG.font + "'" : "'gg sans'",
+      '--cc-glass': rgba(mix(w, '#ffffff', 0.03), solid || window.__ccCel ? 0.98 : 0.78), '--cc-font': CFG.font ? "'" + CFG.font + "'" : "'gg sans'",
       '--text-0': aink, '--text-1': ink, '--text-2': 'rgba(242,243,248,.88)', '--text-3': 'rgba(242,243,248,.76)', '--text-4': 'rgba(242,243,248,.52)', '--text-5': 'rgba(242,243,248,.34)',
       '--bg-1': rgba(mix(w, '#ffffff', 0.12), Math.min(1, op + 0.18)), '--bg-2': rgba(mix(w, '#ffffff', 0.075), Math.min(1, op + 0.12)),
       '--bg-3': rgba(mix(w, '#ffffff', 0.035), op), '--bg-4': rgba(w, op),
@@ -72,7 +72,7 @@
       '--accent-1': mix(a1, '#ffffff', 0.22), '--accent-2': a1, '--accent-3': a1, '--accent-4': mix(a1, '#ffffff', 0.12), '--accent-5': mix(a1, '#000000', 0.12), '--accent-new': a3,
       '--border-light': 'rgba(255,255,255,.05)', '--border': 'rgba(255,255,255,.085)', '--border-hover': 'rgba(255,255,255,.15)', '--button-border': 'rgba(255,255,255,.1)'
     };
-    v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid ? 1 : 0.95);
+    v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid || window.__ccCel ? 1 : 0.95);
     v['--cc-side-w'] = (+CFG.sideW || 272) + 'px';
     // acrílico e mica: uma folha de vidro só, tingida por igual (antes os vãos entre os painéis viravam barras claras)
     if (CFG.mat === 'mica') v['--cc-sheet'] = rgba(P.bg[0], Math.max(0.28, op * 0.7)); // tinge a cor do Windows com o fundo do tema (antes ficava cinza lavado)
@@ -329,13 +329,15 @@
       h += '<h4>Chamadas</h4>' + range('boost', 'Volume das vozes', 'Aumenta o som de todo mundo, até 300%', 0.5, 3, 0.05, FMT.pct);
     } else if (tab === 'telas') {
       h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível') +
+        '<h4>Transmissões</h4>' + toggle('fluida', 'Transmissão fluida', 'Sua tela vai com até 60 quadros por segundo; se a internet ou o PC apertarem, cai a nitidez, não a fluidez') + toggle('levevideo', 'Leve com vídeo na tela', 'Enquanto tem transmissão ou câmera aberta, tira o vidro desfocado e as bolhas para o vídeo não travar') +
+        (window.__ccCel ? '<h4>Celular</h4>' + range('celzoom', 'Tamanho das coisas', 'Menor cabe mais na tela', 0.7, 1, 0.02, FMT.pct) : '') +
         '<h4>Janela</h4>' + toggle('bg', 'Continuar aberto ao fechar', 'Fechar a janela deixa o Concord no ícone perto do relógio: você segue nas calls e recebendo avisos') + '<div class="btns" style="justify-content:flex-start"><button class="btn" data-a="fechar">Sair do Concord de vez</button></div>';
     }
     PANEL.querySelector('.tabbar').innerHTML = tabs;
     var bd = PANEL.querySelector('.bd'), sc = bd.dataset.tab === tab ? bd.scrollTop : 0; bd.innerHTML = h; bd.scrollTop = sc; bd.dataset.tab = tab;
     PANEL.querySelector('[data-a="update"]').hidden = !INFO.update;
   }
-  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (k === 'bg' && window.ccSegundoPlano) window.ccSegundoPlano(!!v).catch(function () {}); if (repaint) paintPanel(); if (k === 'home') homeTick(); if (k === 'parallax') parallax(); }
+  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (k === 'bg' && window.ccSegundoPlano) window.ccSegundoPlano(!!v).catch(function () {}); if (repaint) paintPanel(); if (k === 'home') homeTick(); if (k === 'parallax') parallax(); if (k === 'celzoom') celZoom(); }
   function newId() { return 'meu-' + Date.now().toString(36); }
   function themeCode(t) { try { return 'CONCORD-TEMA:' + btoa(unescape(encodeURIComponent(JSON.stringify(t)))); } catch (e) { return ''; } }
   function readCode(c) {
@@ -636,7 +638,9 @@
     Read: function (m) { return typeof m.getMentionCount === 'function' && typeof m.hasUnread === 'function' && typeof m.lastMessageId === 'function'; },
     GuildOrder: function (m) { return typeof m.getFlattenedGuildIds === 'function'; },
     VoiceAct: function (m) { return typeof m.selectVoiceChannel === 'function'; },
-    DMAct: function (m) { return typeof m.openPrivateChannel === 'function'; }
+    DMAct: function (m) { return typeof m.openPrivateChannel === 'function'; },
+    Profile: function (m) { return typeof m.getUserProfile === 'function' && typeof m.getMutualGuilds === 'function'; },
+    Note: function (m) { return typeof m.getNote === 'function' && typeof m.getUserProfile !== 'function'; }
   };
   // procura todas as peças que faltam numa passada só (o Discord tem milhares de módulos)
   var SCAN_AT = 0;
@@ -846,7 +850,7 @@
      O Discord no navegador para em 100%. Aqui o som de cada pessoa passa por um amplificador (até 300%). */
   var BOOST = { ctx: null, sink: '', els: [] };
   function boostCtx() {
-    if (!BOOST.ctx) { BOOST.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (BOOST.sink && BOOST.ctx.setSinkId) BOOST.ctx.setSinkId(BOOST.sink).catch(function () {}); }
+    if (!BOOST.ctx) { BOOST.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'playback' }); /* folga maior: com a tela sendo enviada o PC aperta e as vozes picotavam */ if (BOOST.sink && BOOST.ctx.setSinkId) BOOST.ctx.setSinkId(BOOST.sink).catch(function () {}); }
     if (BOOST.ctx.state === 'suspended') BOOST.ctx.resume().catch(function () {});
     return BOOST.ctx;
   }
@@ -918,14 +922,56 @@
       if (c.audio) {
         var a = typeof c.audio === 'object' ? Object.assign({}, c.audio) : {};
         if (sup.restrictOwnAudio) a.restrictOwnAudio = true;
-        a.suppressLocalAudioPlayback = false; a.echoCancellation = true; c.audio = a;
+        a.suppressLocalAudioPlayback = false; a.echoCancellation = false; a.noiseSuppression = false; a.autoGainControl = false; c.audio = a; /* som do PC vai puro (o tratamento de voz nele pesava e picotava) */
+      }
+      // fluida: até 60 quadros e o navegador segura os quadros por segundo em vez da nitidez (antes caía para 2 fps quando apertava)
+      if (CFG.fluida !== false) {
+        var v = typeof c.video === 'object' && c.video ? Object.assign({}, c.video) : {};
+        var fr = v.frameRate; if (typeof fr !== 'object' || !fr) fr = typeof fr === 'number' ? { ideal: Math.max(fr, 30) } : {};
+        fr = Object.assign({}, fr); if (!fr.ideal || fr.ideal < 30) fr.ideal = 30; if (!fr.max || fr.max < fr.ideal) fr.max = 60; delete fr.min; delete fr.exact;
+        v.frameRate = fr; if (!v.width) v.width = { max: 1920 }; if (!v.height) v.height = { max: 1080 }; c.video = v; /* tela 2K/4K inteira pesava demais para codificar */
       }
       return orig(c).then(function (s) {
         if (!sup.restrictOwnAudio) s.getAudioTracks().forEach(function (t) { t.stop(); s.removeTrack(t); });
+        if (CFG.fluida !== false) s.getVideoTracks().forEach(function (t) { try { t.contentHint = 'motion'; } catch (e) {} });
         return s;
       });
     };
   })();
+
+  /* ---------- celular: tudo um pouco menor (o Discord cabe melhor na tela pequena) ---------- */
+  function celZoom() {
+    if (!window.__ccCel || !document.head) return;
+    var z = Math.max(0.6, Math.min(1, +CFG.celzoom || 0.86)), want = 'width=device-width, initial-scale=' + z + ', minimum-scale=' + z + ', maximum-scale=' + z + ', user-scalable=no, viewport-fit=cover';
+    var m = document.querySelector('meta[name="viewport"]');
+    if (!m) { m = document.createElement('meta'); m.name = 'viewport'; document.head.appendChild(m); }
+    if (m.content !== want) m.content = want;
+  }
+
+  /* ---------- tela cheia da call: o Discord prende a call dentro do painel quando algum pai tem vidro/transformação;
+     aqui os pais soltam enquanto está em tela cheia e a call ocupa a janela toda ---------- */
+  function cheiaTick() {
+    var w = document.querySelector('.wrapper_cb9592.fullScreen_cb9592'), old = document.querySelectorAll('[data-cc-fsanc]');
+    if (!w) { if (old.length) old.forEach(function (e) { delete e.dataset.ccFsanc; }); flag('cc-fs', false); return; }
+    for (var n = w.parentElement; n && n !== document.documentElement; n = n.parentElement) if (!n.dataset.ccFsanc) n.dataset.ccFsanc = '1';
+    flag('cc-fs', true);
+  }
+  // quadros vazios da call (convidar / atividade): marca para ganharem a nossa cara
+  function callTick() {
+    var ts = document.querySelectorAll('.tile__2f4f7:not([data-cc-vz])');
+    for (var i = 0; i < ts.length; i++) { var t = ts[i]; if (!t.querySelector('.avatarWrapper_fb62e2, video') && t.querySelector('button')) t.dataset.ccVz = '1'; }
+  }
+
+  /* ---------- vídeo na tela (transmissão, câmera): tira o vidro e as bolhas para o vídeo não travar ---------- */
+  function videoTick() {
+    var on = false;
+    if (CFG.levevideo !== false) {
+      var vs = document.getElementsByTagName('video');
+      for (var i = 0; i < vs.length && !on; i++) { var v = vs[i]; if (v.readyState >= 2 && !v.paused && v.offsetWidth > 140) on = true; }
+    }
+    flag('cc-video', on);
+  }
+  setInterval(videoTick, 1500);
 
   /* ---------- esconder Nitro, Loja, Missões, presente e baixar app ---------- */
   function cleanAds() {
@@ -935,12 +981,18 @@
     var dl = document.querySelector('[data-list-item-id="guildsnav___app-download-button"]'); if (dl) hide(dl.closest('.listItem__650eb'));
     document.querySelectorAll('.trinketsIcon__5287f').forEach(function (t) { hide(t.closest('.container__5287f')); });
     document.querySelectorAll('.app-launcher-entrypoint').forEach(hide);
+    // aviso do Discord mandando baixar o app de computador (no Concord não faz sentido e come o topo da tela)
+    document.querySelectorAll('[class*="notice_"]:not([data-cc-baixe])').forEach(function (n) {
+      if (n.closest('[data-cc-baixe]') || n.offsetHeight > 90) return;
+      if (/baixe o app|baixar o app|download the app|desktop app|app (para|de) (a )?área de trabalho/i.test(n.textContent || '')) n.dataset.ccBaixe = '1';
+    });
   }
 
   /* ---------- diagnóstico (vai junto no esqueleto da tela, para eu ver o que falhou) ---------- */
   function diag() {
     var ch = window.webpackChunkdiscord_app, d = { chunk: typeof ch, pronto: !!(ch && ch.push && ch.push !== Array.prototype.push), wreq: !!WREQ, cache: WREQ && WREQ.c ? Object.keys(WREQ.c).length : -1, achados: {}, audios: BOOST.els.length, amplificados: BOOST.els.filter(function (e) { return e.__cc; }).length, boost: CFG.boost, home: CFG.home, inicio: !!(HOME && HOME.el) };
     Object.keys(SHAPES).forEach(function (k) { d.achados[k] = !!STORES[k]; });
+    try { var gl = document.createElement('canvas').getContext('webgl'), ex = gl && gl.getExtension('WEBGL_debug_renderer_info'); d.gpu = ex ? gl.getParameter(ex.UNMASKED_RENDERER_WEBGL) : (gl ? 'webgl sem nome' : 'sem webgl'); } catch (e) { d.gpu = 'erro'; }
     return d;
   }
   window.__ccDiag = diag;
@@ -1642,14 +1694,47 @@
     });
   }
   var MEDIA_OK = {};
-  function mediaJa(u) { if (!u) return ''; if (/^data:image\//.test(u)) return u; return MEDIA_OK[String(u).slice(-32)] || ''; }
+  function mediaJa(u) { if (!u) return ''; if (/^data:(image|video)\//.test(u)) return u; return MEDIA_OK[String(u).slice(-32)] || ''; }
   function mediaURL(u) {
     if (!u) return Promise.resolve('');
-    if (/^data:image\//.test(u)) return Promise.resolve(u);
+    if (/^data:(image|video)\//.test(u)) return Promise.resolve(u);
     var h = String(u).slice(-32);
     if (!/^[0-9a-f]{32}$/.test(h)) return Promise.resolve('');
     if (!PF.media[h]) PF.media[h] = net('GET', '/concord/m/' + h).then(function (d) { if (d) MEDIA_OK[h] = d; return d; }).catch(function () { delete PF.media[h]; return ''; });
     return PF.media[h];
+  }
+  // vídeo do fundo: vira um endereço blob: (o vídeo em data: pesa e nem sempre toca)
+  var BLOB_C = {};
+  function blobDe(d, k) {
+    if (!/^data:/.test(d || '')) return d || '';
+    k = k || d.length + ':' + d.slice(-48); if (BLOB_C[k]) return BLOB_C[k];
+    try {
+      var i = d.indexOf(','), mime = d.slice(5, d.indexOf(';')), bin = atob(d.slice(i + 1)), n = bin.length, u8 = new Uint8Array(n);
+      for (var j = 0; j < n; j++) u8[j] = bin.charCodeAt(j);
+      return (BLOB_C[k] = URL.createObjectURL(new Blob([u8], { type: mime })));
+    } catch (e) { return d; }
+  }
+  // fundo com foto, GIF ou vídeo, em camadas: mídia → cor por cima → padrão → escurecer e vinheta
+  function fundoVars(el, f) {
+    el.style.setProperty('--fz', f.zoom || 1); el.style.setProperty('--fx', (f.x == null ? 50 : f.x) + '%'); el.style.setProperty('--fy', (f.y == null ? 50 : f.y) + '%');
+    el.style.setProperty('--fb', (f.desfoque || 0) + 'px'); el.style.setProperty('--fe', f.escuro == null ? 0.15 : f.escuro); el.style.setProperty('--fc', f.cor || 0); el.style.setProperty('--fv', f.vinheta == null ? 0.35 : f.vinheta);
+    var c = (f.cores || []).filter(Boolean); if (!c.length) c = ['#ff5c7a', '#7b5cff']; if (c.length < 2) c = [c[0], c[0]];
+    el.style.setProperty('--fg', 'linear-gradient(' + (+f.angulo || 0) + 'deg, ' + c.join(', ') + ')');
+    el.style.setProperty('--fp', f.comPadrao ? padraoSVG(f.padrao || 'pontos', '#ffffff') : 'none');
+  }
+  function fundoMidia(wr, f) {
+    if (!f || f.tipo !== 'midia' || !(f.midia || f._m)) return;
+    var pc = wr.querySelector('.cc-pc'); if (!pc) return;
+    var fm = document.createElement('div'); fm.className = 'pc-fm'; fm.innerHTML = '<i class="fm-m"></i><i class="fm-c"></i><i class="fm-p"></i><i class="fm-v"></i>';
+    pc.insertBefore(fm, pc.firstChild); fundoVars(fm, f); wr.classList.add('has-fm');
+    var por = function (d) {
+      if (!d) return;
+      var box = fm.querySelector('.fm-m'), video = f.video || /^data:video\//.test(d), el;
+      if (video) { el = document.createElement('video'); el.muted = true; el.loop = true; el.autoplay = true; el.playsInline = true; el.setAttribute('playsinline', ''); el.src = blobDe(d, (f.midia || '').slice(-32) || null); el.play && el.play().catch(function () {}); }
+      else { el = document.createElement('img'); el.alt = ''; el.src = d; }
+      box.appendChild(el);
+    };
+    if (f._m) por(f._m); else if (mediaJa(f.midia)) por(mediaJa(f.midia)); else mediaURL(f.midia).then(por);
   }
 
   var INS = {
@@ -1740,7 +1825,7 @@
       (ins.length ? '<div class="pc-ins">' + ins.map(insHTML).join('') + '</div>' : '') + (p.bio ? '<p class="pc-bio"></p>' : '') +
       (acoes ? '<div class="pc-acts">' + acoes.map(function (a) { return '<button data-pca="' + a[0] + '"' + (a[2] ? ' class="pri"' : '') + '>' + a[1] + '</button>'; }).join('') + '</div>' : '') +
       '</div><i class="pc-luz"></i></div><div class="pc-mold"><i class="mr"></i>' + moldHTML(p.moldura) + '</div>';
-    wr.style.setProperty('--pf', fundoCSS(p.fundo)); wr.style.setProperty('--d', p.destaque || '#ff5c7a');
+    wr.style.setProperty('--pf', fundoCSS(p.fundo)); wr.style.setProperty('--d', p.destaque || '#ff5c7a'); fundoMidia(wr, p.fundo);
     wr.style.setProperty('--lc', p.luz.cor); wr.style.setProperty('--lf', p.luz.forca);
     var nm = wr.querySelector('.pc-nm'); nm.textContent = p.apelido || nome || p.nomeDiscord || 'Você'; nomeStyle(nm, p.nome);
     if (p.bio) wr.querySelector('.pc-bio').textContent = p.bio;
@@ -1859,6 +1944,7 @@
   }
   // ver o cartão grande (edição e perfil dos outros)
   function ampliar(p, nome, avatar) {
+    if (p && p.__id) { perfilCompleto(p, p.__id, nome, avatar, {}); return; }
     fecharGrande();
     var ov = document.createElement('div'); ov.id = 'cc-grande';
     ov.innerHTML = '<button class="gx" title="Fechar">' + IC.x + '</button><div class="gw"></div><div class="gn">Toque fora do cartão para fechar</div>';
@@ -1869,8 +1955,105 @@
     ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.gx') || e.target.classList.contains('gw')) fecharGrande(); });
     requestAnimationFrame(function () { ov.classList.add('on'); });
   }
-  function fecharGrande() { var o = document.getElementById('cc-grande'); if (o) { o.classList.remove('on'); setTimeout(function () { o.remove(); }, 250); } }
-  window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('cc-grande')) { e.stopPropagation(); fecharGrande(); } }, true);
+  /* ---------- perfil completo: o cartão do Concord grande + o que o Discord sabe (desde quando, conexões, em comum, nota) ---------- */
+  var CONEX = { steam: 'Steam', xbox: 'Xbox', playstation: 'PlayStation', battlenet: 'Battle.net', riotgames: 'Riot Games', leagueoflegends: 'League of Legends', epicgames: 'Epic Games', roblox: 'Roblox', spotify: 'Spotify', youtube: 'YouTube', twitch: 'Twitch', github: 'GitHub', reddit: 'Reddit', twitter: 'X', tiktok: 'TikTok', instagram: 'Instagram', facebook: 'Facebook', bluesky: 'Bluesky', crunchyroll: 'Crunchyroll', domain: 'Site', paypal: 'PayPal', ebay: 'eBay', bungie: 'Bungie', mastodon: 'Mastodon', amazon: 'Amazon' };
+  var CONEX_URL = { steam: function (a) { return 'https://steamcommunity.com/profiles/' + a.id; }, youtube: function (a) { return 'https://youtube.com/channel/' + a.id; }, twitch: function (a) { return 'https://twitch.tv/' + a.name; }, github: function (a) { return 'https://github.com/' + a.name; }, reddit: function (a) { return 'https://reddit.com/u/' + a.name; }, twitter: function (a) { return 'https://x.com/' + a.name; }, tiktok: function (a) { return 'https://tiktok.com/@' + a.name; }, instagram: function (a) { return 'https://instagram.com/' + a.name; }, spotify: function (a) { return 'https://open.spotify.com/user/' + a.id; }, roblox: function (a) { return 'https://www.roblox.com/users/' + a.id + '/profile'; }, domain: function (a) { return 'https://' + a.name; }, bluesky: function (a) { return 'https://bsky.app/profile/' + a.name; } };
+  function dataBR(d) { try { return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } }
+  function infoDiscord(id, dlg) {
+    var o = { criado: null, amigo: null, conexoes: [], servidores: [], amigos: [], nota: '' };
+    try { o.criado = new Date(Number(BigInt(id) >> BigInt(22)) + 1420070400000); } catch (e) {}
+    try { var R = st('Rel'), sn = R && R.getSince && R.getSince(id); if (sn) o.amigo = new Date(sn); } catch (e) {}
+    try {
+      var P = st('Profile'), up = P && P.getUserProfile(id);
+      if (up) o.conexoes = (up.connectedAccounts || []).map(function (a) { return { tipo: a.type, nome: a.name, id: a.id, ok: !!a.verified }; });
+      var mg = P && P.getMutualGuilds && P.getMutualGuilds(id);
+      if (mg) o.servidores = mg.map(function (x) { return x && (x.guild || x); }).filter(function (g) { return g && g.id; }).map(function (g) { return { id: g.id, nome: g.name, icon: g.icon }; });
+      var mf = P && P.getMutualFriends && P.getMutualFriends(id);
+      if (mf) o.amigos = mf.map(function (x) { return x && (x.user || x); }).filter(function (u) { return u && u.id; });
+    } catch (e) {}
+    try { var N = st('Note'), nt = N && N.getNote(id); o.nota = (nt && (typeof nt === 'string' ? nt : nt.note)) || ''; } catch (e) {}
+    // sem o que o Discord guarda por dentro: lê do próprio cartão do Discord (escondido)
+    if (dlg) {
+      var txt = function (re) { var els = dlg.querySelectorAll('h1, h2, h3, h4, div, span'); for (var i = 0; i < els.length; i++) { var e = els[i]; if (e.children.length < 2 && re.test((e.textContent || '').trim())) { var nx = e.nextElementSibling; if (nx && nx.textContent.trim()) return nx.textContent.trim(); } } return ''; };
+      if (!o.amigo) o.amigoTxt = txt(/^(friends since|amigos desde)$/i);
+      if (!o.criado) o.criadoTxt = txt(/^(member since|membro desde)$/i);
+      if (!o.nota) { var ta = dlg.querySelector('textarea'); if (ta && ta.value) o.nota = ta.value; }
+    }
+    return o;
+  }
+  function perfilInfoHTML(o, eu) {
+    var h = '', sec = function (t, c) { return '<section><h5>' + t + '</h5>' + c + '</section>'; };
+    var datas = '';
+    if (o.criado || o.criadoTxt) datas += '<div class="pp-d"><small>No Discord desde</small><b>' + esc(o.criado ? dataBR(o.criado) : o.criadoTxt) + '</b></div>';
+    if (!eu && (o.amigo || o.amigoTxt)) datas += '<div class="pp-d"><small>Amigos desde</small><b>' + esc(o.amigo ? dataBR(o.amigo) : o.amigoTxt) + '</b></div>';
+    if (datas) h += '<div class="pp-ds">' + datas + '</div>';
+    if (o.conexoes.length) h += sec('Conexões', '<div class="pp-cx">' + o.conexoes.map(function (a) { var u = CONEX_URL[a.tipo] ? CONEX_URL[a.tipo](a) : ''; return '<' + (u ? 'a href="' + esc(u) + '" data-ppurl="' + esc(u) + '"' : 'span') + ' class="pp-cxi"><em>' + esc(CONEX[a.tipo] || a.tipo) + '</em><b>' + esc(a.nome) + '</b>' + (a.ok ? sv('<path d="M5 12l4.5 4.5L19 7"/>') : '') + '</' + (u ? 'a' : 'span') + '>'; }).join('') + '</div>');
+    if (!eu && o.servidores.length) h += sec('Servidores em comum <i>' + o.servidores.length + '</i>', '<div class="pp-sv">' + o.servidores.slice(0, 30).map(function (g) { return '<button data-ppg="' + g.id + '" title="' + esc(g.nome) + '">' + (g.icon ? '<img src="https://cdn.discordapp.com/icons/' + g.id + '/' + g.icon + '.webp?size=64" alt="">' : '<span>' + esc((g.nome || '?').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 3)) + '</span>') + '<em>' + esc(g.nome) + '</em></button>'; }).join('') + '</div>');
+    if (!eu && o.amigos.length) h += sec('Amigos em comum <i>' + o.amigos.length + '</i>', '<div class="pp-am">' + o.amigos.slice(0, 24).map(function (u) { return '<button data-ppu="' + u.id + '" title="' + esc(nameOf(u)) + '"><img src="' + esc(avatarOf(u, 64)) + '" alt=""><em>' + esc(nameOf(u)) + '</em></button>'; }).join('') + '</div>');
+    if (o.nota) h += sec('Sua nota <i>só você vê</i>', '<p class="pp-nt"></p>');
+    if (!h) h = '<div class="pp-vz">O Discord ainda está buscando o resto do perfil...</div>';
+    return h;
+  }
+  function perfilCompleto(p, id, nome, avatar, op) {
+    fecharGrande(); op = op || {};
+    var U = st('User'), me = U && U.getCurrentUser && U.getCurrentUser(), eu = !!(me && me.id === id);
+    var ov = document.createElement('div'); ov.id = 'cc-grande'; ov.className = 'cc-perfil';
+    var acoes = eu ? [['editar', 'Editar perfil', true]] : [['msg', 'Mensagem', true]];
+    if (op.host) acoes.push(['discord', 'Perfil do Discord']);
+    ov.innerHTML = '<button class="gx" title="Fechar">' + IC.x + '</button><div class="pp"><div class="pp-c"></div><div class="pp-i"><div class="pp-acts">' +
+      acoes.map(function (a) { return '<button data-ppa="' + a[0] + '"' + (a[2] ? ' class="pri"' : '') + '>' + a[1] + '</button>'; }).join('') + '</div><div class="pp-info"></div></div></div>';
+    var cp = JSON.parse(JSON.stringify(p)); delete cp.__id;
+    var card = cardEl(cp, nome, avatar); card.classList.add('grande');
+    ov.querySelector('.pp-c').appendChild(card); document.body.appendChild(ov);
+    var info = ov.querySelector('.pp-info');
+    var pinta = function () { var o = infoDiscord(id, op.dlg); info.innerHTML = perfilInfoHTML(o, eu); var nt = info.querySelector('.pp-nt'); if (nt) nt.textContent = o.nota; };
+    pinta(); setTimeout(function () { if (ov.isConnected) pinta(); }, 900); setTimeout(function () { if (ov.isConnected) pinta(); }, 2500);
+    var fit = function () {
+      var largo = innerWidth >= 820, h = card.offsetHeight || 420, w = card.offsetWidth || 330;
+      var z = largo ? Math.max(1, Math.min(1.6, (innerHeight - 90) / h, (innerWidth * 0.46) / w)) : Math.max(1, Math.min(1.35, (innerWidth - 32) / w));
+      card.style.zoom = z.toFixed(3);
+    };
+    fit(); setTimeout(fit, 250);
+    ov.addEventListener('click', function (e) {
+      var a = e.target.closest('[data-ppa]'), g = e.target.closest('[data-ppg]'), u = e.target.closest('[data-ppu]'), l = e.target.closest('[data-ppurl]');
+      if (l) { e.preventDefault(); if (window.ccOpen) window.ccOpen(l.dataset.ppurl); else window.open(l.dataset.ppurl, '_blank'); return; }
+      if (g) { fecharPerfil(true); go('/channels/' + g.dataset.ppg); return; }
+      if (u) { var uu = U && U.getUser(u.dataset.ppu); if (uu) { var pu = perfilDe(uu.id); if (pu) { pu = JSON.parse(JSON.stringify(pu)); pu.__id = uu.id; perfilCompleto(pu, uu.id, nameOf(uu), avatarOf(uu, 128), {}); } else { fecharPerfil(true); openDM(uu.id); } } return; }
+      if (a) {
+        var k = a.dataset.ppa;
+        if (k === 'msg') { fecharPerfil(true); openDM(id); }
+        else if (k === 'editar') { fecharPerfil(true); CFG.tab = 'perfil'; save(); togglePanel(true); }
+        else if (k === 'discord' && op.host) { op.host.dataset.ccDiscord = '1'; if (op.dlg) op.dlg.classList.remove('cc-sumido'); op.host.classList.remove('cc-oculto'); ov.classList.remove('on'); ov.classList.add('fora'); verConcordPill(function () { delete op.host.dataset.ccDiscord; if (op.dlg) op.dlg.classList.add('cc-sumido'); op.host.classList.add('cc-oculto'); ov.classList.remove('fora'); ov.classList.add('on'); }); }
+        return;
+      }
+      if (e.target === ov || e.target.closest('.gx') || e.target.classList.contains('pp')) fecharPerfil(true);
+    });
+    ov._fechaDiscord = !!op.host; ov._host = op.host; ov._dlg = op.dlg;
+    requestAnimationFrame(function () { ov.classList.add('on'); });
+    return ov;
+  }
+  function verConcordPill(cb) {
+    var b = document.getElementById('cc-vercc'); if (b) b.remove();
+    b = document.createElement('button'); b.id = 'cc-vercc'; b.textContent = 'Ver o do Concord';
+    b.addEventListener('click', function () { b.remove(); cb(); }); document.body.appendChild(b);
+  }
+  // fecha o nosso e, se veio do perfil do Discord, fecha o dele também
+  function fecharPerfil(tudo) {
+    var o = document.getElementById('cc-grande'); if (!o) return;
+    var dz = o._fechaDiscord; o.remove(); var pl = document.getElementById('cc-vercc'); if (pl) pl.remove();
+    if (tudo && dz) {
+      var hs = o._host, dl = o._dlg;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true }));
+      // se o Discord não fechou o dele, tenta pelo fundo escuro; se nem assim, mostra o dele (nunca fica uma janela invisível travando a tela)
+      setTimeout(function () {
+        if (!dl || !dl.isConnected) return;
+        var bk = document.querySelector('[class*="backdrop"]'); if (bk) bk.click();
+        setTimeout(function () { if (dl.isConnected) { dl.classList.remove('cc-sumido'); if (hs) { hs.classList.remove('cc-oculto'); hs.dataset.ccDiscord = '1'; } } }, 300);
+      }, 300);
+    }
+  }
+  function fecharGrande() { var o = document.getElementById('cc-grande'); if (!o) return; if (o._fechaDiscord) { fecharPerfil(true); return; } o.id = 'cc-grande-sai'; o.classList.remove('on'); setTimeout(function () { o.remove(); }, 250); var pl = document.getElementById('cc-vercc'); if (pl) pl.remove(); }
+  window.addEventListener('keydown', function (e) { var g = document.getElementById('cc-grande'); if (e.key !== 'Escape' || !g || !e.isTrusted && g._fechaDiscord) return; if (g._fechaDiscord) { var pl = document.getElementById('cc-vercc'); if (pl) pl.remove(); g.remove(); return; } e.stopPropagation(); fecharGrande(); }, true);
   // decide rápido o que mostrar quando um cartão do Discord abre (sem o do Discord piscar antes)
   var POP_RAF = 0;
   new MutationObserver(function () {
@@ -1898,7 +2081,7 @@
   }
   function popTick(refresh) {
     var host = document.querySelector('.user-profile-modal-v2, .user-profile-modal, .user-profile-popout');
-    if (POP.card && POP.host && (!POP.host.isConnected || POP.host !== host)) { POP.card.remove(); POP.card = null; POP.host = null; }
+    if (POP.card && POP.host && (!POP.host.isConnected || POP.host !== host)) { if (POP.card.id === 'cc-grande') { var pl0 = document.getElementById('cc-vercc'); if (pl0) pl0.remove(); } POP.card.remove(); POP.card = null; POP.host = null; }
     if (!host || !window.ccNet) { POP.host = null; POP.card = null; POP.id = ''; return; }
     var id = host === POP.host ? POP.id : popUserId(host);
     if (!host.dataset.ccw) host.dataset.ccw = String(Date.now());
@@ -1914,8 +2097,17 @@
     if (!p) { host.classList.remove('cc-oculto'); return; }
     var U = st('User'), u = U && U.getUser(id), me = U && U.getCurrentUser && U.getCurrentUser(), eu = me && me.id === id;
     var modal = host.classList.contains('user-profile-modal') || host.classList.contains('user-profile-modal-v2');
+    if (modal) {
+      // perfil completo do Discord: no lugar dele, o nosso grande com as informações do Discord
+      var dlg = host.closest('[role="dialog"]') || host, pp = JSON.parse(JSON.stringify(p)); pp.__id = id;
+      if (!host.dataset.ccDiscord) { host.classList.add('cc-oculto'); dlg.classList.add('cc-sumido'); }
+      host.dataset.ccd = '1';
+      var ovl = perfilCompleto(pp, id, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '', { host: host, dlg: dlg });
+      POP.card = ovl; return;
+    }
     var acoes = eu ? [['editar', 'Editar perfil', true], ['discord', 'Perfil do Discord']] : [['msg', 'Mensagem', true], ['discord', 'Perfil do Discord']];
-    var card = cardEl(p, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '', acoes);
+    var pcp = JSON.parse(JSON.stringify(p)); pcp.__id = id;
+    var card = cardEl(pcp, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '', acoes);
     card.classList.add('cc-pop'); if (modal) card.classList.add('modal');
     var pai = host.parentElement; if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
     card.style.width = (modal ? Math.min(420, host.offsetWidth - 24) : Math.max(300, host.offsetWidth)) + 'px';
@@ -2013,9 +2205,18 @@
     h += decorHTML();
     h += '<h4>Imagens</h4><div class="pf-imgs"><div class="pf-img"><b>Avatar</b><small>GIF, PNG, JPG ou WEBP, até 6 MB</small><div class="btns"><button class="btn" data-pfa="pick" data-k="avatar">' + IC.img + ' Trocar</button>' + (d.avatar ? '<button class="btn" data-pfa="tirar" data-k="avatar">Tirar</button>' : '') + '</div></div>' +
       '<div class="pf-img"><b>Banner</b><small>Fica no topo do cartão</small><div class="btns"><button class="btn" data-pfa="pick" data-k="banner">' + IC.img + ' Trocar</button>' + (d.banner ? '<button class="btn" data-pfa="tirar" data-k="banner">Tirar</button>' : '') + '</div></div></div>';
-    h += '<h4>Fundo do cartão</h4><div class="seg">' + [['degrade', 'Degradê'], ['cor', 'Cor'], ['padrao', 'Padrão']].map(function (m) { return '<button data-pff="' + m[0] + '"' + (f.tipo === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>';
-    h += coresHTML('fundo', f.cores, f.tipo === 'cor' ? 1 : f.cores.length);
-    if (f.tipo !== 'cor') h += '<div class="row"><div class="l"><b>Direção</b></div><input type="range" data-pfr="angulo" min="0" max="360" step="5" value="' + f.angulo + '" style="--p:' + (f.angulo / 3.6) + '%"><output>' + f.angulo + '°</output></div>';
+    h += '<h4>Fundo do cartão</h4><div class="seg">' + [['degrade', 'Degradê'], ['cor', 'Cor'], ['padrao', 'Padrão'], ['midia', 'Foto ou vídeo']].map(function (m) { return '<button data-pff="' + m[0] + '"' + (f.tipo === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>';
+    if (f.tipo === 'midia') {
+      var faixa = function (k, rot, min, max, step, val, fmt) { return '<div class="row"><div class="l"><b>' + rot + '</b></div><input type="range" data-pfmr="' + k + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="--p:' + ((val - min) / (max - min) * 100) + '%"><output>' + fmt(val) + '</output></div>'; };
+      var pc = function (v) { return Math.round(v * 100) + '%'; };
+      h += '<div class="pf-img pf-fmid"><b>Foto, GIF ou vídeo</b><small>Imagem até 6 MB; vídeo MP4 ou WEBM até 12 MB (toca sem som, em loop)</small><div class="btns"><button class="btn" data-pfa="pickfundo">' + IC.img + (f.midia || PF.fundoLocal ? ' Trocar' : ' Escolher') + '</button>' + (f.midia ? '<button class="btn" data-pfa="tirarfundo">Tirar</button>' : '') + '</div></div>';
+      h += '<div class="note" style="margin:10px 0 2px">Enquadrar</div>' + faixa('zoom', 'Zoom', 1, 3, 0.05, f.zoom || 1, function (v) { return (+v).toFixed(2) + 'x'; }) + faixa('x', 'Para os lados', 0, 100, 1, f.x == null ? 50 : f.x, function (v) { return Math.round(v) + '%'; }) + faixa('y', 'Para cima e baixo', 0, 100, 1, f.y == null ? 50 : f.y, function (v) { return Math.round(v) + '%'; });
+      h += '<div class="note" style="margin:10px 0 2px">Camadas por cima</div>' + faixa('desfoque', 'Desfoque', 0, 20, 1, f.desfoque || 0, function (v) { return Math.round(v) + 'px'; }) + faixa('escuro', 'Escurecer', 0, 0.9, 0.05, f.escuro == null ? 0.15 : f.escuro, pc) + faixa('cor', 'Cor do degradê por cima', 0, 1, 0.05, f.cor || 0, pc) + faixa('vinheta', 'Vinheta', 0, 1, 0.05, f.vinheta == null ? 0.35 : f.vinheta, pc);
+      h += '<div class="row"><div class="l"><b>Padrão por cima</b><small>Pontos, listras, estrelas...</small></div><button class="tg' + (f.comPadrao ? ' on' : '') + '" data-pfa="compadrao" role="switch" aria-checked="' + !!f.comPadrao + '"></button></div>';
+      if (f.comPadrao) h += chips('pfp', PADROES, f.padrao);
+      if (f.cor > 0) h += coresHTML('fundo', f.cores, f.cores.length);
+    } else h += coresHTML('fundo', f.cores, f.tipo === 'cor' ? 1 : f.cores.length);
+    if (f.tipo !== 'cor' && (f.tipo !== 'midia' || f.cor > 0)) h += '<div class="row"><div class="l"><b>Direção</b></div><input type="range" data-pfr="angulo" min="0" max="360" step="5" value="' + f.angulo + '" style="--p:' + (f.angulo / 3.6) + '%"><output>' + f.angulo + '°</output></div>';
     if (f.tipo === 'padrao') h += chips('pfp', PADROES, f.padrao);
     h += '<h4>Nome</h4><input class="txt pf-ap" data-pfap maxlength="32" placeholder="' + esc(PF.conta.nome || 'Seu nome') + '" value="' + esc(d.apelido || '') + '"><div class="note" style="margin:6px 0 0">Nome do Concord: aparece no seu cartão e no chat para quem usa o Concord. Vazio usa o nome do Discord.</div>' + chips('pfn', ESTILOS, n.estilo);
     if (n.estilo !== 'arcoiris') h += coresHTML('nome', n.cores, n.estilo === 'normal' ? 1 : Math.max(2, n.cores.length));
@@ -2056,7 +2257,7 @@
     var key = JSON.stringify(PF.draft) + (flutua ? 'f' : 'p');
     if (b.firstChild && b.dataset.k === key) return; b.dataset.k = key;
     var U = st('User'), me = U && U.getCurrentUser && U.getCurrentUser();
-    var p = JSON.parse(JSON.stringify(PF.draft)); if (PF.draft._av) p.avatar = PF.draft._av; if (PF.draft._bn) p.banner = PF.draft._bn;
+    var p = JSON.parse(JSON.stringify(PF.draft)); if (PF.draft._av) p.avatar = PF.draft._av; if (PF.draft._bn) p.banner = PF.draft._bn; if (PF.fundoLocal && p.fundo.tipo === 'midia') { p.fundo._m = PF.fundoLocal.url; p.fundo.video = PF.fundoLocal.video; }
     b.innerHTML = ''; PF.quieto = true; b.appendChild(cardEl(p, me ? nameOf(me) : PF.conta.nome, me ? avatarOf(me, 128) : '')); PF.quieto = false;
   }
   // troca só o "escolhido" no lugar, sem redesenhar o painel (nada de piscar)
@@ -2072,7 +2273,7 @@
     var d = PF.draft; if (!d || !PF.conta) return;
     if (PF.salvando) { PF.denovo = true; return; }
     PF.salvando = true; PF.denovo = false; botaoSalvar('Salvando...');
-    var body = JSON.parse(JSON.stringify(d)); delete body._av; delete body._bn; delete body.ganhas; delete body.nomeDiscord; delete body.v;
+    var body = JSON.parse(JSON.stringify(d)); delete body._av; delete body._bn; if (body.fundo) delete body.fundo._m; delete body.ganhas; delete body.nomeDiscord; delete body.v;
     net('PUT', '/concord/perfil', JSON.stringify(body)).then(function (r) {
       PF.salvando = false; PF.conta.perfil = r.perfil; d.v = r.perfil.v; d.ganhas = r.perfil.ganhas;
       PF.cache[PF.conta.id] = { t: Date.now(), p: r.perfil };
@@ -2084,6 +2285,24 @@
   function mexeu(repaint) {
     PF.sujo = true; PF.erro = ''; agendarSalvar();
     if (repaint) { paintPanel(); botaoSalvar('Salvando em instantes...'); } else pfPreview();
+  }
+  function pickFundo() {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/gif,image/png,image/jpeg,image/webp,video/mp4,video/webm';
+    inp.onchange = function () {
+      var file = inp.files[0]; if (!file) return;
+      var video = /^video\//.test(file.type);
+      if (file.size > (video ? 12 : 6) << 20) { toast(video ? 'O vídeo precisa ter até 12 MB' : 'A imagem precisa ter até 6 MB'); return; }
+      var r = new FileReader();
+      r.onload = function () {
+        var url = String(r.result), b64 = url.split(',')[1], d = PF.draft;
+        PF.fundoLocal = { url: url, video: video }; d.fundo.tipo = 'midia'; d.fundo.video = video; paintPanel(); toast(video ? 'Enviando o vídeo...' : 'Enviando a imagem...');
+        net('POST', '/concord/midia', b64).then(function (res) {
+          d.fundo.midia = res.url; d.fundo.video = /^video\//.test(res.tipo || '') || video; PF.media[res.url.slice(-32)] = Promise.resolve(url); MEDIA_OK[res.url.slice(-32)] = url; mexeu(true); toast('Fundo pronto');
+        }).catch(function (e) { PF.fundoLocal = null; PF.erro = e.erro || 'Não consegui enviar o fundo.'; paintPanel(); });
+      };
+      r.readAsDataURL(file);
+    };
+    inp.click();
   }
   function pickImg(k) {
     var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/gif,image/png,image/jpeg,image/webp';
@@ -2111,6 +2330,9 @@
     if (a === 'sair') { if (b.dataset.sure) { if (window.ccSair) window.ccSair(); PF.conta = null; PF.draft = null; paintPanel(); } else { b.dataset.sure = '1'; b.textContent = 'Sair mesmo?'; } return true; }
     if (a === 'salvar') { clearTimeout(PF.autoT); salvarPerfil(); return true; }
     if (a === 'pick') { pickImg(b.dataset.k); return true; }
+    if (a === 'pickfundo') { pickFundo(); return true; }
+    if (a === 'tirarfundo') { delete d.fundo.midia; PF.fundoLocal = null; d.fundo.tipo = 'degrade'; mexeu(true); return true; }
+    if (a === 'compadrao') { d.fundo.comPadrao = !d.fundo.comPadrao; mexeu(true); return true; }
     if (a === 'tirar') { d[b.dataset.k] = null; delete d[b.dataset.k === 'avatar' ? '_av' : '_bn']; mexeu(true); return true; }
     if (a === 'animado') { d.nome.animado = !d.nome.animado; b.setAttribute('aria-checked', d.nome.animado); marcar(b, 1); return true; }
     if (a === 'addcor' || a === 'tirarcor') {
@@ -2139,6 +2361,15 @@
   function perfilInput(t) {
     var d = PF.draft; if (!d) return false;
     if (t.dataset.pfc) { var p = t.dataset.pfc.split('.'), g = p[0] === 'fundo' ? d.fundo : d.nome; g.cores[+p[1]] = t.value; t.parentNode.style.setProperty('--c', t.value); mexeu(false); return true; }
+    if (t.dataset.pfmr) {
+      var k = t.dataset.pfmr, v = +t.value, mn = +t.min, mx = +t.max; d.fundo[k] = v; t.style.setProperty('--p', ((v - mn) / (mx - mn) * 100) + '%');
+      var o3 = t.nextElementSibling; if (o3) o3.textContent = k === 'zoom' ? v.toFixed(2) + 'x' : k === 'x' || k === 'y' ? Math.round(v) + '%' : k === 'desfoque' ? Math.round(v) + 'px' : Math.round(v * 100) + '%';
+      // mexe só nas camadas do cartão que já está na tela (o vídeo não recomeça)
+      var vivos = document.querySelectorAll('#cc-pf-fl .pc-fm, #cc-pf-prev .pc-fm');
+      if (vivos.length) { vivos.forEach(function (fm) { fundoVars(fm, d.fundo); }); PF.sujo = true; agendarSalvar(); var bx = document.getElementById('cc-pf-fl') || document.getElementById('cc-pf-prev'); if (bx) bx.dataset.k = JSON.stringify(PF.draft) + (pfFloat() ? 'f' : 'p'); if (k === 'cor' && (v === 0 || +t.dataset.antes === 0)) paintPanel(); t.dataset.antes = v; }
+      else mexeu(false);
+      return true;
+    }
     if (t.dataset.pfr) { d.fundo.angulo = +t.value; t.style.setProperty('--p', (+t.value / 3.6) + '%'); var o = t.nextElementSibling; if (o) o.textContent = t.value + '°'; mexeu(false); return true; }
     if (t.dataset.pfb != null) { d.bio = t.value.slice(0, 190); var c = document.getElementById('cc-pf-bion'); if (c) c.textContent = d.bio.length + '/190'; mexeu(false); return true; }
     if (t.dataset.pfdi != null) { d.destaque = t.value; mexeu(false); return true; }
@@ -2157,7 +2388,7 @@
       if (!p) { delete t.dataset.ccTile; t.style.removeProperty('--pf'); t.style.removeProperty('--cc-tbn'); continue; }
       t.dataset.ccTile = k; var pp = completar(JSON.parse(JSON.stringify(p)));
       t.style.setProperty('--pf', fundoCSS(pp.fundo)); t.style.setProperty('--d', pp.destaque);
-      (function (t, pp) { if (pp.banner) mediaURL(pp.banner).then(function (d) { if (d) t.style.setProperty('--cc-tbn', 'url("' + d + '")'); }); else t.style.removeProperty('--cc-tbn'); })(t, pp);
+      (function (t, pp) { var fimg = pp.fundo && pp.fundo.tipo === 'midia' && pp.fundo.midia && !pp.fundo.video ? pp.fundo.midia : ''; if (pp.banner || fimg) mediaURL(pp.banner || fimg).then(function (d) { if (d) t.style.setProperty('--cc-tbn', 'url("' + d + '")'); }); else t.style.removeProperty('--cc-tbn'); })(t, pp);
       var nm = t.querySelector('.experimentOverlayTitle__2f4f7, .overlayTitleText__2f4f7'); if (nm) { nomeStyle(nm, pp.nome); nm.classList.add('cc-nm'); }
     }
   }
@@ -2351,7 +2582,7 @@
     };
     if (!polite) raDc(c, pc.createDataChannel('fz')); else pc.ondatachannel = function (e) { raDc(c, e.channel); };
   }
-  function raAddLocal(c) { c.local.getTracks().forEach(function (t) { var s = c.pc.addTrack(t, c.local); if (t.kind === 'video') c.camSender = s; }); }
+  function raAddLocal(c) { c.local.getTracks().forEach(function (t) { var s = c.pc.addTrack(t, c.local); if (t.kind === 'video') { c.camSender = s; raEnc(s, 'video', 'cam'); } }); }
   function raOnSdp(c, desc) {
     var pc = c.pc; if (!pc || !desc) return;
     var collision = desc.type === 'offer' && (c.making || pc.signalingState !== 'stable');
@@ -2393,6 +2624,34 @@
     var c = RA.call; if (!c || !c.cam) return; c.facing = c.facing === 'user' ? 'environment' : 'user';
     navigator.mediaDevices.getUserMedia({ video: { facingMode: c.facing } }).then(function (s) { var nt = s.getVideoTracks()[0]; c.local.getVideoTracks().forEach(function (t) { t.stop(); c.local.removeTrack(t); }); c.local.addTrack(nt); if (c.camSender) c.camSender.replaceTrack(nt); raSelf(); }).catch(function () {});
   }
+  // qualidade do que vai pela chamada ReApps: sem isso o navegador começava com pouca banda e o vídeo ficava borrado e travado (pior no celular)
+  function raCodec(c, sender) {
+    try {
+      var tr = c.pc.getTransceivers().find(function (t) { return t.sender === sender; }), caps = RTCRtpReceiver.getCapabilities && RTCRtpReceiver.getCapabilities('video');
+      if (!tr || !tr.setCodecPreferences || !caps) return;
+      // H.264 primeiro: celular e tablet decodificam no chip de vídeo (leve e liso); os outros ficam de reserva
+      var h = caps.codecs.filter(function (k) { return /h264/i.test(k.mimeType); }), o = caps.codecs.filter(function (k) { return !/h264/i.test(k.mimeType); });
+      if (h.length) tr.setCodecPreferences(h.concat(o));
+    } catch (e) {}
+  }
+  function raEnc(sender, kind, tipo) {
+    var go = function () {
+      try {
+        var p = sender.getParameters(); if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+        var e = p.encodings[0];
+        if (kind === 'audio') e.maxBitrate = tipo === 'filme' ? 160000 : 96000;
+        else {
+          // filme: no máximo 720p (1080p codificado no PC enquanto ele mesmo toca o vídeo apertava o processador e o navegador derretia a imagem)
+          var hgt = 0; try { hgt = (sender.track && sender.track.getSettings().height) || 0; } catch (e3) {}
+          e.maxBitrate = tipo === 'filme' ? 4500000 : tipo === 'tela' ? 5000000 : 1500000; e.maxFramerate = tipo === 'cam' || tipo === 'filme' ? 30 : 60;
+          e.scaleResolutionDownBy = tipo === 'filme' && hgt > 760 ? hgt / 720 : 1;
+          p.degradationPreference = tipo === 'tela' && CFG.fluida === false ? 'maintain-resolution' : tipo === 'tela' ? 'maintain-framerate' : 'balanced';
+        }
+        sender.setParameters(p).catch(function () {});
+      } catch (e2) {}
+    };
+    go(); setTimeout(go, 1500); setTimeout(go, 5000);
+  }
   function canScreen() { return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && !TOQUE; }
   function raScreen() {
     var c = RA.call; if (!c || !c.pc) return;
@@ -2400,7 +2659,7 @@
     // o getDisplayMedia já tira o som do próprio Concord (ver "compartilhar tela sem o som do próprio Concord")
     navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 }, width: { max: 1920 }, height: { max: 1080 } }, audio: true, systemAudio: 'include', selfBrowserSurface: 'exclude' }).then(function (s) {
       if (RA.call !== c) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
-      c.screen = s; c.screenSenders = s.getTracks().map(function (t) { if (t.kind === 'video' && 'contentHint' in t) t.contentHint = 'detail'; return c.pc.addTrack(t, s); });
+      c.screen = s; c.screenSenders = s.getTracks().map(function (t) { if (t.kind === 'video' && 'contentHint' in t) t.contentHint = CFG.fluida === false ? 'detail' : 'motion'; var sd = c.pc.addTrack(t, s); if (t.kind === 'video') raCodec(c, sd); raEnc(sd, t.kind, 'tela'); return sd; });
       s.getVideoTracks()[0].onended = function () { stopScreen(c); };
       raSend({ k: 'streams', roles: raRoles(c) }); raPaint(); raLayout();
       if (!s.getAudioTracks().length) toast('Tela compartilhada sem som (assim as vozes da chamada não voltam duplicadas)');
@@ -2468,7 +2727,7 @@
       var v = document.createElement('video'); v.src = URL.createObjectURL(f); v.playsInline = true; v.controls = true;
       v.onloadedmetadata = function () {
         var s = (v.captureStream || v.mozCaptureStream).call(v); c.watchV = v; c.watchS = s;
-        var add = function () { s.getTracks().forEach(function (t) { if (!(c.watchSenders || []).some(function (x) { return x.track === t; })) (c.watchSenders = c.watchSenders || []).push(c.pc.addTrack(t, s)); }); raSend({ k: 'streams', roles: raRoles(c) }); };
+        var add = function () { s.getTracks().forEach(function (t) { if (!(c.watchSenders || []).some(function (x) { return x.track === t; })) { if (t.kind === 'video' && 'contentHint' in t) t.contentHint = 'motion'; var sd = c.pc.addTrack(t, s); if (t.kind === 'video') raCodec(c, sd); raEnc(sd, t.kind, 'filme'); (c.watchSenders = c.watchSenders || []).push(sd); } }); raSend({ k: 'streams', roles: raRoles(c) }); };
         s.onaddtrack = add; add();
         v.onplay = v.onpause = function () { raSend({ k: 'wfstate', paused: v.paused }); };
         v.play().catch(function () {}); raLayout(); raPaint();
@@ -2591,7 +2850,7 @@
   var CEL = { g: null, lista: false, btn: null };
   function estreito() { return innerWidth < 760; }
   function celTick() {
-    var on = estreito(); flag('cc-estreito', on);
+    var on = estreito(); flag('cc-estreito', on); setTick();
     if (!on) { flag('cc-lista', false); if (CEL.btn) CEL.btn.style.display = 'none'; return; }
     var p = location.pathname.split('/'), g = p[2] || '', ch = p[3] || '';
     if (g !== CEL.g) { CEL.lista = g !== '@me'; CEL.g = g; CEL.ch = ch; CEL.forcou = false; }
@@ -2601,10 +2860,10 @@
     if (!CEL.btn) {
       CEL.btn = document.createElement('button'); CEL.btn.id = 'cc-voltar'; CEL.btn.title = 'Voltar para a lista';
       CEL.btn.innerHTML = sv('<path d="M15 5l-7 7 7 7"/>');
-      CEL.btn.addEventListener('click', function () { CEL.lista = true; CEL.forcou = true; flag('cc-lista', true); });
+      CEL.btn.addEventListener('click', function () { if (SET.side && SET.ver) { SET.ver = false; flag('cc-setmain', false); return; } CEL.lista = true; CEL.forcou = true; flag('cc-lista', true); });
       document.body.appendChild(CEL.btn);
     }
-    CEL.btn.style.display = CEL.lista ? 'none' : '';
+    CEL.btn.style.display = CEL.lista && !(SET.side && SET.ver) ? 'none' : '';
   }
   // na lista, tocar num canal ou conversa já abre a conversa (mesmo se for o mesmo canal de antes)
   document.addEventListener('click', function (e) {
@@ -2614,6 +2873,37 @@
   }, true);
   window.addEventListener('resize', celTick);
 
+  /* configurações do Discord na tela estreita: o menu ocupa a tela toda; tocar num item abre a página dele, o voltar volta ao menu
+     (antes o menu espremia a página num canto e cortava tudo) */
+  var SET = { side: null, main: null, ver: false };
+  function acharDivisao(lay) {
+    var fila = [lay], H = innerHeight * 0.45;
+    for (var n = 0; n < 400 && fila.length; n++) {
+      var el = fila.shift(), k = Array.prototype.filter.call(el.children, function (c) { var r = c.getBoundingClientRect(); return r.width > 50 && r.height > H; });
+      if (k.length >= 2) {
+        var a = k[0].getBoundingClientRect(), b = k[k.length - 1].getBoundingClientRect();
+        if (b.left >= a.right - 4 && a.width < b.width * 2.5) return { side: k[0], main: k[k.length - 1], split: el };
+      }
+      Array.prototype.forEach.call(el.children, function (c) { fila.push(c); });
+    }
+    return null;
+  }
+  function setTick() {
+    var lay = estreito() ? document.querySelector('.layers__960e4 > .layer__960e4:not(.baseLayer__960e4)') : null;
+    if (!lay) { if (SET.side) { delete SET.side.dataset.ccSide; delete SET.main.dataset.ccMain; } SET.side = SET.main = null; SET.ver = false; flag('cc-set', false); flag('cc-setmain', false); return; }
+    if (!SET.side || !lay.contains(SET.side) || !lay.contains(SET.main)) {
+      var d = acharDivisao(lay); SET.side = d && d.side; SET.main = d && d.main; SET.ver = false;
+      if (d) {
+        d.side.dataset.ccSide = '1'; d.main.dataset.ccMain = '1'; d.split.dataset.ccSplit = '1';
+        d.side.addEventListener('click', function (e) {
+          if (!e.target.closest || e.target.closest('input, textarea')) return;
+          if (e.target.closest('[role="tab"], [role="button"], [role="menuitem"], a, [class*="item"], [class*="Item"]')) setTimeout(function () { SET.ver = true; flag('cc-setmain', true); }, 30);
+        }, true);
+      }
+    }
+    flag('cc-set', !!SET.side); flag('cc-setmain', !!SET.side && SET.ver);
+  }
+
   // botão voltar do celular: fecha o que estiver por cima, depois volta para a lista
   window.__ccVoltar = function () {
     if (document.getElementById('cc-grande')) { fecharGrande(); return true; }
@@ -2621,6 +2911,8 @@
     if (PANEL && PANEL.classList.contains('on')) { togglePanel(false); return true; }
     var rc = document.getElementById('cc-rc'); if (rc && rc.classList.contains('on') && !rc.classList.contains('mini') && RA.call && RA.call.state !== 'ringing') { raMini(true); return true; }
     if (POP.card) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true; }
+    if (SET.side && SET.ver) { SET.ver = false; flag('cc-setmain', false); return true; }
+    if (SET.side) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true })); return true; }
     if (estreito() && !CEL.lista) { CEL.lista = true; CEL.forcou = true; flag('cc-lista', true); return true; }
     return false;
   };
@@ -2630,7 +2922,7 @@
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); pfTick(); celTick(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
+    setTimeout(function () { pend = false; place(); if (document.body) { celZoom(); splash(); aura(); mountWin(); tagMine(); pfTick(); celTick(); cheiaTick(); callTick(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, window.__ccCel ? 450 : 250); // no celular, menos vezes: o Discord mexe na página o tempo todo
   });
   mo.observe(document, { childList: true, subtree: true });
   // troca de tela na hora (sem esperar o Discord mexer na página): o Início entra sem mostrar a lista de amigos antes
