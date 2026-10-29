@@ -1033,7 +1033,7 @@
     var semVidro = (MAT() === 'acrylic' || MAT() === 'mica') && !window.__ccCel;
     flag('cc-vfsem', semVidro && !assado);
     if (!assado && !semVidro) { if (VF.els.length) vidroLimpar(); return; }
-    if (varrer || Date.now() - VF.t > 4000) {
+    if (varrer || Date.now() - VF.t > 15000) {
       VF.t = Date.now();
       var base = document.querySelector('.baseLayer__960e4') || document.body, cel = !!window.__ccCel, novos = [];
       var cand = base.querySelectorAll('div, nav, section, aside, main, header, form');
@@ -1105,9 +1105,13 @@
   }
 
   /* ---------- diagnóstico (vai junto no esqueleto da tela, para eu ver o que falhou) ---------- */
+  var ERROS = [];
+  window.addEventListener('error', function (e) { if (ERROS.length < 60) ERROS.push((e.message || '') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0) + ' ' + String(e.error && e.error.stack || '').split('\n').slice(1, 3).join(' | ').slice(0, 200)); });
+  window.addEventListener('unhandledrejection', function (e) { if (ERROS.length < 60) ERROS.push('promessa: ' + String(e.reason && (e.reason.stack || e.reason.message) || e.reason).slice(0, 200)); });
   function diag() {
     var ch = window.webpackChunkdiscord_app, d = { chunk: typeof ch, pronto: !!(ch && ch.push && ch.push !== Array.prototype.push), wreq: !!WREQ, cache: WREQ && WREQ.c ? Object.keys(WREQ.c).length : -1, achados: {}, audios: BOOST.els.length, amplificados: BOOST.els.filter(function (e) { return e.__cc; }).length, boost: CFG.boost, home: CFG.home, inicio: !!(HOME && HOME.el) };
     Object.keys(SHAPES).forEach(function (k) { d.achados[k] = !!STORES[k]; });
+    d.erros = ERROS.slice(-12);
     try { d.tempos = window.__ccTempos(); d.camadasVidro = VF.els.length; d.auraAssada = !!AURA.k; } catch (e) {}
     try { var gl = document.createElement('canvas').getContext('webgl'), ex = gl && gl.getExtension('WEBGL_debug_renderer_info'); d.gpu = ex ? gl.getParameter(ex.UNMASKED_RENDERER_WEBGL) : (gl ? 'webgl sem nome' : 'sem webgl'); } catch (e) { d.gpu = 'erro'; }
     return d;
