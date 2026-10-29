@@ -463,10 +463,15 @@
      Lê (só lê) as informações que o próprio Discord já tem carregadas: amigos, status, quem está em chamada,
      conversas e servidores. Nada é enviado para fora. */
   var WREQ = null, STORES = {};
+  // o Discord liga mais de um carregador: um pequeno primeiro e o principal depois. Fica sempre com o maior.
+  var WREQ_AT = 0;
   function wreq() {
-    if (WREQ) return WREQ;
-    var ch = window.webpackChunkdiscord_app; if (!ch || !ch.push || ch.push === Array.prototype.push) return null;
-    try { ch.push([[Symbol('concord')], {}, function (r) { WREQ = r; }]); ch.pop(); } catch (e) {}
+    var size = function (r) { return r && r.c ? Object.keys(r.c).length : 0; };
+    if (WREQ && size(WREQ) > 2000 && Date.now() - WREQ_AT < 60000) return WREQ;
+    var ch = window.webpackChunkdiscord_app; if (!ch || !ch.push || ch.push === Array.prototype.push) return WREQ;
+    var got = null;
+    try { ch.push([[Symbol('concord')], {}, function (r) { if (!got || size(r) > size(got)) got = r; }]); ch.pop(); } catch (e) {}
+    if (got && size(got) >= size(WREQ)) { WREQ = got; WREQ_AT = Date.now(); }
     return WREQ;
   }
   function findMod(test) {
@@ -492,12 +497,26 @@
     VoiceAct: function (m) { return typeof m.selectVoiceChannel === 'function'; },
     DMAct: function (m) { return typeof m.openPrivateChannel === 'function'; }
   };
-  function st(k) {
-    if (STORES[k]) return STORES[k];
-    var t = STORES['_t' + k] || 0; if (Date.now() - t < 5000) return null; // o Discord ainda está carregando: tenta de novo daqui a pouco
-    STORES['_t' + k] = Date.now();
-    var v = findMod(SHAPES[k]); if (v) STORES[k] = v; return v || null;
+  // procura todas as peças que faltam numa passada só (o Discord tem milhares de módulos)
+  var SCAN_AT = 0;
+  function scanStores() {
+    if (Date.now() - SCAN_AT < 5000) return; SCAN_AT = Date.now();
+    var r = wreq(); if (!r || !r.c) return;
+    var miss = Object.keys(SHAPES).filter(function (k) { return !STORES[k]; }); if (!miss.length) return;
+    var check = function (x) {
+      try { if (x.__ccNaoExiste__ !== undefined) return; } catch (e) { return; } // objetos que respondem a qualquer nome enganariam a busca
+      for (var i = miss.length - 1; i >= 0; i--) { var k = miss[i]; try { if (SHAPES[k](x)) { STORES[k] = x; miss.splice(i, 1); } } catch (e) {} }
+    };
+    for (var id in r.c) {
+      var m = r.c[id] && r.c[id].exports; if (!m || m === window) continue;
+      try {
+        if (typeof m === 'object' || typeof m === 'function') check(m);
+        if (typeof m === 'object') for (var k in m) { var x = m[k]; if (x && (typeof x === 'object' || typeof x === 'function')) check(x); }
+      } catch (e) {}
+      if (!miss.length) break;
+    }
   }
+  function st(k) { if (!STORES[k]) scanStores(); return STORES[k] || null; }
   function go(path) { try { history.pushState(null, '', path); dispatchEvent(new PopStateEvent('popstate', { state: null })); } catch (e) { location.href = path; } }
   function avatarOf(u, size) {
     if (!u) return '';
