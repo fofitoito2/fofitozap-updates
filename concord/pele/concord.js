@@ -128,7 +128,7 @@
     if (STY.adopted) STY.adopted[1].replaceSync(css); else style('theme', css);
     marks(); if (typeof PX !== 'undefined') parallax();
     if (window.ccMat) window.ccMat(CFG.mat === 'acrylic' || CFG.mat === 'mica' ? CFG.mat : 'none').catch(function () {});
-    paintWall();
+    paintWall(); if (typeof assarAura === 'function') setTimeout(assarAura, 0);
   }
 
   // o Discord reescreve as classes do <html> quando termina de carregar ou troca o tema: as nossas voltam sozinhas
@@ -962,6 +962,106 @@
     for (var i = 0; i < ts.length; i++) { var t = ts[i]; if (!t.querySelector('.avatarWrapper_fb62e2, video') && t.querySelector('button')) t.dataset.ccVz = '1'; }
   }
 
+  /* ================= otimização sem perder o visual =================
+     1) A aura (bolhas + granulado) é desenhada uma vez numa imagem: some 4 camadas do tamanho da janela e a mistura por cima.
+     2) Vidro "assado": em cima da aura parada, o desfoque de verdade dá o mesmo que a aura já desfocada. Os painéis grandes
+        ganham essa imagem desfocada por baixo da cor deles (no lugar do backdrop-filter, que é o que mais pesa na placa de vídeo).
+        No celular e tablet isso devolve o vidro que antes era tirado.
+     3) Animações enfeite param com a janela sem foco ou parada há um tempo, e tudo para com a janela escondida. */
+  var AURA = { k: '', url: '', blur: '', fazendo: false, ruido: null };
+  function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function auraAssavel() { return (CFG.mat === 'aura') && !CFG.motion; }
+  function corRGB(c, a) { var d = document.createElement('canvas').getContext('2d'); d.fillStyle = c || '#000'; var f = d.fillStyle; if (a == null) return f; if (f[0] === '#') { var n = parseInt(f.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; } return f.replace(/rgba?\(([^)]+)\)/, function (m, x) { var p = x.split(',').slice(0, 3); return 'rgba(' + p.join(',') + ',' + a + ')'; }); }
+  function desenharAura(cx, W, H, comRuido) {
+    var b0 = cssVar('--cc-bg0'), b1 = cssVar('--cc-bg1'), orbs = +cssVar('--cc-orbs') || 0.6;
+    cx.fillStyle = b0; cx.fillRect(0, 0, W, H);
+    // radial-gradient(140% 100% at 50% 0%, bg1, bg0)
+    cx.save(); cx.translate(W / 2, 0); cx.scale(1.4 * W / H, 1);
+    var g = cx.createRadialGradient(0, 0, 0, 0, 0, H); g.addColorStop(0, b1); g.addColorStop(1, b0); cx.fillStyle = g; cx.fillRect(-W, 0, 2 * W, H); cx.restore();
+    var vmax = Math.max(W, H) / 100, r = 36 * vmax, cores = [cssVar('--cc-o1'), cssVar('--cc-o2'), cssVar('--cc-o3')];
+    var centros = [[-22 * vmax + r, -28 * vmax + r], [W + 26 * vmax - r, 6 * vmax + r], [12 * vmax + r, H + 38 * vmax - r]];
+    cx.globalAlpha = orbs;
+    centros.forEach(function (c, i) { var gg = cx.createRadialGradient(c[0], c[1], 0, c[0], c[1], r); gg.addColorStop(0, corRGB(cores[i], 1)); gg.addColorStop(1, corRGB(cores[i], 0)); cx.fillStyle = gg; cx.fillRect(c[0] - r, c[1] - r, 2 * r, 2 * r); });
+    cx.globalAlpha = 1;
+    if (comRuido && AURA.ruido) { cx.globalCompositeOperation = 'overlay'; cx.globalAlpha = 0.55; cx.fillStyle = cx.createPattern(AURA.ruido, 'repeat'); cx.fillRect(0, 0, W, H); cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over'; }
+  }
+  function assarAura() {
+    var A = document.getElementById('cc-aura');
+    if (!A || !auraAssavel()) { if (AURA.k) { AURA.k = ''; flag('cc-auraimg', false); if (A) A.style.removeProperty('background-image'); document.documentElement.style.removeProperty('--cc-aura-blur'); } return; }
+    var W = Math.max(1, innerWidth), H = Math.max(1, innerHeight), k = [cssVar('--cc-bg0'), cssVar('--cc-bg1'), cssVar('--cc-o1'), cssVar('--cc-o2'), cssVar('--cc-o3'), cssVar('--cc-orbs'), W, H, CFG.blur].join('|');
+    if (k === AURA.k || AURA.fazendo) return;
+    if (!AURA.ruido) { var im = new Image(); im.onload = function () { AURA.ruido = im; assarAura(); }; im.onerror = function () { AURA.ruido = 1; assarAura(); }; im.src = NOISE.slice(5, -2).replace(/\\"/g, '"'); AURA.fazendo = false; if (AURA.ruido !== 1) return; }
+    AURA.fazendo = true;
+    try {
+      var cv = document.createElement('canvas'); cv.width = W; cv.height = H; var cx = cv.getContext('2d');
+      desenharAura(cx, W, H, AURA.ruido && AURA.ruido !== 1);
+      // versão desfocada, pequena (é só degradê): vira o "vidro" dos painéis
+      var q = 4, bw = Math.ceil(W / q), bh = Math.ceil(H / q), bv = document.createElement('canvas'); bv.width = bw; bv.height = bh; var bx = bv.getContext('2d');
+      var limpa = document.createElement('canvas'); limpa.width = bw; limpa.height = bh; desenharAura(limpa.getContext('2d'), bw, bh, false);
+      bx.filter = 'blur(' + Math.max(2, (+CFG.blur || 14) / q) + 'px)'; bx.drawImage(limpa, -6, -6, bw + 12, bh + 12); bx.filter = 'none';
+      var pronto = 0, fim = function () { if (++pronto < 2) return; AURA.fazendo = false; AURA.k = k; flag('cc-auraimg', true); vidroTick(true); };
+      cv.toBlob(function (b) { if (AURA.url) URL.revokeObjectURL(AURA.url); AURA.url = URL.createObjectURL(b); A.style.backgroundImage = 'url("' + AURA.url + '")'; fim(); }, 'image/webp', 0.95);
+      bv.toBlob(function (b) { if (AURA.blur) URL.revokeObjectURL(AURA.blur); AURA.blur = URL.createObjectURL(b); document.documentElement.style.setProperty('--cc-aura-blur', 'url("' + AURA.blur + '")'); fim(); }, 'image/webp', 0.9);
+    } catch (e) { AURA.fazendo = false; }
+  }
+  var ASSA_T = 0;
+  window.addEventListener('resize', function () { clearTimeout(ASSA_T); ASSA_T = setTimeout(assarAura, 350); });
+
+  // painéis grandes da tela, em cima da aura, que usam vidro (ou só cor translúcida no celular)
+  var VF = { els: [], t: 0 };
+  function alfa(c) { var m = /rgba?\(([^)]+)\)/.exec(c || ''); if (!m) return c === 'transparent' ? 0 : 1; var p = m[1].split(/[ ,/]+/).filter(Boolean); return p.length > 3 ? parseFloat(p[3]) : 1; }
+  function vidroLimpar() { VF.els.forEach(function (e) { delete e.dataset.ccVf; e.style.removeProperty('--vft'); e.style.removeProperty('--vfx'); e.style.removeProperty('--vfy'); }); VF.els = []; }
+  function vidroTick(varrer) {
+    var assado = document.documentElement.classList.contains('cc-auraimg') && AURA.blur && !CFG.lite;
+    // acrílico e mica: atrás dos painéis só tem o vidro do Windows (a página é transparente), o desfoque deles não muda nada na tela
+    var semVidro = (CFG.mat === 'acrylic' || CFG.mat === 'mica') && !window.__ccCel;
+    flag('cc-vfsem', semVidro && !assado);
+    if (!assado && !semVidro) { if (VF.els.length) vidroLimpar(); return; }
+    if (varrer || Date.now() - VF.t > 4000) {
+      VF.t = Date.now();
+      var base = document.querySelector('.baseLayer__960e4') || document.body, cel = !!window.__ccCel, novos = [];
+      var cand = base.querySelectorAll('div, nav, section, aside, main, header, form');
+      for (var i = 0; i < cand.length; i++) {
+        var e = cand[i]; if (e.offsetWidth < 150 || e.offsetHeight < 40) continue;
+        if (novos.length && novos.some(function (p) { return p.contains(e); })) continue;
+        var cs = getComputedStyle(e);
+        if (cs.position === 'fixed' || (semVidro && cs.position === 'absolute') || cs.backgroundImage !== 'none' && !e.dataset.ccVf) continue;
+        var bf = cs.backdropFilter && cs.backdropFilter !== 'none', a = alfa(e.dataset.ccVf ? e.style.getPropertyValue('--vft') : cs.backgroundColor);
+        if (e.dataset.ccVf || bf || (cel && !semVidro && a > 0.02 && a < 0.97)) {
+          if (!e.dataset.ccVf) e.style.setProperty('--vft', cs.backgroundColor);
+          novos.push(e);
+        }
+      }
+      VF.els.forEach(function (e) { if (novos.indexOf(e) < 0) { delete e.dataset.ccVf; e.style.removeProperty('--vft'); } });
+      novos.forEach(function (e) { e.dataset.ccVf = '1'; });
+      VF.els = novos;
+    }
+    VF.els.forEach(function (e) {
+      var r = e.getBoundingClientRect(), x = -Math.round(r.left) + 'px', y = -Math.round(r.top) + 'px';
+      if (e.style.getPropertyValue('--vfx') !== x) e.style.setProperty('--vfx', x);
+      if (e.style.getPropertyValue('--vfy') !== y) e.style.setProperty('--vfy', y);
+    });
+  }
+  window.addEventListener('resize', function () { setTimeout(function () { vidroTick(true); }, 400); });
+
+  // parar enfeites: sem foco (depois de 8 s), parado há 2 min, ou janela escondida
+  var PAUSA = { foco: true, mexeu: Date.now(), visivel: true, t: 0 };
+  function pausaTick() {
+    var semFoco = !document.hasFocus() && Date.now() - PAUSA.t > 8000, parado = Date.now() - PAUSA.mexeu > 120000, escondido = document.hidden || !PAUSA.visivel;
+    var call = document.documentElement.classList.contains('cc-video') || !!document.querySelector('#cc-sala, #cc-rc.on');
+    flag('cc-pausa', escondido || ((semFoco || parado) && !call));
+  }
+  ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, function () { var era = Date.now() - PAUSA.mexeu > 120000; PAUSA.mexeu = Date.now(); if (era) pausaTick(); }, { passive: true, capture: true }); });
+  window.addEventListener('blur', function () { PAUSA.t = Date.now(); setTimeout(pausaTick, 8100); });
+  window.addEventListener('focus', function () { PAUSA.t = Date.now(); pausaTick(); });
+  document.addEventListener('visibilitychange', function () { pausaTick(); if (!document.hidden) { vidroTick(true); } });
+  setInterval(pausaTick, 5000);
+  // o app do celular pergunta antes de parar de desenhar: em call, continua tudo
+  window.__ccEmCall = function () { try { return !!(RA.call || SL.on || meuCanal()); } catch (e) { return true; } };
+  // pouca memória no aparelho: solta as imagens guardadas (voltam quando precisar)
+  window.__ccEnxugar = function () { MEDIA_ORDEM.slice().forEach(function (h) { var x = MEDIA_OK[h]; delete MEDIA_OK[h]; delete PF.media[h]; if (x && x.indexOf('blob:') === 0) setTimeout(function () { URL.revokeObjectURL(x); }, 30000); }); MEDIA_ORDEM = []; BLOB_C = {}; Object.keys(PF.cache).forEach(function (k) { if (Date.now() - PF.cache[k].t > 6e4) delete PF.cache[k]; }); };
+  window.__ccVisivel = function (v) { PAUSA.visivel = !!v; pausaTick(); if (v) { vidroTick(true); } };
+
   /* ---------- vídeo na tela (transmissão, câmera): tira o vidro e as bolhas para o vídeo não travar ---------- */
   function videoTick() {
     var on = false;
@@ -992,6 +1092,7 @@
   function diag() {
     var ch = window.webpackChunkdiscord_app, d = { chunk: typeof ch, pronto: !!(ch && ch.push && ch.push !== Array.prototype.push), wreq: !!WREQ, cache: WREQ && WREQ.c ? Object.keys(WREQ.c).length : -1, achados: {}, audios: BOOST.els.length, amplificados: BOOST.els.filter(function (e) { return e.__cc; }).length, boost: CFG.boost, home: CFG.home, inicio: !!(HOME && HOME.el) };
     Object.keys(SHAPES).forEach(function (k) { d.achados[k] = !!STORES[k]; });
+    try { d.tempos = window.__ccTempos(); d.camadasVidro = VF.els.length; d.auraAssada = !!AURA.k; } catch (e) {}
     try { var gl = document.createElement('canvas').getContext('webgl'), ex = gl && gl.getExtension('WEBGL_debug_renderer_info'); d.gpu = ex ? gl.getParameter(ex.UNMASKED_RENDERER_WEBGL) : (gl ? 'webgl sem nome' : 'sem webgl'); } catch (e) { d.gpu = 'erro'; }
     return d;
   }
@@ -1700,8 +1801,14 @@
     if (/^data:(image|video)\//.test(u)) return Promise.resolve(u);
     var h = String(u).slice(-32);
     if (!/^[0-9a-f]{32}$/.test(h)) return Promise.resolve('');
-    if (!PF.media[h]) PF.media[h] = net('GET', '/concord/m/' + h).then(function (d) { if (d) MEDIA_OK[h] = d; return d; }).catch(function () { delete PF.media[h]; return ''; });
+    if (!PF.media[h]) PF.media[h] = net('GET', '/concord/m/' + h).then(function (d) { if (d) { d = blobDe(d, h); guardarMidia(h, d); } return d; }).catch(function () { delete PF.media[h]; return ''; });
     return PF.media[h];
+  }
+  // imagens e vídeos dos perfis ficam como endereço blob: (metade da memória de um data: e decodifica direto), no máximo 80
+  var MEDIA_ORDEM = [];
+  function guardarMidia(h, u) {
+    MEDIA_OK[h] = u; var i = MEDIA_ORDEM.indexOf(h); if (i >= 0) MEDIA_ORDEM.splice(i, 1); MEDIA_ORDEM.push(h);
+    while (MEDIA_ORDEM.length > 80) { var v = MEDIA_ORDEM.shift(), x = MEDIA_OK[v]; delete MEDIA_OK[v]; delete PF.media[v]; if (x && x.indexOf('blob:') === 0) { for (var kk in BLOB_C) if (BLOB_C[kk] === x) delete BLOB_C[kk]; setTimeout(function (y) { return function () { URL.revokeObjectURL(y); }; }(x), 60000); } }
   }
   // vídeo do fundo: vira um endereço blob: (o vídeo em data: pesa e nem sempre toca)
   var BLOB_C = {};
@@ -2482,7 +2589,16 @@
       var nm = t.querySelector('.experimentOverlayTitle__2f4f7, .overlayTitleText__2f4f7'); if (nm) { nomeStyle(nm, pp.nome); nm.classList.add('cc-nm'); }
     }
   }
-  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); pintarNomes(false); pintarPlacas(); pintarTiles(); popTick(false); raBtns(); }
+  // nomes animados: só as 3 mensagens mais novas e a que está sob o mouse ficam se mexendo (o resto fica no degradê parado)
+  var VIVOS = [];
+  function vivosTick() {
+    var lis = document.querySelectorAll('li[data-cc-a] [data-ccn][data-cca]'), novos = [];
+    for (var i = lis.length - 1; i >= 0 && novos.length < 3; i--) { var li = lis[i].closest('li'); if (li && novos.indexOf(li) < 0) novos.push(li); }
+    VIVOS.forEach(function (li) { if (novos.indexOf(li) < 0) delete li.dataset.ccVivo; });
+    novos.forEach(function (li) { if (!li.dataset.ccVivo) li.dataset.ccVivo = '1'; });
+    VIVOS = novos;
+  }
+  function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); vivosTick(); pintarNomes(false); pintarPlacas(); pintarTiles(); popTick(false); raBtns(); }
   window.addEventListener('resize', function () { popPlace(); if (PF.draft) pfPreview(); });
 
   /* ---------- chamada ReApps no Concord: voz, vídeo, tela e assistir junto, direto entre os aparelhos ----------
@@ -3280,10 +3396,18 @@
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
-  var pend = false;
+  var pend = false, TEMPOS = {};
+  // tudo que a pele confere quando o Discord mexe na página (cada parte cronometrada: dá para ver o que pesa em window.__ccTempos)
+  function tickTudo() {
+    [['vidro', function () { vidroTick(false); }], ['celZoom', celZoom], ['splash', splash], ['aura', function () { aura(); if (!AURA.k && auraAssavel()) assarAura(); }], ['win', mountWin], ['mine', tagMine], ['perfil', pfTick], ['cel', celTick],
+     ['cheia', cheiaTick], ['call', callTick], ['home', homeTick], ['ads', function () { if (Date.now() - (TEMPOS._ads || 0) > 1500) { TEMPOS._ads = Date.now(); cleanAds(); } }], ['splashCheck', splashCheck], ['dm', dmAside], ['tela', watchScreen]].forEach(function (x) {
+      var t = performance.now(); try { x[1](); } catch (e) {} var d = performance.now() - t, o = TEMPOS[x[0]] || (TEMPOS[x[0]] = { n: 0, ms: 0, max: 0 }); o.n++; o.ms += d; if (d > o.max) o.max = d;
+    });
+  }
+  window.__ccTempos = function () { var r = {}; Object.keys(TEMPOS).forEach(function (k) { if (k[0] === '_') return; var o = TEMPOS[k]; r[k] = { media: +(o.ms / o.n).toFixed(2), max: +o.max.toFixed(1), n: o.n }; }); return r; };
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { celZoom(); splash(); aura(); mountWin(); tagMine(); pfTick(); celTick(); cheiaTick(); callTick(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, window.__ccCel ? 450 : 250); // no celular, menos vezes: o Discord mexe na página o tempo todo
+    setTimeout(function () { pend = false; place(); if (document.body && PAUSA.visivel && !document.hidden) { tickTudo(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, window.__ccCel ? 450 : 250); // no celular, menos vezes: o Discord mexe na página o tempo todo
   });
   mo.observe(document, { childList: true, subtree: true });
   // troca de tela na hora (sem esperar o Discord mexer na página): o Início entra sem mostrar a lista de amigos antes
@@ -3295,7 +3419,8 @@
     new MutationObserver(badge).observe(document.querySelector('title') || document.head, { childList: true, subtree: true, characterData: true });
     if (window.ccInfo) window.ccInfo().then(function (i) { if (i) { INFO.ver = i.ver; INFO.mats = i.mats || INFO.mats; INFO.update = i.update; if (!INFO.mats[CFG.mat]) { CFG.mat = 'aura'; save(); } applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); } }).catch(function () {});
     win('state'); restoreZoom(); if (window.ccSegundoPlano) window.ccSegundoPlano(CFG.bg !== false).catch(function () {});
-    setTimeout(function () { homeTick(); if (window.ccDump) window.ccDump('diagnostico', '<!-- ' + JSON.stringify(diag()) + ' -->').catch(function () {}); }, 30000);
+    var diagDump = function () { if (window.ccDump) window.ccDump('diagnostico', '<!-- ' + JSON.stringify(diag()) + ' -->').catch(function () {}); };
+    setTimeout(function () { homeTick(); diagDump(); }, 30000); setTimeout(diagDump, 300000);
     setTimeout(function () { (window.requestIdleCallback || setTimeout)(dumpCSS, { timeout: 10000 }); }, 15000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();

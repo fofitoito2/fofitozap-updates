@@ -1274,3 +1274,22 @@ html.cc-cel #cc-sala, html.cc-cel #cc-salabtn { -webkit-backdrop-filter: none; b
 #cc-apk small { display: block; font-size: 11.5px; font-weight: 500; opacity: .75; }
 #cc-apk i { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.14); margin-left: 4px; }
 #cc-apk i svg { width: 14px; height: 14px; }
+
+/* ================= otimização sem perder o visual ================= */
+/* aura desenhada uma vez numa imagem (as bolhas e o granulado de antes eram 4 camadas do tamanho da janela) */
+html.cc-auraimg #cc-aura { background-size: 100% 100% !important; background-repeat: no-repeat !important; background-position: 0 0 !important; }
+html.cc-auraimg #cc-aura i, html.cc-auraimg #cc-aura b { display: none !important; }
+/* vidro assado: a aura já desfocada por baixo da cor do painel, no lugar do desfoque ao vivo */
+html.cc-auraimg [data-cc-vf] { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background-color: transparent !important;
+  background-image: linear-gradient(var(--vft), var(--vft)), var(--cc-aura-blur) !important; background-size: 100% 100%, 100vw 100vh !important;
+  background-position: 0 0, var(--vfx, 0) var(--vfy, 0) !important; background-repeat: no-repeat !important; background-attachment: scroll !important; }
+/* enfeites param quando ninguém está olhando (sem foco, parado ou escondido) */
+html.cc-pausa *, html.cc-pausa *::before, html.cc-pausa *::after { animation-play-state: paused !important; }
+/* nossos painéis desenham só o que é deles */
+#cc-panel .bd, #cc-home .sc, #cc-sala .sl-strip, #cc-grande .pp-i { contain: layout paint; }
+/* nomes e placas animados ficam parados no degradê, e se mexem nas 3 mensagens mais novas, no que está sob o mouse e no cartão
+   (cada um se mexendo redesenha a tela 60 vezes por segundo) */
+li[data-cc-a]:not([data-cc-vivo]):not(:hover) [data-ccn], li[data-cc-a]:not([data-cc-vivo]):not(:hover) [data-ccn]::before, li[data-cc-a]:not([data-cc-vivo]):not(:hover) [data-ccn]::after,
+[data-ccplaca]:not(:hover)::after, [data-ccplaca]:not(:hover)::before { animation-play-state: paused !important; }
+html:not(.cc-pausa) #cc-panel [data-ccplaca]::after, html:not(.cc-pausa) #cc-panel [data-ccplaca]::before { animation-play-state: running !important; }
+html.cc-vfsem [data-cc-vf] { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
