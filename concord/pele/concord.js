@@ -108,16 +108,25 @@
   function applyTheme() {
     var css = themeCSS();
     if (STY.adopted) STY.adopted[1].replaceSync(css); else style('theme', css);
-    var h = document.documentElement; if (!h) return;
-    h.classList.toggle('cc-aura', CFG.mat === 'aura' || CFG.mat === 'wall');
-    h.classList.toggle('cc-solid', CFG.mat === 'solid');
-    h.classList.toggle('cc-anim', !!CFG.anim);
-    h.classList.toggle('cc-still', !CFG.motion);
-    h.classList.toggle('cc-style', !!CFG.style);
-    h.classList.toggle('cc-bub', !!(CFG.style && CFG.bub));
-    h.classList.toggle('cc-dood', !!(CFG.style && CFG.dood));
+    marks();
     if (window.ccMat) window.ccMat(CFG.mat === 'acrylic' || CFG.mat === 'mica' ? CFG.mat : 'none').catch(function () {});
     paintWall();
+  }
+
+  // o Discord reescreve as classes do <html> quando termina de carregar ou troca o tema: as nossas voltam sozinhas
+  var HASBAR = false;
+  function marks() {
+    var h = document.documentElement; if (!h) return;
+    watchHtml();
+    var want = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
+      'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-hasbar': HASBAR };
+    Object.keys(want).forEach(function (c) { if (h.classList.contains(c) !== want[c]) h.classList.toggle(c, want[c]); });
+  }
+  var htmlWatched = false;
+  function watchHtml() {
+    if (htmlWatched || !document.documentElement) return; htmlWatched = true;
+    new MutationObserver(function () { if (!document.documentElement.classList.contains('cc-on')) marks(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 
   /* ---------- fontes (FontFace com os bytes: não depende de baixar nada) ---------- */
@@ -171,7 +180,7 @@
     if (!document.body) return;
     if (!document.getElementById('cc-winfix')) { var f = winBox(); f.id = 'cc-winfix'; document.body.appendChild(f); var dr = document.createElement('div'); dr.id = 'cc-drag'; document.body.appendChild(dr); paintMax(); }
     var tr = document.querySelector('[class*="base_"] > [class*="bar_"] > [class*="trailing_"]');
-    document.documentElement.classList.toggle('cc-hasbar', !!tr);
+    if (HASBAR !== !!tr) { HASBAR = !!tr; marks(); }
     if (tr && !tr.querySelector('.cc-win')) {
       var m = /\btrailing_([\w-]+)/.exec(tr.className), suf = m ? m[1] : '';
       tr.appendChild(winBox(suf ? 'winButtons_' + suf : '')); paintMax();
