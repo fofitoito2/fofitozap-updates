@@ -1063,6 +1063,7 @@
   // parar enfeites: sem foco (depois de 8 s), parado há 2 min, ou janela escondida
   var PAUSA = { foco: true, mexeu: Date.now(), visivel: true, t: 0 };
   function pausaTick() {
+    if (!document.documentElement || !document.body) return;
     var semFoco = !document.hasFocus() && Date.now() - PAUSA.t > 8000, parado = Date.now() - PAUSA.mexeu > 120000, escondido = document.hidden || !PAUSA.visivel;
     var call = document.documentElement.classList.contains('cc-video') || !!document.querySelector('#cc-sala, #cc-rc.on');
     flag('cc-pausa', escondido || ((semFoco || parado) && !call));
