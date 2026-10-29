@@ -75,7 +75,8 @@
     v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid ? 1 : 0.95);
     v['--cc-side-w'] = (+CFG.sideW || 272) + 'px';
     // acrílico e mica: uma folha de vidro só, tingida por igual (antes os vãos entre os painéis viravam barras claras)
-    if (CFG.mat === 'acrylic' || CFG.mat === 'mica') {
+    if (CFG.mat === 'mica') v['--cc-sheet'] = rgba(P.bg[0], Math.max(0.12, op * 0.55));
+    if (CFG.mat === 'acrylic') {
       v['--cc-sheet'] = rgba(w, Math.max(0.15, op * 0.92));
       v['--bg-4'] = 'rgba(255,255,255,.035)'; v['--bg-3'] = 'rgba(255,255,255,.05)'; v['--bg-2'] = 'rgba(255,255,255,.075)'; v['--bg-1'] = 'rgba(255,255,255,.11)';
       v['--cc-wall1'] = rgba(mix(w, P.o[0], 0.4), 0.22); v['--cc-wall2'] = rgba(mix(w, P.o[1], 0.3), 0.16); v['--cc-wall3'] = rgba(mix(w, P.o[2], 0.4), 0.22);
@@ -134,7 +135,7 @@
   // (o Discord troca as classes do <html> quando a janela ganha ou perde o foco: por isso TODAS as nossas, inclusive as de estado, voltam aqui)
   var HASBAR = false, FLAGS = {};
   function wantMarks() {
-    var w = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-glass': CFG.mat === 'acrylic' || CFG.mat === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
+    var w = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-glass': CFG.mat === 'acrylic', 'cc-mica': CFG.mat === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
       'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite, 'cc-hasbar': HASBAR,
       'cc-lay': CFG.layout === 'palco', 'cc-homecfg': !!CFG.home };
     Object.keys(FLAGS).forEach(function (k) { w[k] = FLAGS[k]; });
@@ -301,14 +302,14 @@
     } else if (tab === 'fundo') {
       h += '<h4>Material</h4><div class="seg">' + [['aura', 'Aura'], ['acrylic', 'Acrílico'], ['mica', 'Mica'], ['wall', 'Imagem'], ['solid', 'Sólido']].map(function (m) {
         return '<button data-m="' + m[0] + '"' + (CFG.mat === m[0] ? ' class="on"' : '') + (INFO.mats[m[0]] === false ? ' disabled title="Precisa do Windows 11"' : '') + '>' + m[1] + '</button>';
-      }).join('') + '</div><div class="note" style="margin-top:8px">' + ({ aura: 'Bolhas com as cores do tema atrás dos painéis de vidro.', acrylic: 'O que está atrás da janela aparece desfocado. Painéis bem transparentes combinam mais.', mica: 'A cor do seu papel de parede do Windows tinge a janela.', wall: 'Uma imagem sua atrás dos painéis de vidro.', solid: 'Painéis firmes, sem transparência. O mais leve.' }[CFG.mat] || '') + '</div>';
+      }).join('') + '</div><div class="note" style="margin-top:8px">' + ({ aura: 'Bolhas com as cores do tema atrás dos painéis de vidro.', acrylic: 'O que está atrás da janela aparece desfocado. Painéis bem transparentes combinam mais.', mica: 'Meio-termo: a cor do Windows por trás, com as bolhas do tema fracas e uma textura por cima.', wall: 'Uma imagem sua atrás dos painéis de vidro.', solid: 'Painéis firmes, sem transparência. O mais leve.' }[CFG.mat] || '') + '</div>';
       if (CFG.mat === 'wall') {
         h += '<h4>Seus fundos</h4><div class="note">Crie no editor com camadas, pincel, imagens e texto. Cada fundo tem versão para PC, tablet e celular.</div><div class="walls2" id="cc-walls"><div class="wl-load">Carregando...</div></div>' +
           '<div class="btns" style="justify-content:flex-start"><button class="btn pri" data-a="wallnew">' + IC.plus + ' Criar fundo</button><button class="btn" data-a="wallpick">' + IC.img + ' Usar uma imagem</button></div>';
         setTimeout(paintWalls, 0);
       }
-      if (CFG.mat === 'aura') h += range('orbs', 'Bolhas', 'Força das cores do fundo', 0.2, 1, 0.05, FMT.pct) + toggle('motion', 'Bolhas em movimento', 'Mais bonito, pesa um pouco mais');
-      if (CFG.mat === 'aura' || CFG.mat === 'wall') h += toggle('parallax', 'Profundidade', 'O fundo acompanha o mouse devagar, como se estivesse mais longe');
+      if (CFG.mat === 'aura' || CFG.mat === 'mica') h += range('orbs', 'Bolhas', 'Força das cores do fundo', 0.2, 1, 0.05, FMT.pct) + toggle('motion', 'Bolhas em movimento', 'Mais bonito, pesa um pouco mais');
+      if (CFG.mat === 'aura' || CFG.mat === 'wall' || CFG.mat === 'mica') h += toggle('parallax', 'Profundidade', 'O fundo acompanha o mouse devagar, como se estivesse mais longe');
       if (CFG.mat !== 'solid') h += range('op', 'Opacidade dos painéis', 'Menos opaco deixa ver mais o fundo', 0.2, 1, 0.02, FMT.pct) + range('blur', 'Desfoque', 'Quanto o vidro desfoca o que está atrás', 0, 40, 1, FMT.px);
     } else if (tab === 'estilo') {
       h += '<h4>Layout</h4><div class="seg">' + [['palco', 'Palco'], ['classico', 'Clássico']].map(function (m) { return '<button data-lay="' + m[0] + '"' + (CFG.layout === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div><div class="note" style="margin-top:8px">' +
@@ -919,7 +920,7 @@
     if (Math.abs(PX.tx - PX.x) > 0.3 || Math.abs(PX.ty - PX.y) > 0.3) PX.raf = requestAnimationFrame(pxStep);
   }
   function parallax() {
-    var want = !!CFG.parallax && !CFG.lite && (CFG.mat === 'aura' || CFG.mat === 'wall');
+    var want = !!CFG.parallax && !CFG.lite && (CFG.mat === 'aura' || CFG.mat === 'wall' || CFG.mat === 'mica');
     if (want === PX.on) return; PX.on = want;
     if (want) window.addEventListener('mousemove', pxMove, { passive: true });
     else { window.removeEventListener('mousemove', pxMove); var a = document.getElementById('cc-aura'); if (a) a.style.transform = ''; }

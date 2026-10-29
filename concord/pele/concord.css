@@ -388,7 +388,10 @@ html.cc-style .guilds__5e434 { padding-top: 4px; }
 /* ================= Concord 10 ================= */
 
 /* --- Início: a lista de amigos do Discord nunca aparece por baixo (nem ao abrir, nem com a janela sem foco) --- */
-html.cc-homecfg:not(.cc-homelist) main.container__133bf { visibility: hidden !important; }
+html.cc-homecfg:not(.cc-homelist) main.container__133bf { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+/* Início com o material: painel de vidro igual aos outros (a lista do Discord embaixo já está invisível) */
+#cc-home { background: radial-gradient(70% 60% at 85% 0%, color-mix(in srgb, var(--cc-o2) 45%, transparent), transparent 70%), radial-gradient(60% 50% at 0% 100%, color-mix(in srgb, var(--cc-o1) 45%, transparent), transparent 70%), var(--bg-4) !important;
+  -webkit-backdrop-filter: var(--panel-backdrop-filter); backdrop-filter: var(--panel-backdrop-filter); }
 /* "Friends" vira "Início" */
 html.cc-homecfg [data-list-item-id$="___friends"] .name__20a53 { font-size: 0 !important; }
 html.cc-homecfg [data-list-item-id$="___friends"] .name__20a53::before { content: 'Início'; font-size: 16px; font-family: var(--cc-brand); font-weight: 600; }
@@ -416,11 +419,11 @@ html.cc-glass .chat_f75fb0 > .subtitleContainer_f75fb0, html.cc-glass .channelTe
    Servidores numa faixa no topo, canais num cartão, o chat num palco só e os membros abrindo pela direita. */
 html.cc-lay .bar_c38106 { height: 0 !important; min-height: 0 !important; overflow: visible !important; position: relative; z-index: 1002; padding: 0 !important; border: 0 !important; }
 html.cc-lay .bar_c38106 > .title_c38106, html.cc-lay .bar_c38106 > .leading_c38106 { display: none !important; }
-html.cc-lay .bar_c38106 > .trailing_c38106 { position: fixed !important; top: 8px !important; right: var(--gap) !important; left: auto !important; width: auto !important; flex: none !important; height: 44px !important; display: flex !important; align-items: center; gap: 2px; padding: 0 6px 0 8px !important; margin: 0 !important;
+html.cc-lay .bar_c38106 > .trailing_c38106 { position: fixed !important; top: 12px !important; right: var(--gap) !important; left: auto !important; width: auto !important; flex: none !important; height: 44px !important; display: flex !important; align-items: center; gap: 2px; padding: 0 6px 0 8px !important; margin: 0 !important;
   border-radius: 16px; background: var(--bg-3); border: 1px solid var(--border); z-index: 1002; box-sizing: border-box; }
 html.cc-lay .bar_c38106 > .trailing_c38106 .cc-win { height: 100% !important; }
 
-html.cc-lay .content__5e434 { display: grid !important; grid-template-columns: var(--cc-side-w) minmax(0, 1fr) !important; grid-template-rows: 60px minmax(0, 1fr) auto !important;
+html.cc-lay .content__5e434 { display: grid !important; grid-template-columns: var(--cc-side-w) minmax(0, 1fr) !important; grid-template-rows: 68px minmax(0, 1fr) auto !important;
   grid-template-areas: "dock dock" "list page" "panels page" !important; column-gap: var(--gap); padding: 0 var(--gap) var(--gap) !important; box-sizing: border-box; height: 100% !important; overflow: hidden !important; }
 html.cc-lay .sidebar__5e434 { display: contents !important; }
 html.cc-lay .sidebarResizeHandle__5e434 { display: none !important; }
@@ -429,10 +432,10 @@ html.cc-lay .panels__5e434 { grid-area: panels; position: relative !important; i
 html.cc-lay .page__5e434 { grid-area: page; padding: 0 !important; margin: 0 !important; min-width: 0; min-height: 0; height: auto !important; }
 
 /* faixa dos servidores */
-html.cc-lay .guilds__5e434 { grid-area: dock; align-self: center; justify-self: start; width: auto !important; min-width: 0 !important; max-width: calc(100vw - 330px); height: 48px !important; margin: 0 !important; padding: 0 !important;
-  border-radius: 16px !important; overflow: hidden !important; position: relative; z-index: 3; }
+html.cc-lay .guilds__5e434 { grid-area: dock; align-self: center; justify-self: start; width: auto !important; min-width: 0 !important; max-width: calc(100vw - 330px); height: 56px !important; margin: 0 !important; padding: 0 !important;
+  border-radius: 18px !important; overflow: hidden !important; position: relative; z-index: 3; }
 html.cc-lay .guilds__5e434 .tree_ef3116 { height: 100% !important; width: auto !important; display: block !important; }
-html.cc-lay .guilds__5e434 .scroller_ef3116 { zoom: .84; display: flex !important; flex-direction: row !important; align-items: center !important; height: 57px !important; width: auto !important; max-width: calc((100vw - 330px) / .84);
+html.cc-lay .guilds__5e434 .scroller_ef3116 { display: flex !important; flex-direction: row !important; align-items: center !important; height: 56px !important; width: auto !important; max-width: calc(100vw - 330px);
   overflow-x: auto !important; overflow-y: hidden !important; padding: 0 8px !important; gap: 8px; scrollbar-width: none; scroll-behavior: smooth; }
 html.cc-lay .guilds__5e434 .scroller_ef3116::-webkit-scrollbar { display: none; }
 html.cc-lay .guilds__5e434 .scroller_ef3116 > * { flex: none !important; }
@@ -463,7 +466,8 @@ html.cc-lay .container_c8ffbb { width: 68px !important; min-width: 68px !importa
   background: transparent !important; position: relative; z-index: 6; overflow: hidden !important; box-shadow: none !important;
   -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent); mask-image: linear-gradient(90deg, #000 78%, transparent);
   transition: width .34s var(--cc-out), min-width .34s var(--cc-out), margin .34s var(--cc-out), background-color .2s; }
-html.cc-lay .container_c8ffbb:hover { width: 290px !important; min-width: 290px !important; margin-left: -222px !important; background: var(--cc-float) !important; -webkit-mask-image: none; mask-image: none;
+html.cc-lay .container_c8ffbb:hover { width: 290px !important; min-width: 290px !important; margin-left: -222px !important; background: color-mix(in srgb, var(--cc-bg1) 70%, transparent) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.35) !important; backdrop-filter: blur(26px) saturate(1.35) !important; -webkit-mask-image: none; mask-image: none;
   border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important; box-shadow: -30px 0 60px -30px rgba(0,0,0,.7) !important; transition-delay: .15s; }
 html.cc-lay .container_c8ffbb .membersWrap_c8ffbb, html.cc-lay .container_c8ffbb .members_c8ffbb { width: 290px !important; min-width: 290px !important; }
 html.cc-lay .container_c8ffbb:not(:hover) .content__91a9d, html.cc-lay .container_c8ffbb:not(:hover) .membersGroup_c8ffbb > * { opacity: 0; transition: opacity .12s; }
@@ -603,3 +607,9 @@ html.cc-edon #cc-home, html.cc-edon #cc-homeback { display: none !important; }
   #cc-ed .e-btn[data-e="export"], #cc-ed .e-tools button span { display: none; }
   #cc-ed .e-side { flex-direction: column; height: 44%; } #cc-ed .e-layers { flex: 0 0 45%; border-left: 0; border-top: 1px solid rgba(255,255,255,.07); }
 }
+
+/* mica: meio-termo entre a Aura e o Acrílico. A cor do Windows por trás, com as bolhas do tema fracas e textura por cima */
+html.cc-mica body { background: var(--cc-sheet) !important; }
+html.cc-mica #cc-aura { display: block; background: none; }
+html.cc-mica #cc-aura i { opacity: calc(var(--cc-orbs, .6) * .5); }
+html.cc-mica #cc-aura b { opacity: .9; }
