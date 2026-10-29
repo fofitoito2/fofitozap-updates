@@ -21,11 +21,12 @@
     ouro: { n: 'Ouro', a1: '#ffd36b', a2: '#e0a84a', a3: '#ff9ecf', o: ['#4a3a1f', '#3a2a1f', '#2a2440'], w: '#17120b', bg: ['#0c0905', '#15100a'] }
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
-  var FONTS = ['Onest', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Onest', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false };
+  var FONTS = ['Bricolage Grotesque', 'Onest', 'Space Grotesk', 'Sora', 'Manrope', 'DM Sans', 'Urbanist', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema' };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
+  if ((CFG.v || 0) < 7) { if (CFG.font === 'Onest') CFG.font = 'Bricolage Grotesque'; CFG.v = 7; try { LS && LS.setItem('concord.cfg', JSON.stringify(CFG)); } catch (e) {} }
   if ((CFG.v || 0) < 6) { CFG.motion = false; CFG.blur = Math.min(+CFG.blur || 0, 14); CFG.v = 6; try { LS && LS.setItem('concord.cfg', JSON.stringify(CFG)); } catch (e) {} }
   function save() { try { LS && LS.setItem('concord.cfg', JSON.stringify(CFG)); } catch (e) {} }
   var INFO = { mats: { aura: true, acrylic: true, mica: false, solid: true }, ver: CC.ver };
@@ -47,8 +48,13 @@
   var DOOD = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" fill="none" stroke="white" stroke-opacity=".06" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + DOODLES.map(function (d) { return '<path d="' + d + '"/>'; }).join('') + '</svg>') + '")';
   var NOISE = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
+  function allThemes() { var o = {}; Object.keys(PRESETS).forEach(function (k) { o[k] = PRESETS[k]; }); Object.keys(CFG.mine || {}).forEach(function (k) { o[k] = CFG.mine[k]; }); return o; }
+  // lugar aberto agora: um servidor (g:id) ou uma conversa (dm:id)
+  function placeKey() { var p = location.pathname.split('/'); if (p[1] !== 'channels') return ''; if (p[2] === '@me') return p[3] ? 'dm:' + p[3] : ''; return p[2] ? 'g:' + p[2] : ''; }
+  function placeTheme() { var pk = placeKey(), t = pk && (CFG.places || {})[pk]; return t && allThemes()[t] ? t : ''; }
+  function themeKey() { return placeTheme() || CFG.preset; }
   function themeCSS() {
-    var P = PRESETS[CFG.preset] || PRESETS.fofito, a1 = CFG.accent || P.a1, a3 = P.a3;
+    var P = allThemes()[themeKey()] || PRESETS.fofito, a1 = placeTheme() ? P.a1 : (CFG.accent || P.a1), a3 = P.a3;
     var solid = CFG.mat === 'solid', op = solid ? 1 : +CFG.op, w = mix(mix(P.w, P.o[1], 0.22), a1, CFG.style ? +CFG.tint : 0);
     var aink = lum(a1) > 0.45 ? '#0b0c10' : '#ffffff';
     var ink = '#f2f3f8';
@@ -112,7 +118,7 @@
   function applyTheme() {
     var css = themeCSS();
     if (STY.adopted) STY.adopted[1].replaceSync(css); else style('theme', css);
-    marks();
+    marks(); if (typeof PX !== 'undefined') parallax();
     if (window.ccMat) window.ccMat(CFG.mat === 'acrylic' || CFG.mat === 'mica' ? CFG.mat : 'none').catch(function () {});
     paintWall();
   }
@@ -135,9 +141,15 @@
 
   /* ---------- fontes (FontFace com os bytes: não depende de baixar nada) ---------- */
   var FONTS_LOADED = {};
+  function loadCustomFont() {
+    var b64 = ''; try { b64 = LS && LS.getItem('concord.font.pc'); } catch (e) {}
+    if (!b64 || FONTS_LOADED.pc) return; FONTS_LOADED.pc = 1;
+    try { var bin = atob(b64), buf = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); var f = new FontFace('Fonte do PC', buf); document.fonts.add(f); f.load().catch(function () {}); } catch (e) {}
+  }
   function loadFonts(all) {
+    if (all || CFG.font === 'Fonte do PC') loadCustomFont();
     Object.keys(CC.fonts || {}).forEach(function (fam) {
-      if (FONTS_LOADED[fam] || (!all && fam !== CFG.font)) return; FONTS_LOADED[fam] = 1;
+      if (FONTS_LOADED[fam] || (!all && fam !== CFG.font && fam !== 'Bricolage Grotesque')) return; FONTS_LOADED[fam] = 1;
       Object.keys(CC.fonts[fam]).forEach(function (wt) {
         try {
           var bin = atob(CC.fonts[fam][wt]), buf = new Uint8Array(bin.length);
@@ -165,7 +177,7 @@
   function sv(d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
   var IC = {
     min: sv('<path d="M5 12h14"/>'), max: sv('<rect x="5" y="5" width="14" height="14" rx="2.5"/>'), rest: sv('<rect x="5" y="8" width="11" height="11" rx="2"/><path d="M9 5h8a2 2 0 0 1 2 2v8"/>'),
-    x: sv('<path d="M6 6l12 12M18 6L6 18"/>'), pal: sv('<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.4-.5-.8-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/>'),
+    x: sv('<path d="M6 6l12 12M18 6L6 18"/>'), pen: sv('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/>'), down: sv('<path d="M12 4v12M6 10l6 6 6-6M5 20h14"/>'), pal: sv('<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.4-.5-.8-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/>'),
     plus: sv('<path d="M12 5v14M5 12h14"/>'), img: sv('<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/>')
   };
   var MARK = "<svg class=\"mk\" viewBox=\"0 0 1024 1024\"><defs><linearGradient id=\"ccga\" gradientUnits=\"userSpaceOnUse\" x1=\"252\" y1=\"344\" x2=\"588\" y2=\"680\"><stop offset=\"0\" stop-color=\"#4fe6c6\"/><stop offset=\"1\" stop-color=\"#3e8bff\"/></linearGradient><linearGradient id=\"ccgb\" gradientUnits=\"userSpaceOnUse\" x1=\"436\" y1=\"344\" x2=\"772\" y2=\"680\"><stop offset=\"0\" stop-color=\"#ddd2ff\"/><stop offset=\"1\" stop-color=\"#9b7bff\"/></linearGradient></defs><rect width=\"1024\" height=\"1024\" rx=\"232\" fill=\"#15161c\"/><circle cx=\"604\" cy=\"512\" r=\"168\" fill=\"none\" stroke=\"#15161c\" stroke-width=\"112\"/><circle cx=\"604\" cy=\"512\" r=\"168\" fill=\"none\" stroke=\"url(#ccgb)\" stroke-width=\"76\"/><circle cx=\"420\" cy=\"512\" r=\"168\" fill=\"none\" stroke=\"#15161c\" stroke-width=\"112\"/><circle cx=\"420\" cy=\"512\" r=\"168\" fill=\"none\" stroke=\"url(#ccga)\" stroke-width=\"76\"/><path d=\"M574.8 677.4A168 168 0 0 1 458.5 596\" fill=\"none\" stroke=\"#15161c\" stroke-width=\"112\"/><path d=\"M598.1 679.9A168 168 0 0 1 444.2 563.9\" fill=\"none\" stroke=\"url(#ccgb)\" stroke-width=\"76\"/></svg>";
@@ -211,7 +223,7 @@
   }
   function buildPanel() {
     PANEL = document.createElement('div'); PANEL.id = 'cc-panel';
-    PANEL.innerHTML = '<div class="hd">' + MARK + '<div class="t"><b>Aparência</b><small>Concord ' + esc(INFO.ver) + '</small></div><button class="ib" data-a="close" title="Fechar">' + IC.x + '</button></div><div class="bd"></div>' +
+    PANEL.innerHTML = '<div class="hd">' + MARK + '<div class="t"><b>Aparência</b><small>Concord ' + esc(INFO.ver) + '</small></div><button class="ib" data-a="close" title="Fechar">' + IC.x + '</button></div><div class="tabbar"></div><div class="bd"></div>' +
       '<div class="ft"><span class="sp">As mudanças aparecem na hora</span><button class="btn" data-a="reset">Restaurar padrão</button><button class="btn pri" data-a="update" hidden>Atualizar o Concord</button></div>';
     document.body.appendChild(PANEL);
     PANEL.addEventListener('click', onPanelClick);
@@ -225,38 +237,95 @@
   }
   function toggle(k, label, sub) { return '<div class="row"><div class="l"><b>' + label + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div><button class="tg' + (CFG[k] ? ' on' : '') + '" data-t="' + k + '" role="switch" aria-checked="' + !!CFG[k] + '"></button></div>'; }
   var FMT = { pct: function (v) { return Math.round(v * 100) + '%'; }, px: function (v) { return Math.round(v) + 'px'; } };
+  var EDIT = null; // tema sendo criado/editado
+  var TABS = [['tema', 'Tema'], ['fundo', 'Fundo'], ['estilo', 'Estilo'], ['texto', 'Texto'], ['som', 'Som'], ['telas', 'Telas']];
+  function themeCard(k, t, on, extra) {
+    return '<button class="th' + (on ? ' on' : '') + '" data-p="' + esc(k) + '" style="--a:' + t.a1 + ';--g:radial-gradient(90% 120% at 15% 10%, ' + t.o[0] + ', transparent 70%), radial-gradient(90% 120% at 95% 90%, ' + t.o[1] + ', transparent 70%), ' + t.bg[1] + '"><i><em style="--c:' + t.a1 + '"></em><em style="--c:' + t.a2 + '"></em><em style="--c:' + t.a3 + '"></em></i><span>' + esc(t.n) + '</span>' + (extra || '') + '</button>';
+  }
+  function placeName() {
+    var pk = placeKey(); if (!pk) return '';
+    try {
+      if (pk.indexOf('g:') === 0) { var G = st('Guild'), g = G && G.getGuild(pk.slice(2)); return g ? g.name : 'este servidor'; }
+      var C = st('Channel'), U = st('User'), c = C && C.getChannel(pk.slice(3));
+      if (c && c.name) return c.name;
+      var u = c && U && U.getUser((c.recipients || [])[0]); return u ? nameOf(u) : 'esta conversa';
+    } catch (e) { return pk.indexOf('g:') === 0 ? 'este servidor' : 'esta conversa'; }
+  }
+  var EDIT_FIELDS = [['bg.0', 'Fundo escuro'], ['bg.1', 'Fundo claro'], ['w', 'Painéis'], ['o.0', 'Bolha 1'], ['o.1', 'Bolha 2'], ['o.2', 'Bolha 3'], ['a1', 'Destaque'], ['a2', 'Destaque 2'], ['a3', 'Detalhe']];
+  function getF(t, f) { var p = f.split('.'); return p.length > 1 ? t[p[0]][+p[1]] : t[f]; }
+  function setF(t, f, v) { var p = f.split('.'); if (p.length > 1) t[p[0]][+p[1]] = v; else t[f] = v; }
   function paintPanel() {
-    var P = PRESETS[CFG.preset] || PRESETS.fofito, h = '';
-    h += '<h4>Tema</h4><div class="themes">' + Object.keys(PRESETS).map(function (k) {
-      var t = PRESETS[k];
-      return '<button class="th' + (CFG.preset === k ? ' on' : '') + '" data-p="' + k + '" style="--a:' + t.a1 + ';--g:radial-gradient(90% 120% at 15% 10%, ' + t.o[0] + ', transparent 70%), radial-gradient(90% 120% at 95% 90%, ' + t.o[1] + ', transparent 70%), ' + t.bg[1] + '"><i><em style="--c:' + t.a1 + '"></em><em style="--c:' + t.a2 + '"></em><em style="--c:' + t.a3 + '"></em></i><span>' + esc(t.n) + '</span></button>';
-    }).join('') + '</div>';
-    h += '<h4>Cor de destaque</h4><div class="sws"><button class="sw auto' + (!CFG.accent ? ' on' : '') + '" data-c="" title="A do tema" style="--c:' + P.a1 + '"></button>' +
-      ACCENTS.map(function (c) { return '<button class="sw' + (CFG.accent === c ? ' on' : '') + '" data-c="' + c + '" style="--c:' + c + '"></button>'; }).join('') +
-      '<label class="sw' + (CFG.accent && ACCENTS.indexOf(CFG.accent) < 0 ? ' on' : '') + '" title="Outra cor" style="--c:' + (CFG.accent || P.a1) + '">' + IC.plus + '<input type="color" data-ci="accent" value="' + (CFG.accent || P.a1) + '"></label></div>';
-    h += '<h4>Material</h4><div class="seg">' + [['aura', 'Aura'], ['acrylic', 'Acrílico'], ['mica', 'Mica'], ['wall', 'Imagem'], ['solid', 'Sólido']].map(function (m) {
-      return '<button data-m="' + m[0] + '"' + (CFG.mat === m[0] ? ' class="on"' : '') + (INFO.mats[m[0]] === false ? ' disabled title="Precisa do Windows 11"' : '') + '>' + m[1] + '</button>';
-    }).join('') + '</div><div class="note" style="margin-top:8px">' + ({ aura: 'Bolhas de cor do tema se movendo devagar atrás dos painéis de vidro.', acrylic: 'O que está atrás da janela aparece desfocado, como no Windows.', mica: 'A cor do papel de parede tinge a janela, bem de leve.', wall: 'Uma imagem sua atrás dos painéis de vidro.', solid: 'Painéis opacos, sem transparência. O mais leve.' }[CFG.mat] || '') + '</div>';
-    if (CFG.mat === 'wall') h += '<div class="walls"><button data-a="wallpick" style="--w:' + (CFG.wall ? 'url(' + CFG.wall + ')' : 'none') + '">' + (CFG.wall ? '' : 'Escolher') + '</button></div>';
-    if (CFG.mat === 'aura') h += range('orbs', 'Bolhas', 'Força das cores do fundo', 0.2, 1, 0.05, FMT.pct) + toggle('motion', 'Bolhas em movimento', '');
-    if (CFG.mat !== 'solid') h += range('op', 'Opacidade dos painéis', 'Menos opaco deixa ver mais o fundo', 0.2, 1, 0.02, FMT.pct) + range('blur', 'Desfoque', 'Quanto o vidro desfoca o que está atrás', 0, 40, 1, FMT.px);
-    h += '<h4>Estilo</h4>' + toggle('style', 'Estilo ReApps', 'Fundo do chat, caixa de digitar e seleção com a cara do FofitoZap');
-    if (CFG.style) h += toggle('bub', 'Mensagens em balões', 'As suas ficam na cor de destaque') + toggle('dood', 'Desenhos no fundo do chat', '') + range('tint', 'Cor do tema nos painéis', 'Quanto a cor de destaque tinge os painéis', 0, 0.25, 0.01, FMT.pct);
-    h += '<h4>Formas</h4>' + range('radius', 'Cantos', '', 0, 24, 1, FMT.px) + range('gap', 'Espaço entre painéis', '', 0, 20, 1, FMT.px);
-    h += '<h4>Fonte</h4><div class="fonts">' + FONTS.map(function (f) { return '<button data-f="' + esc(f) + '"' + (CFG.font === f ? ' class="on"' : '') + ' style="font-family:' + (f ? "'" + f + "'" : "'gg sans'") + '">' + (f || 'Padrão do Discord') + '</button>'; }).join('') + '</div>';
-    h += '<h4>Som</h4>' + range('boost', 'Volume das vozes nas chamadas', 'Aumenta o som de todo mundo, até 300%', 0.5, 3, 0.05, FMT.pct);
-    h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores');
-    h += '<h4>Detalhes</h4>' + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('anim', 'Animações', 'Mensagens, menus e listas se movendo') + toggle('chatbar', 'Barra de mensagem solta', 'A caixa de digitar fica separada do chat') + toggle('small', 'Painel de usuário compacto', 'Seu perfil lá embaixo ocupa menos espaço');
-    var bd = PANEL.querySelector('.bd'), st = bd.scrollTop; bd.innerHTML = h; bd.scrollTop = st;
+    var P = allThemes()[themeKey()] || PRESETS.fofito, h = '', tab = CFG.tab || 'tema';
+    var tabs = '<div class="tabs">' + TABS.map(function (t) { return '<button data-tab="' + t[0] + '"' + (tab === t[0] ? ' class="on"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div>';
+    if (tab === 'tema' && EDIT) {
+      var t = EDIT.t;
+      h += '<h4>' + (EDIT.key ? 'Editar tema' : 'Criar tema') + '</h4><div class="row"><div class="l"><b>Nome</b></div><input class="txt" data-en value="' + esc(t.n) + '" maxlength="24"></div>';
+      h += '<div class="cols">' + EDIT_FIELDS.map(function (f) { return '<label class="col"><input type="color" data-ef="' + f[0] + '" value="' + getF(t, f[0]) + '"><span>' + f[1] + '</span></label>'; }).join('') + '</div>';
+      h += '<div class="note">As mudanças aparecem na hora, enquanto você edita.</div><div class="btns"><button class="btn" data-a="ecancel">Cancelar</button>' + (EDIT.key ? '<button class="btn" data-a="edel">Apagar</button>' : '') + '<button class="btn pri" data-a="esave">Salvar tema</button></div>';
+    } else if (tab === 'tema') {
+      var mine = CFG.mine || {}, pn = placeName(), pt = placeTheme();
+      h += '<h4>Temas prontos</h4><div class="themes">' + Object.keys(PRESETS).map(function (k) { return themeCard(k, PRESETS[k], CFG.preset === k); }).join('') + '</div>';
+      h += '<h4>Seus temas</h4><div class="themes">' + Object.keys(mine).map(function (k) { return themeCard(k, mine[k], CFG.preset === k, '<b class="ed" data-edit="' + esc(k) + '" title="Editar">' + IC.pen + '</b>'); }).join('') +
+        '<button class="th add" data-a="enew">' + IC.plus + '<span>Criar tema</span></button><button class="th add" data-a="eimp">' + IC.down + '<span>Colar código</span></button></div>';
+      h += '<h4>Cor de destaque</h4><div class="sws"><button class="sw auto' + (!CFG.accent ? ' on' : '') + '" data-c="" title="A do tema" style="--c:' + P.a1 + '"></button>' +
+        ACCENTS.map(function (c) { return '<button class="sw' + (CFG.accent === c ? ' on' : '') + '" data-c="' + c + '" style="--c:' + c + '"></button>'; }).join('') +
+        '<label class="sw' + (CFG.accent && ACCENTS.indexOf(CFG.accent) < 0 ? ' on' : '') + '" title="Outra cor" style="--c:' + (CFG.accent || P.a1) + '">' + IC.plus + '<input type="color" data-ci="accent" value="' + (CFG.accent || P.a1) + '"></label></div>';
+      if (pn) {
+        h += '<h4>Tema só para ' + esc(pn) + '</h4><div class="note">Quando você abre ' + (placeKey().indexOf('g:') === 0 ? 'esse servidor' : 'essa conversa') + ', o Concord troca para o tema escolhido aqui.</div><div class="places"><button class="chip' + (!pt ? ' on' : '') + '" data-pl="">Igual ao geral</button>' +
+          Object.keys(allThemes()).map(function (k) { var x = allThemes()[k]; return '<button class="chip' + (pt === k ? ' on' : '') + '" data-pl="' + esc(k) + '"><i style="background:linear-gradient(135deg,' + x.a1 + ',' + x.o[1] + ')"></i>' + esc(x.n) + '</button>'; }).join('') + '</div>';
+      }
+      if (CFG.mine && CFG.mine[CFG.preset]) h += '<div class="btns"><button class="btn" data-a="eexp">Copiar código do tema</button></div>';
+    } else if (tab === 'fundo') {
+      h += '<h4>Material</h4><div class="seg">' + [['aura', 'Aura'], ['acrylic', 'Acrílico'], ['mica', 'Mica'], ['wall', 'Imagem'], ['solid', 'Sólido']].map(function (m) {
+        return '<button data-m="' + m[0] + '"' + (CFG.mat === m[0] ? ' class="on"' : '') + (INFO.mats[m[0]] === false ? ' disabled title="Precisa do Windows 11"' : '') + '>' + m[1] + '</button>';
+      }).join('') + '</div><div class="note" style="margin-top:8px">' + ({ aura: 'Bolhas com as cores do tema atrás dos painéis de vidro.', acrylic: 'O que está atrás da janela aparece desfocado. Painéis bem transparentes combinam mais.', mica: 'A cor do seu papel de parede do Windows tinge a janela.', wall: 'Uma imagem sua atrás dos painéis de vidro.', solid: 'Painéis firmes, sem transparência. O mais leve.' }[CFG.mat] || '') + '</div>';
+      if (CFG.mat === 'wall') h += '<div class="walls"><button data-a="wallpick" style="--w:' + (CFG.wall ? 'url(' + CFG.wall + ')' : 'none') + '">' + (CFG.wall ? '' : 'Escolher') + '</button></div>';
+      if (CFG.mat === 'aura') h += range('orbs', 'Bolhas', 'Força das cores do fundo', 0.2, 1, 0.05, FMT.pct) + toggle('motion', 'Bolhas em movimento', 'Mais bonito, pesa um pouco mais');
+      if (CFG.mat === 'aura' || CFG.mat === 'wall') h += toggle('parallax', 'Profundidade', 'O fundo acompanha o mouse devagar, como se estivesse mais longe');
+      if (CFG.mat !== 'solid') h += range('op', 'Opacidade dos painéis', 'Menos opaco deixa ver mais o fundo', 0.2, 1, 0.02, FMT.pct) + range('blur', 'Desfoque', 'Quanto o vidro desfoca o que está atrás', 0, 40, 1, FMT.px);
+    } else if (tab === 'estilo') {
+      h += '<h4>Estilo</h4>' + toggle('style', 'Estilo ReApps', 'Fundo do chat, caixa de digitar e seleção com a nossa cara');
+      if (CFG.style) h += toggle('bub', 'Mensagens em balões', 'As suas ficam na cor de destaque') + toggle('dood', 'Desenhos no fundo do chat', '') + range('tint', 'Cor do tema nos painéis', 'Quanto a cor de destaque tinge os painéis', 0, 0.25, 0.01, FMT.pct);
+      h += '<h4>Formas</h4>' + range('radius', 'Cantos', '', 0, 24, 1, FMT.px) + range('gap', 'Espaço entre painéis', '', 0, 20, 1, FMT.px);
+      h += '<h4>Detalhes</h4>' + toggle('anim', 'Animações', 'Trocas de tela, mensagens chegando, listas') + toggle('chatbar', 'Barra de mensagem solta', 'A caixa de digitar fica separada do chat') + toggle('small', 'Painel de usuário compacto', 'Seu perfil lá embaixo ocupa menos espaço');
+    } else if (tab === 'texto') {
+      h += '<h4>Fonte</h4><div class="fonts">' + FONTS.map(function (f) { return '<button data-f="' + esc(f) + '"' + (CFG.font === f ? ' class="on"' : '') + ' style="font-family:' + (f ? "'" + f + "'" : "'gg sans'") + '">' + (f === 'Bricolage Grotesque' ? 'Concord' : f || 'Padrão do Discord') + '</button>'; }).join('') +
+        '<button data-a="fontpc"' + (CFG.font === 'Fonte do PC' ? ' class="on"' : '') + ' style="font-family:\'Fonte do PC\'">' + IC.plus + ' Fonte do PC</button></div><div class="note" style="margin-top:8px">"Concord" é a fonte do Concord. Em "Fonte do PC" você escolhe um arquivo .ttf, .otf ou .woff.</div>';
+    } else if (tab === 'som') {
+      h += '<h4>Chamadas</h4>' + range('boost', 'Volume das vozes', 'Aumenta o som de todo mundo, até 300%', 0.5, 3, 0.05, FMT.pct);
+    } else if (tab === 'telas') {
+      h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível');
+    }
+    PANEL.querySelector('.tabbar').innerHTML = tabs;
+    var bd = PANEL.querySelector('.bd'), sc = bd.dataset.tab === tab ? bd.scrollTop : 0; bd.innerHTML = h; bd.scrollTop = sc; bd.dataset.tab = tab;
     PANEL.querySelector('[data-a="update"]').hidden = !INFO.update;
   }
-  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (repaint) paintPanel(); if (k === 'home') homeTick(); }
+  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (repaint) paintPanel(); if (k === 'home') homeTick(); if (k === 'parallax') parallax(); }
+  function newId() { return 'meu-' + Date.now().toString(36); }
+  function themeCode(t) { try { return 'CONCORD-TEMA:' + btoa(unescape(encodeURIComponent(JSON.stringify(t)))); } catch (e) { return ''; } }
+  function readCode(c) {
+    try { var t = JSON.parse(decodeURIComponent(escape(atob(String(c).trim().replace(/^CONCORD-TEMA:/, ''))))); if (!t || !t.a1 || !t.o || !t.bg) return null; t.n = String(t.n || 'Tema').slice(0, 24); return t; } catch (e) { return null; }
+  }
   function onPanelClick(e) {
-    var b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.a === 'close') togglePanel(false);
-    else if (b.dataset.a === 'reset') { Object.keys(DEF).forEach(function (k) { CFG[k] = DEF[k]; }); delete CFG.wall; save(); applyTheme(); paintPanel(); toast('Aparência padrão de volta'); }
-    else if (b.dataset.a === 'update') { if (window.ccUpdate) window.ccUpdate(); }
-    else if (b.dataset.a === 'wallpick') pickWall();
+    var b = e.target.closest('button, b[data-edit]'); if (!b) return;
+    var a = b.dataset.a;
+    if (b.dataset.tab) { CFG.tab = b.dataset.tab; EDIT = null; save(); paintPanel(); return; }
+    if (b.dataset.edit) { e.stopPropagation(); var k = b.dataset.edit; EDIT = { key: k, t: JSON.parse(JSON.stringify(CFG.mine[k])), prev: CFG.preset }; CFG.preset = k; applyTheme(); paintPanel(); return; }
+    if (a === 'close') togglePanel(false);
+    else if (a === 'reset') { Object.keys(DEF).forEach(function (k) { if (k !== 'mine' && k !== 'places') CFG[k] = DEF[k]; }); delete CFG.wall; save(); applyTheme(); paintPanel(); toast('Aparência padrão de volta. Seus temas continuam salvos.'); }
+    else if (a === 'update') { if (window.ccUpdate) window.ccUpdate(); }
+    else if (a === 'wallpick') pickWall();
+    else if (a === 'fontpc') pickFont();
+    else if (a === 'enew') { var base = allThemes()[themeKey()] || PRESETS.fofito; var t = JSON.parse(JSON.stringify(base)); t.n = 'Meu tema'; EDIT = { key: '', t: t, prev: CFG.preset, tmp: newId() }; CFG.mine = CFG.mine || {}; CFG.mine[EDIT.tmp] = EDIT.t; CFG.preset = EDIT.tmp; applyTheme(); paintPanel(); }
+    else if (a === 'ecancel') { if (EDIT.tmp) delete CFG.mine[EDIT.tmp]; else CFG.mine[EDIT.key] = EDIT.orig || CFG.mine[EDIT.key]; CFG.preset = EDIT.prev; EDIT = null; save(); applyTheme(); paintPanel(); }
+    else if (a === 'esave') { var key = EDIT.key || EDIT.tmp; CFG.mine[key] = EDIT.t; CFG.preset = key; CFG.accent = ''; EDIT = null; save(); applyTheme(); paintPanel(); toast('Tema salvo'); }
+    else if (a === 'edel') { delete CFG.mine[EDIT.key]; Object.keys(CFG.places || {}).forEach(function (p) { if (CFG.places[p] === EDIT.key) delete CFG.places[p]; }); CFG.preset = EDIT.prev === EDIT.key ? 'fofito' : EDIT.prev; EDIT = null; save(); applyTheme(); paintPanel(); toast('Tema apagado'); }
+    else if (a === 'eexp') { var c = themeCode(CFG.mine[CFG.preset]); try { navigator.clipboard.writeText(c); toast('Código copiado. Quem colar no Concord ganha esse tema.'); } catch (e2) { prompt('Código do tema', c); } }
+    else if (a === 'eimp') {
+      var paste = function (txt) { var t = readCode(txt); if (!t) { toast('Esse código não é de um tema do Concord'); return; } var id = newId(); CFG.mine = CFG.mine || {}; CFG.mine[id] = t; CFG.preset = id; CFG.accent = ''; save(); applyTheme(); paintPanel(); toast('Tema "' + t.n + '" adicionado'); };
+      if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(paste).catch(function () { var v = prompt('Cole o código do tema'); if (v) paste(v); }); else { var v = prompt('Cole o código do tema'); if (v) paste(v); }
+    }
+    else if (b.dataset.pl != null) { var pk = placeKey(); CFG.places = CFG.places || {}; if (b.dataset.pl) CFG.places[pk] = b.dataset.pl; else delete CFG.places[pk]; save(); themeSwap(); paintPanel(); }
     else if (b.dataset.p) { CFG.accent = ''; set('preset', b.dataset.p, true); }
     else if (b.dataset.c != null && b.classList.contains('sw')) set('accent', b.dataset.c, true);
     else if (b.dataset.m) { set('mat', b.dataset.m, true); if (b.dataset.m === 'wall' && !CFG.wall) pickWall(); }
@@ -265,11 +334,27 @@
   }
   function onPanelInput(e) {
     var t = e.target;
+    if (t.dataset.ef && EDIT) { setF(EDIT.t, t.dataset.ef, t.value); applyTheme(); return; }
+    if (t.dataset.en != null && EDIT) { EDIT.t.n = t.value || 'Meu tema'; return; }
     if (t.dataset.k) {
       var min = +t.min, max = +t.max, v = +t.value; t.style.setProperty('--p', ((v - min) / (max - min)) * 100 + '%');
       var o = t.nextElementSibling; if (o) o.textContent = (t.dataset.k === 'op' || t.dataset.k === 'orbs' || t.dataset.k === 'tint' || t.dataset.k === 'boost' ? FMT.pct : FMT.px)(v);
       CFG[t.dataset.k] = v; save(); if (t.dataset.k === 'boost') { if (window.__ccBoostApply) window.__ccBoostApply(); } else applyTheme();
     } else if (t.dataset.ci) { CFG.accent = t.value; save(); applyTheme(); }
+  }
+  function pickFont() {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.ttf,.otf,.woff,.woff2';
+    inp.onchange = function () {
+      var f = inp.files[0]; if (!f) return;
+      if (f.size > 3 << 20) { toast('Fonte grande demais (até 3 MB)'); return; }
+      var r = new FileReader(); r.onload = function () {
+        var b64 = String(r.result).split(',')[1];
+        try { LS.setItem('concord.font.pc', b64); } catch (e) { toast('Não consegui guardar essa fonte'); return; }
+        FONTS_LOADED.pc = 0; loadCustomFont(); set('font', 'Fonte do PC', true); toast('Fonte "' + f.name.replace(/\.[^.]+$/, '') + '" aplicada');
+      };
+      r.readAsDataURL(f);
+    };
+    inp.click();
   }
   function pickWall() {
     var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
@@ -425,9 +510,8 @@
     if (k === lastPath) return;
     var g = location.pathname.split('/')[2], og = lastPath.split('|')[0].split('/')[2];
     lastPath = k; CHAN_AT = Date.now();
-    var h = document.documentElement;
-    h.classList.add('cc-swap'); if (g !== og) h.classList.add('cc-gswap');
-    setTimeout(function () { h.classList.remove('cc-swap', 'cc-gswap'); }, 520);
+    swapAnim(g !== og);
+    if (themeKey() !== LAST_THEME) themeSwap();
     homeTick();
     clearTimeout(dumpT); dumpT = setTimeout(function () { (window.requestIdleCallback || setTimeout)(function () { dump(false); }, { timeout: 8000 }); }, 5000);
   }
@@ -556,25 +640,35 @@
     return pg ? pg.getBoundingClientRect() : null;
   }
   function homeTick() {
-    if (!CFG.home) { if (HOME.el) HOME.el.classList.remove('on'); if (HOME.back) HOME.back.classList.remove('on'); return; }
-    var want = onHomePath() && !!st('User');
-    if (!want) { HOME.hidden = false; }
+    var h = document.documentElement;
+    if (!CFG.home) { if (HOME.el) HOME.el.classList.remove('on'); if (HOME.back) HOME.back.classList.remove('on'); h.classList.remove('cc-home-on'); return; }
+    var want = onHomePath();
+    if (!want) HOME.hidden = false;
     var show = want && !HOME.hidden;
     if (!HOME.el && show) buildHome();
     if (!HOME.el) return;
     var r = homeRect();
     var vis = show && r && r.width > 200;
+    h.classList.toggle('cc-home-on', !!vis);
     if (vis) {
-      var mg = 0;
-      HOME.el.style.left = (r.left + mg) + 'px'; HOME.el.style.top = (r.top + mg) + 'px'; HOME.el.style.width = (r.width - mg * 2) + 'px'; HOME.el.style.height = (r.height - mg * 2) + 'px';
-      if (!HOME.shown) { HOME.shown = true; HOME.el.classList.add('on', 'in'); renderHome(true); setTimeout(function () { HOME.el.classList.remove('in'); }, 1200); }
-    } else if (HOME.shown) { HOME.shown = false; HOME.el.classList.remove('on'); }
-    // botão para voltar ao Início quando você abriu a lista do Discord
+      HOME.el.style.left = r.left + 'px'; HOME.el.style.top = r.top + 'px'; HOME.el.style.width = r.width + 'px'; HOME.el.style.height = r.height + 'px';
+      var ready = !!st('User');
+      if (!HOME.shown) { HOME.shown = true; HOME.el.classList.add('on'); HOME.ready = false; }
+      if (ready && !HOME.ready) { HOME.ready = true; HOME.el.classList.add('in'); renderHome(true); setTimeout(function () { HOME.el.classList.remove('in'); }, 1300); }
+      else if (!ready && !HOME.loading) { HOME.loading = true; renderLoading(); }
+      if (!ready) { clearTimeout(HOME.retry); HOME.retry = setTimeout(homeTick, 1200); }
+    } else if (HOME.shown) { HOME.shown = false; HOME.ready = false; HOME.loading = false; HOME.el.classList.remove('on'); }
     if (HOME.back) {
       var b = want && HOME.hidden && r;
       HOME.back.classList.toggle('on', !!b);
       if (b) { HOME.back.style.right = (innerWidth - r.right + 18) + 'px'; HOME.back.style.top = (r.top + 12) + 'px'; }
     }
+  }
+  // enquanto o Discord ainda não entregou os dados: esqueleto da tela com brilho passando
+  function renderLoading() {
+    var sk = function (c, n) { var o = ''; for (var i = 0; i < n; i++) o += '<div class="' + c + '"></div>'; return o; };
+    HOME.el.querySelector('.sc').innerHTML = '<div class="hero sk-hero"><div class="sk sk-av"></div><div class="tx"><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div></div>' +
+      '<div class="grid" style="margin-top:22px"><div><div class="sk sk-h"></div><div class="friends">' + sk('sk sk-card', 6) + '</div></div><div><div class="sk sk-h"></div>' + sk('sk sk-card wide', 3) + '</div></div>';
   }
   function buildHome() {
     HOME.el = document.createElement('div'); HOME.el.id = 'cc-home'; HOME.el.innerHTML = '<div class="sc"></div>';
@@ -630,6 +724,7 @@
   }
   function renderHome(first) {
     if (!HOME.el) return;
+    HOME.loading = false;
     HOME.lastRender = Date.now();
     var d; try { d = homeData(); } catch (e) { HOME.el.querySelector('.sc').innerHTML = '<div class="empty">Não consegui ler os dados do Discord agora. A lista normal continua no botão abaixo.</div>'; return; }
     var on = d.friends.filter(function (f) { return f.status !== 'offline'; });
@@ -757,17 +852,77 @@
   }
   window.__ccDiag = diag;
 
+  /* ---------- troca de tema suave (servidores e conversas com tema próprio) ---------- */
+  var LAST_THEME = '';
+  function themeSwap() {
+    var h = document.documentElement; h.classList.add('cc-tfade'); applyTheme();
+    clearTimeout(themeSwap.t); themeSwap.t = setTimeout(function () { h.classList.remove('cc-tfade'); }, 750);
+    LAST_THEME = themeKey();
+  }
+
+  /* ---------- profundidade: o fundo acompanha o mouse devagar ---------- */
+  var PX = { on: false, x: 0, y: 0, tx: 0, ty: 0, raf: 0 };
+  function pxMove(e) { PX.tx = (e.clientX / innerWidth - 0.5) * -26; PX.ty = (e.clientY / innerHeight - 0.5) * -18; if (!PX.raf) PX.raf = requestAnimationFrame(pxStep); }
+  function pxStep() {
+    PX.raf = 0; PX.x += (PX.tx - PX.x) * 0.12; PX.y += (PX.ty - PX.y) * 0.12;
+    var a = document.getElementById('cc-aura'); if (a) a.style.transform = 'translate3d(' + PX.x.toFixed(1) + 'px,' + PX.y.toFixed(1) + 'px,0) scale(1.05)';
+    if (Math.abs(PX.tx - PX.x) > 0.3 || Math.abs(PX.ty - PX.y) > 0.3) PX.raf = requestAnimationFrame(pxStep);
+  }
+  function parallax() {
+    var want = !!CFG.parallax && !CFG.lite && (CFG.mat === 'aura' || CFG.mat === 'wall');
+    if (want === PX.on) return; PX.on = want;
+    if (want) window.addEventListener('mousemove', pxMove, { passive: true });
+    else { window.removeEventListener('mousemove', pxMove); var a = document.getElementById('cc-aura'); if (a) a.style.transform = ''; }
+  }
+
+  /* ---------- tela de abertura (enquanto o Discord carrega) ---------- */
+  var SPLASH = null, SPLASH_AT = Date.now();
+  function splash() {
+    if (SPLASH || !document.body || window.__ccSplashDone) return;
+    SPLASH = document.createElement('div'); SPLASH.id = 'cc-splash';
+    var iv = setInterval(function () { splashCheck(); if (window.__ccSplashDone) clearInterval(iv); }, 300);
+    SPLASH.innerHTML = '<div class="sp-in"><svg viewBox="0 0 120 64" class="sp-mk"><circle class="r1" cx="40" cy="32" r="20"/><circle class="r2" cx="80" cy="32" r="20"/></svg><b>Concord</b><small>Abrindo seu Discord</small><i class="sp-bar"><em></em></i></div>';
+    document.body.appendChild(SPLASH);
+  }
+  function splashCheck() {
+    if (!SPLASH || SPLASH.classList.contains('out')) return;
+    var ready = document.querySelector('.guilds__5e434') && (document.querySelector('.sidebarList__5e434') || document.querySelector('.privateChannels_e6b769'));
+    var login = /^\/(login|register)/.test(location.pathname) && Date.now() - SPLASH_AT > 1500;
+    if ((ready && Date.now() - SPLASH_AT > 900) || login || Date.now() - SPLASH_AT > 25000) {
+      SPLASH.classList.add('out'); window.__ccSplashDone = true;
+      setTimeout(function () { if (SPLASH) SPLASH.remove(); }, 700);
+    }
+  }
+
+  /* ---------- conversa privada: o painel grande da direita fica fechado (abre no botão do Discord) ---------- */
+  function dmAside() {
+    if (CFG.dmAsideOk || !/^\/channels\/@me\/\d/.test(location.pathname)) return;
+    if (!document.querySelector('.content_f75fb0 > aside')) return;
+    var btn = [].slice.call(document.querySelectorAll('.toolbar__9293f [aria-label]')).find(function (b) { return /hide user profile|ocultar perfil|esconder perfil/i.test(b.getAttribute('aria-label')); });
+    if (btn) { btn.click(); CFG.dmAsideOk = true; save(); }
+  }
+
+  /* ---------- animação de troca de canal e de servidor (anima o que já está na tela, sem piscar) ---------- */
+  function swapAnim(guildChanged) {
+    if (!CFG.anim) return;
+    setTimeout(function () {
+      var mw = document.querySelector('.messagesWrapper__36d07');
+      if (mw && mw.animate) mw.animate([{ opacity: 0.35, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.16,1,.3,1)' });
+      if (guildChanged) { var sl = document.querySelector('.sidebarList__5e434'); if (sl && sl.animate) sl.animate([{ opacity: 0.55 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' }); }
+    }, 30);
+  }
+
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { aura(); mountWin(); tagMine(); homeTick(); cleanAds(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
+    setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
   function ready() {
-    aura(); mountWin(); applyTheme(); fallbackSheets(); badge();
+    splash(); aura(); mountWin(); applyTheme(); parallax(); LAST_THEME = themeKey(); fallbackSheets(); badge();
     new MutationObserver(badge).observe(document.querySelector('title') || document.head, { childList: true, subtree: true, characterData: true });
     if (window.ccInfo) window.ccInfo().then(function (i) { if (i) { INFO.ver = i.ver; INFO.mats = i.mats || INFO.mats; INFO.update = i.update; if (!INFO.mats[CFG.mat]) { CFG.mat = 'aura'; save(); } applyTheme(); if (PANEL && PANEL.classList.contains('on')) paintPanel(); } }).catch(function () {});
     win('state'); restoreZoom();
