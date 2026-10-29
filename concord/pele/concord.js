@@ -1644,7 +1644,7 @@
   var INS_LIVRES = ['noite', 'gamer', 'musica', 'arte', 'fofo', 'raio', 'planta', 'estrela'];
   var ESTILOS = [['normal', 'Normal'], ['degrade', 'Degradê'], ['brilho', 'Brilho'], ['neon', 'Neon'], ['arcoiris', 'Arco-íris'], ['toon', 'Desenho'], ['pop', 'Pop'], ['brilhante', 'Brilhante'], ['prisma', 'Prisma'], ['glitch', 'Glitch'], ['contorno', 'Contorno']];
   var PADROES = [['pontos', 'Pontos'], ['listras', 'Listras'], ['xadrez', 'Xadrez'], ['ondas', 'Ondas'], ['estrelas', 'Estrelas'], ['doodles', 'Desenhos']];
-  function perfilVazio() { return { avatar: null, banner: null, placa: 'doce', efeito: 'coracoes', decoracao: 'gato', placa: 'aurora', efeito: 'bolhas', decoracao: 'orbita', fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', moldura: 'nenhuma', luz: { tipo: 'segue', cor: '#ffffff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, placa: 'nenhuma', efeito: 'nenhum', decoracao: 'nenhuma', ganhas: [] }; }
+  function perfilVazio() { return { avatar: null, banner: null, placa: 'doce', efeito: 'coracoes', decoracao: 'gato', placa: 'aurora', efeito: 'bolhas', decoracao: 'orbita', fundo: { tipo: 'degrade', cores: ['#ff5c7a', '#7b5cff'], angulo: 135, padrao: 'pontos' }, nome: { estilo: 'normal', cores: ['#ffffff', '#ff5c7a'], fonte: '', animado: false }, insignias: [], bio: '', destaque: '#ff5c7a', moldura: 'nenhuma', luz: { tipo: 'segue', cor: '#ffffff', forca: 0.5 }, interacao: { inclinar: true, particulas: 'estrelas' }, placa: 'nenhuma', efeito: 'nenhum', decoracao: 'nenhuma', apelido: '', ganhas: [] }; }
   function padraoSVG(k, cor) {
     var s = cor.replace('#', '%23'), o = "stroke='" + s + "' stroke-opacity='.32' fill='none' stroke-width='2' stroke-linecap='round'", d = '';
     if (k === 'pontos') d = "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18'><circle cx='4' cy='4' r='1.8' fill='" + s + "' fill-opacity='.4'/><circle cx='13' cy='13' r='1.8' fill='" + s + "' fill-opacity='.4'/></svg>";
@@ -1719,7 +1719,7 @@
       '</div><i class="pc-luz"></i></div><div class="pc-mold"><i class="mr"></i>' + moldHTML(p.moldura) + '</div>';
     wr.style.setProperty('--pf', fundoCSS(p.fundo)); wr.style.setProperty('--d', p.destaque || '#ff5c7a');
     wr.style.setProperty('--lc', p.luz.cor); wr.style.setProperty('--lf', p.luz.forca);
-    var nm = wr.querySelector('.pc-nm'); nm.textContent = nome || p.nomeDiscord || 'Você'; nomeStyle(nm, p.nome);
+    var nm = wr.querySelector('.pc-nm'); nm.textContent = p.apelido || nome || p.nomeDiscord || 'Você'; nomeStyle(nm, p.nome);
     if (p.bio) wr.querySelector('.pc-bio').textContent = p.bio;
     var img = wr.querySelector('.pc-av img'); if (avatar) img.src = avatar;
     var bnEl = wr.querySelector('.pc-bn'), setBn = function (d) { if (d) { bnEl.style.backgroundImage = 'url("' + d + '")'; wr.classList.add('has-bn'); } };
@@ -1776,7 +1776,7 @@
   var FILA_T = null;
   function perfilDe(id) {
     var c = PF.cache[id];
-    if (c && Date.now() - c.t < 6e5) return c.p;
+    if (c && Date.now() - c.t < 1.2e5) return c.p;
     if (!PF.fila[id] && window.ccNet) { PF.fila[id] = 1; clearTimeout(FILA_T); FILA_T = setTimeout(pedirPerfis, 250); }
     return c ? c.p : undefined;
   }
@@ -1800,6 +1800,7 @@
       var p = perfilDe(a); if (!p) continue;
       var u = li.querySelector('.username_c19a55'); if (!u) continue;
       nomeStyle(u, p.nome); u.classList.add('cc-nm');
+      if (p.apelido) u.dataset.ccAp = p.apelido; else delete u.dataset.ccAp;
       if (!u.nextElementSibling || !u.nextElementSibling.classList.contains('cc-ins')) {
         var ins = (p.insignias || []).filter(function (k) { return INS[k]; }).slice(0, 3);
         if (ins.length) { var s = document.createElement('span'); s.className = 'cc-ins'; s.innerHTML = ins.map(function (k) { return '<i title="' + INS[k][0] + '">' + sv(INS[k][1]) + '</i>'; }).join(''); u.after(s); }
@@ -1993,7 +1994,7 @@
     h += coresHTML('fundo', f.cores, f.tipo === 'cor' ? 1 : f.cores.length);
     if (f.tipo !== 'cor') h += '<div class="row"><div class="l"><b>Direção</b></div><input type="range" data-pfr="angulo" min="0" max="360" step="5" value="' + f.angulo + '" style="--p:' + (f.angulo / 3.6) + '%"><output>' + f.angulo + '°</output></div>';
     if (f.tipo === 'padrao') h += chips('pfp', PADROES, f.padrao);
-    h += '<h4>Nome</h4>' + chips('pfn', ESTILOS, n.estilo);
+    h += '<h4>Nome</h4><input class="txt pf-ap" data-pfap maxlength="32" placeholder="' + esc(PF.conta.nome || 'Seu nome') + '" value="' + esc(d.apelido || '') + '"><div class="note" style="margin:6px 0 0">Nome do Concord: aparece no seu cartão e no chat para quem usa o Concord. Vazio usa o nome do Discord.</div>' + chips('pfn', ESTILOS, n.estilo);
     if (n.estilo !== 'arcoiris') h += coresHTML('nome', n.cores, n.estilo === 'normal' ? 1 : Math.max(2, n.cores.length));
     if (n.estilo === 'degrade' || n.estilo === 'arcoiris' || n.estilo === 'neon' || n.estilo === 'brilho') h += '<div class="row"><div class="l"><b>Animado</b><small>As cores andam devagar</small></div><button class="tg' + (n.animado ? ' on' : '') + '" data-pfa="animado" role="switch" aria-checked="' + !!n.animado + '"></button></div>';
     h += '<div class="pf-fontes">' + [''].concat(FONTS.filter(Boolean), NOME_FONTES).map(function (fm) { if (fm) loadFam(fm); return '<button data-pffo="' + esc(fm) + '"' + (n.fonte === fm ? ' class="on"' : '') + ' style="font-family:' + (fm ? "'" + fm + "'" : 'inherit') + '">' + (fm === 'Bricolage Grotesque' ? 'Concord' : fm || 'Igual ao chat') + '</button>'; }).join('') + '</div>';
@@ -2039,11 +2040,27 @@
   function marcar(b, multi) {
     if (multi) b.classList.toggle('on'); else { var attr = Object.keys(b.dataset).filter(function (k) { return k.indexOf('pf') === 0; })[0], box = b.parentNode;
       box.querySelectorAll('button').forEach(function (x) { if (attr in x.dataset) x.classList.toggle('on', x === b); }); }
-    PF.sujo = true; PF.erro = ''; pfPreview(); var s = PANEL.querySelector('[data-pfa="salvar"]'); if (s) s.textContent = 'Salvar perfil';
+    PF.sujo = true; PF.erro = ''; pfPreview(); agendarSalvar();
+  }
+  // salva sozinho logo depois de cada mudança (o botão Salvar continua para quem quiser na hora)
+  function agendarSalvar() { if (!PF.draft || !PF.conta) return; clearTimeout(PF.autoT); PF.autoT = setTimeout(salvarPerfil, 900); botaoSalvar('Salvando em instantes...'); }
+  function botaoSalvar(t) { var b = PANEL && PANEL.querySelector('[data-pfa="salvar"]'); if (b) b.textContent = t; }
+  function salvarPerfil() {
+    var d = PF.draft; if (!d || !PF.conta) return;
+    if (PF.salvando) { PF.denovo = true; return; }
+    PF.salvando = true; PF.denovo = false; botaoSalvar('Salvando...');
+    var body = JSON.parse(JSON.stringify(d)); delete body._av; delete body._bn; delete body.ganhas; delete body.nomeDiscord; delete body.v;
+    net('PUT', '/concord/perfil', JSON.stringify(body)).then(function (r) {
+      PF.salvando = false; PF.conta.perfil = r.perfil; d.v = r.perfil.v; d.ganhas = r.perfil.ganhas;
+      PF.cache[PF.conta.id] = { t: Date.now(), p: r.perfil };
+      if (PF.denovo) { salvarPerfil(); return; }
+      PF.sujo = false; PF.erro = ''; botaoSalvar('Salvo');
+      pintarNomes(true); pintarPlacas(); if (POP.id === PF.conta.id) popTick(true);
+    }).catch(function (e) { PF.salvando = false; PF.erro = e.erro || 'Não consegui salvar.'; if (e.status === 401) { PF.conta = null; PF.draft = null; } paintPanel(); });
   }
   function mexeu(repaint) {
-    PF.sujo = true; PF.erro = '';
-    if (repaint) paintPanel(); else { pfPreview(); var s = PANEL.querySelector('[data-pfa="salvar"]'); if (s) s.textContent = 'Salvar perfil'; }
+    PF.sujo = true; PF.erro = ''; agendarSalvar();
+    if (repaint) { paintPanel(); botaoSalvar('Salvando em instantes...'); } else pfPreview();
   }
   function pickImg(k) {
     var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/gif,image/png,image/jpeg,image/webp';
@@ -2069,15 +2086,7 @@
     if (a === 'entrar') { if (!window.ccEntrar) { toast('Atualize o Concord para entrar'); return true; } PF.entrando = true; PF.erro = ''; window.ccEntrar(); paintPanel(); toast('Abri o login do Discord no navegador'); return true; }
     if (!d) return a != null;
     if (a === 'sair') { if (b.dataset.sure) { if (window.ccSair) window.ccSair(); PF.conta = null; PF.draft = null; paintPanel(); } else { b.dataset.sure = '1'; b.textContent = 'Sair mesmo?'; } return true; }
-    if (a === 'salvar') {
-      PF.salvando = true; paintPanel();
-      var body = JSON.parse(JSON.stringify(d)); delete body._av; delete body._bn; delete body.ganhas; delete body.nomeDiscord; delete body.v;
-      net('PUT', '/concord/perfil', JSON.stringify(body)).then(function (r) {
-        PF.salvando = false; PF.sujo = false; PF.conta.perfil = r.perfil; var av = d._av, bn = d._bn; PF.draft = completar(JSON.parse(JSON.stringify(r.perfil))); if (av && PF.draft.avatar) PF.draft._av = av; if (bn && PF.draft.banner) PF.draft._bn = bn;
-        PF.cache[PF.conta.id] = { t: Date.now(), p: r.perfil }; paintPanel(); pintarNomes(true); toast('Perfil salvo. Quem usa o Concord já vê.');
-      }).catch(function (e) { PF.salvando = false; PF.erro = e.erro || 'Não consegui salvar.'; if (e.status === 401) { PF.conta = null; PF.draft = null; } paintPanel(); });
-      return true;
-    }
+    if (a === 'salvar') { clearTimeout(PF.autoT); salvarPerfil(); return true; }
     if (a === 'pick') { pickImg(b.dataset.k); return true; }
     if (a === 'tirar') { d[b.dataset.k] = null; delete d[b.dataset.k === 'avatar' ? '_av' : '_bn']; mexeu(true); return true; }
     if (a === 'animado') { d.nome.animado = !d.nome.animado; b.setAttribute('aria-checked', d.nome.animado); marcar(b, 1); return true; }
@@ -2110,6 +2119,7 @@
     if (t.dataset.pfr) { d.fundo.angulo = +t.value; t.style.setProperty('--p', (+t.value / 3.6) + '%'); var o = t.nextElementSibling; if (o) o.textContent = t.value + '°'; mexeu(false); return true; }
     if (t.dataset.pfb != null) { d.bio = t.value.slice(0, 190); var c = document.getElementById('cc-pf-bion'); if (c) c.textContent = d.bio.length + '/190'; mexeu(false); return true; }
     if (t.dataset.pfdi != null) { d.destaque = t.value; mexeu(false); return true; }
+    if (t.dataset.pfap != null) { d.apelido = t.value.slice(0, 32); mexeu(false); return true; }
     if (t.dataset.pflc != null) { d.luz.cor = t.value; t.parentNode.style.setProperty('--c', t.value); mexeu(false); return true; }
     if (t.dataset.pflf != null) { d.luz.forca = +t.value; t.style.setProperty('--p', (+t.value * 100) + '%'); var o2 = t.nextElementSibling; if (o2) o2.textContent = Math.round(+t.value * 100) + '%'; mexeu(false); return true; }
     return false;
