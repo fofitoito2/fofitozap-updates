@@ -758,7 +758,7 @@ html.cc-lite .cc-pcw *, html.cc-still .cc-pcw .mf { animation: none !important; 
 .cc-oculto { visibility: hidden !important; }
 .cc-pcw.cc-pop { position: absolute; z-index: 20; opacity: 0; transform: translateY(8px) scale(.97); transition: opacity .22s var(--cc-out), transform .4s var(--cc-spring); }
 .cc-pcw.cc-pop.on { opacity: 1; transform: perspective(900px) var(--tilt, none); }
-.cc-pcw.cc-pop.modal { width: 380px; }
+.cc-pcw.cc-pop.modal { max-width: none; }
 .cc-pcw.cc-pop.mini { left: auto !important; right: 10px; top: 10px !important; width: auto !important; transform: none; cursor: pointer; }
 .cc-pcw.cc-pop.mini > .cc-pc, .cc-pcw.cc-pop.mini > .pc-mold, .cc-pcw.cc-pop.mini > .pc-p { display: none; }
 .cc-pcw.cc-pop.mini::after { content: 'Ver o do Concord'; display: block; height: 34px; line-height: 34px; padding: 0 14px; border-radius: 999px; font: 600 12.5px var(--cc-font), system-ui, sans-serif; color: #fff; background: var(--d); box-shadow: 0 6px 18px -6px var(--d); }
@@ -786,7 +786,7 @@ html.cc-lite .cc-pcw *, html.cc-still .cc-pcw .mf { animation: none !important; 
 @media (max-width: 600px) { #cc-panel .pf-pres { grid-template-columns: repeat(3, 1fr); } }
 
 /* o cartão do Discord espera o Concord decidir (sem piscar) */
-html.cc-pfon .user-profile-popout:not([data-ccd]), html.cc-pfon .user-profile-modal:not([data-ccd]) { opacity: 0 !important; }
+html.cc-pfon .user-profile-popout:not([data-ccd]), html.cc-pfon .user-profile-modal:not([data-ccd]), html.cc-pfon .user-profile-modal-v2:not([data-ccd]) { opacity: 0 !important; }
 
 /* mais estilos de nome */
 [data-ccn="toon"] { color: var(--n1) !important; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--n2) 60%, #000); paint-order: stroke fill; text-shadow: 0 3px 0 color-mix(in srgb, var(--n2) 70%, #000); }

@@ -1845,7 +1845,7 @@
   var POP_RAF = 0;
   new MutationObserver(function () {
     if (POP_RAF || !window.ccNet) return;
-    POP_RAF = requestAnimationFrame(function () { POP_RAF = 0; if (document.querySelector('.user-profile-popout:not([data-ccd]), .user-profile-modal:not([data-ccd])')) popTick(true); });
+    POP_RAF = requestAnimationFrame(function () { POP_RAF = 0; if (document.querySelector('.user-profile-popout:not([data-ccd]), .user-profile-modal:not([data-ccd]), .user-profile-modal-v2:not([data-ccd])')) popTick(true); });
   }).observe(document, { childList: true, subtree: true });
 
   // ---- o cartão Concord no lugar do cartão do Discord (o do Discord fica num botão) ----
@@ -1867,7 +1867,7 @@
     return fiberUser(host.firstElementChild || host);
   }
   function popTick(refresh) {
-    var host = document.querySelector('.user-profile-popout, .user-profile-modal');
+    var host = document.querySelector('.user-profile-modal-v2, .user-profile-modal, .user-profile-popout');
     if (POP.card && POP.host && (!POP.host.isConnected || POP.host !== host)) { POP.card.remove(); POP.card = null; POP.host = null; }
     if (!host || !window.ccNet) { POP.host = null; POP.card = null; POP.id = ''; return; }
     var id = host === POP.host ? POP.id : popUserId(host);
@@ -1883,14 +1883,14 @@
     POP.host = host; POP.id = id; POP.v = v; POP.card = null;
     if (!p) { host.classList.remove('cc-oculto'); return; }
     var U = st('User'), u = U && U.getUser(id), me = U && U.getCurrentUser && U.getCurrentUser(), eu = me && me.id === id;
-    var modal = host.classList.contains('user-profile-modal');
+    var modal = host.classList.contains('user-profile-modal') || host.classList.contains('user-profile-modal-v2');
     var acoes = eu ? [['editar', 'Editar perfil', true], ['discord', 'Perfil do Discord']] : [['msg', 'Mensagem', true], ['discord', 'Perfil do Discord']];
     var card = cardEl(p, u ? nameOf(u) : p.nomeDiscord, u ? avatarOf(u, 128) : '', acoes);
     card.classList.add('cc-pop'); if (modal) card.classList.add('modal');
     var pai = host.parentElement; if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
-    card.style.left = (modal ? host.offsetLeft + Math.max(0, (host.offsetWidth - 380) / 2) : host.offsetLeft) + 'px';
-    card.style.top = (modal ? host.offsetTop + 40 : host.offsetTop) + 'px';
-    if (!modal) card.style.width = Math.max(300, host.offsetWidth) + 'px';
+    card.style.width = (modal ? Math.min(420, host.offsetWidth - 24) : Math.max(300, host.offsetWidth)) + 'px';
+    card.style.left = (modal ? host.offsetLeft + Math.max(0, (host.offsetWidth - parseFloat(card.style.width)) / 2) : host.offsetLeft) + 'px';
+    card.style.top = host.offsetTop + 'px';
     if (host.dataset.ccDiscord) card.classList.add('mini'); else host.classList.add('cc-oculto');
     host.dataset.ccd = '1';
     card.addEventListener('click', function (e) {
@@ -1902,6 +1902,15 @@
     });
     function mostrarConcord() { delete host.dataset.ccDiscord; host.classList.add('cc-oculto'); card.classList.remove('mini'); }
     POP.card = card; pai.appendChild(card);
+    // perto de onde o cartão do Discord abriu: em cima, embaixo (o seu, lá no canto) ou no meio (perfil completo)
+    var hr = host.getBoundingClientRect(), ch = card.offsetHeight, top = host.offsetTop;
+    if (modal) top = host.offsetTop + Math.max(0, (host.offsetHeight - ch) / 2);
+    else if (hr.bottom > innerHeight - 160 && hr.height > ch) top = host.offsetTop + host.offsetHeight - ch;
+    card.style.top = top + 'px';
+    var cr = card.getBoundingClientRect(), dt = 0;
+    if (cr.bottom > innerHeight - 8) dt = innerHeight - 8 - cr.bottom;
+    if (cr.top + dt < 8) dt = 8 - cr.top;
+    if (dt) card.style.top = (top + dt) + 'px';
     requestAnimationFrame(function () { card.classList.add('on'); });
   }
   function popPlace() {}
