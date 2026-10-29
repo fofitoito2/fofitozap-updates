@@ -17,13 +17,13 @@
       "category": "social",
       "versions": [
         {
-          "version": "1.0.7",
-          "buildVersion": "7",
+          "version": "1.0.8",
+          "buildVersion": "8",
           "date": "2026-10-29",
-          "size": 1553095,
-          "downloadURL": "https://raw.githubusercontent.com/fofitoito2/fofitozap-updates/main/concord/Concord.ipa?v=7",
+          "size": 1553106,
+          "downloadURL": "https://raw.githubusercontent.com/fofitoito2/fofitozap-updates/main/concord/Concord.ipa?v=8",
           "minOSVersion": "15.0",
-          "localizedDescription": "Versão 7 do Concord."
+          "localizedDescription": "Versão 8 do Concord."
         }
       ],
       "appPermissions": {
