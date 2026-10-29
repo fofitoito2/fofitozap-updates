@@ -22,7 +22,7 @@
   };
   var ACCENTS = ['#3ee6c4', '#4fd8ff', '#4a7bff', '#9b6bff', '#c3a6ff', '#ff9ecf', '#ff5c7a', '#ffb347', '#ffd36b', '#a6e36b', '#e6e6f0'];
   var FONTS = ['Onest', 'Figtree', 'Outfit', 'Nunito', 'Plus Jakarta Sans', 'Lexend', ''];
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true, style: true, bub: true, dood: true, tint: 0.06, clean: true };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 22, radius: 14, gap: 10, font: 'Onest', anim: true, motion: true, orbs: 0.6, chatbar: true, small: true, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1 };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -65,7 +65,10 @@
       '--accent-1': mix(a1, '#ffffff', 0.22), '--accent-2': a1, '--accent-3': a1, '--accent-4': mix(a1, '#ffffff', 0.12), '--accent-5': mix(a1, '#000000', 0.12), '--accent-new': a3,
       '--border-light': 'rgba(255,255,255,.05)', '--border': 'rgba(255,255,255,.085)', '--border-hover': 'rgba(255,255,255,.15)', '--button-border': 'rgba(255,255,255,.1)'
     };
+    v['--cc-float'] = rgba(mix(w, '#ffffff', 0.05), solid ? 1 : 0.95);
     var root = ':root{' + Object.keys(v).map(function (k) { return k + ':' + v[k]; }).join(';') + '}';
+    var F = v['--cc-float'];
+    root += 'body,.theme-dark,.theme-darker,.theme-midnight,.theme-light{--background-surface-high:' + F + '!important;--background-surface-higher:' + F + '!important;--background-surface-highest:' + F + '!important;--bg-surface-overlay:' + F + '!important;--bg-surface-overlay-tmp:' + F + '!important;--bg-surface-raised:' + F + '!important;--background-floating:' + F + '!important;--modal-background:' + F + '!important;--bg-floating:' + F + '!important}';
     var on = function (b) { return b ? 'on' : 'off'; };
     var r = +CFG.radius;
     var body = 'body{' + [
@@ -238,11 +241,13 @@
     if (CFG.style) h += toggle('bub', 'Mensagens em balões', 'As suas ficam na cor de destaque') + toggle('dood', 'Desenhos no fundo do chat', '') + range('tint', 'Cor do tema nos painéis', 'Quanto a cor de destaque tinge os painéis', 0, 0.25, 0.01, FMT.pct);
     h += '<h4>Formas</h4>' + range('radius', 'Cantos', '', 0, 24, 1, FMT.px) + range('gap', 'Espaço entre painéis', '', 0, 20, 1, FMT.px);
     h += '<h4>Fonte</h4><div class="fonts">' + FONTS.map(function (f) { return '<button data-f="' + esc(f) + '"' + (CFG.font === f ? ' class="on"' : '') + ' style="font-family:' + (f ? "'" + f + "'" : "'gg sans'") + '">' + (f || 'Padrão do Discord') + '</button>'; }).join('') + '</div>';
+    h += '<h4>Som</h4>' + range('boost', 'Volume das vozes nas chamadas', 'Aumenta o som de todo mundo, até 300%', 0.5, 3, 0.05, FMT.pct);
+    h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores');
     h += '<h4>Detalhes</h4>' + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('anim', 'Animações', 'Mensagens, menus e listas se movendo') + toggle('chatbar', 'Barra de mensagem solta', 'A caixa de digitar fica separada do chat') + toggle('small', 'Painel de usuário compacto', 'Seu perfil lá embaixo ocupa menos espaço');
     var bd = PANEL.querySelector('.bd'), st = bd.scrollTop; bd.innerHTML = h; bd.scrollTop = st;
     PANEL.querySelector('[data-a="update"]').hidden = !INFO.update;
   }
-  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (repaint) paintPanel(); }
+  function set(k, v, repaint) { CFG[k] = v; save(); applyTheme(); if (repaint) paintPanel(); if (k === 'home') homeTick(); }
   function onPanelClick(e) {
     var b = e.target.closest('button'); if (!b) return;
     if (b.dataset.a === 'close') togglePanel(false);
@@ -259,8 +264,8 @@
     var t = e.target;
     if (t.dataset.k) {
       var min = +t.min, max = +t.max, v = +t.value; t.style.setProperty('--p', ((v - min) / (max - min)) * 100 + '%');
-      var o = t.nextElementSibling; if (o) o.textContent = (t.dataset.k === 'op' || t.dataset.k === 'orbs' || t.dataset.k === 'tint' ? FMT.pct : FMT.px)(v);
-      CFG[t.dataset.k] = v; save(); applyTheme();
+      var o = t.nextElementSibling; if (o) o.textContent = (t.dataset.k === 'op' || t.dataset.k === 'orbs' || t.dataset.k === 'tint' || t.dataset.k === 'boost' ? FMT.pct : FMT.px)(v);
+      CFG[t.dataset.k] = v; save(); if (t.dataset.k === 'boost') { if (window.__ccBoostApply) window.__ccBoostApply(); } else applyTheme();
     } else if (t.dataset.ci) { CFG.accent = t.value; save(); applyTheme(); }
   }
   function pickWall() {
@@ -334,15 +339,25 @@
     var img = document.querySelector('[class*="panels_"] img[src*="/avatars/"], [class*="panels_"] img[src*="/users/"]');
     var m = img && /\/(?:avatars|users)\/(\d+)\//.exec(img.src); return m ? m[1] : '';
   }
+  var CHAN_AT = 0;
   function tagMine() {
-    var me = myId(), cur = '';
-    if (!me) return;
-    document.querySelectorAll('li[id^="chat-messages-"]').forEach(function (li) {
+    var lis = document.querySelectorAll('li[id^="chat-messages-"]:not([data-cc-a])');
+    if (!lis.length) return;
+    var me = myId(), settled = Date.now() - CHAN_AT > 1200;
+    lis.forEach(function (li) {
+      var a = '?';
       if (li.querySelector('[class*="groupStart_"]')) {
         var av = li.querySelector('img[class*="avatar_"]'), m = av && /\/(?:avatars|users)\/(\d+)\//.exec(av.src || '');
-        cur = m ? m[1] : '?';
+        a = m ? m[1] : '?';
+      } else {
+        var p = li.previousElementSibling;
+        while (p && !(p.tagName === 'LI' && p.dataset.ccA)) p = p.previousElementSibling;
+        if (p) a = p.dataset.ccA;
       }
-      if (cur === me) { if (!li.dataset.ccMe) li.dataset.ccMe = '1'; } else if (li.dataset.ccMe) delete li.dataset.ccMe;
+      li.dataset.ccA = a;
+      if (me && a === me) li.dataset.ccMe = '1';
+      var nx = li.nextElementSibling;
+      if (settled && (!nx || !nx.matches('li[id^="chat-messages-"]'))) li.dataset.ccIn = '1';
     });
   }
 
@@ -369,7 +384,7 @@
     (function walk(el) {
       for (var i = el.attributes.length - 1; i >= 0; i--) {
         var a = el.attributes[i].name;
-        if (KEEP.indexOf(a) < 0 || (a === 'aria-label' && el.tagName !== 'BUTTON' && el.getAttribute('role') !== 'button')) el.removeAttribute(a);
+        if (KEEP.indexOf(a) < 0 || (a === 'aria-label' && el.tagName !== 'BUTTON')) el.removeAttribute(a);
         else if (a === 'href' || a === 'data-list-item-id' || a === 'aria-label') el.setAttribute(a, el.getAttribute(a).replace(/\d{6,}/g, '#'));
       }
       if (el.id) el.id = el.id.replace(/\d{6,}/g, '#');
@@ -397,17 +412,31 @@
   }
   function dump(force) {
     var k = screenKind();
-    if (!window.ccDump || (DUMPED[k] && Date.now() - DUMPED[k] < 120000 && !force) || k === 'entrar') return;
+    if (!window.ccDump || (DUMPED[k] && !force) || k === 'entrar' || document.hidden) return;
     DUMPED[k] = Date.now();
     try { window.ccDump(force ? 'manual-' + k : k, skeleton()).catch(function () {}); if (force) toast('Estrutura da tela guardada'); } catch (e) {}
   }
   var dumpT = null, lastPath = '';
   function watchScreen() {
     var k = location.pathname + '|' + screenKind();
-    if (k === lastPath) return; lastPath = k;
-    clearTimeout(dumpT); dumpT = setTimeout(function () { dump(false); }, 4000);
+    if (k === lastPath) return;
+    var g = location.pathname.split('/')[2], og = lastPath.split('|')[0].split('/')[2];
+    lastPath = k; CHAN_AT = Date.now();
+    var h = document.documentElement;
+    h.classList.add('cc-swap'); if (g !== og) h.classList.add('cc-gswap');
+    setTimeout(function () { h.classList.remove('cc-swap', 'cc-gswap'); }, 520);
+    homeTick();
+    clearTimeout(dumpT); dumpT = setTimeout(function () { (window.requestIdleCallback || setTimeout)(function () { dump(false); }, { timeout: 8000 }); }, 5000);
   }
   document.addEventListener('keydown', function (e) { if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { e.preventDefault(); dump(true); } }, true);
+
+  var dragT = null;
+  ['dragenter', 'dragover'].forEach(function (ev) { window.addEventListener(ev, function (e) {
+    if (!e.dataTransfer || [].indexOf.call(e.dataTransfer.types || [], 'Files') < 0) return;
+    document.documentElement.classList.add('cc-drag'); clearTimeout(dragT);
+    dragT = setTimeout(function () { document.documentElement.classList.remove('cc-drag'); }, 600);
+  }, true); });
+  window.addEventListener('drop', function () { setTimeout(function () { document.documentElement.classList.remove('cc-drag'); }, 300); }, true);
 
   /* ---------- zoom (Ctrl + roda do mouse, Ctrl + / -): o Concord lembra e volta com ele ---------- */
   var DPI = 1, ZOOM_OK = false;
@@ -427,13 +456,274 @@
     }).catch(function () { ZOOM_OK = true; });
   }
 
+  /* ================= Início do Concord: tela inicial nova, com os dados do seu Discord =================
+     Lê (só lê) as informações que o próprio Discord já tem carregadas: amigos, status, quem está em chamada,
+     conversas e servidores. Nada é enviado para fora. */
+  var WREQ = null, STORES = {};
+  function wreq() {
+    if (WREQ) return WREQ;
+    var ch = window.webpackChunkdiscord_app; if (!ch || !ch.push) return null;
+    try { ch.push([[Symbol('concord')], {}, function (r) { WREQ = r; }]); ch.pop(); } catch (e) {}
+    return WREQ;
+  }
+  function findMod(test) {
+    var r = wreq(); if (!r || !r.c) return null;
+    for (var id in r.c) {
+      var m = r.c[id] && r.c[id].exports; if (!m || m === window) continue;
+      try {
+        if (test(m)) return m;
+        if (typeof m === 'object') for (var k in m) { var x = m[k]; if (x && (typeof x === 'object' || typeof x === 'function') && test(x)) return x; }
+      } catch (e) {}
+    }
+    return null;
+  }
+  var SHAPES = {
+    User: function (m) { return typeof m.getCurrentUser === 'function' && typeof m.getUser === 'function'; },
+    Rel: function (m) { return typeof m.getFriendIDs === 'function' && typeof m.isFriend === 'function'; },
+    Presence: function (m) { return typeof m.getStatus === 'function' && typeof m.getActivities === 'function'; },
+    Channel: function (m) { return typeof m.getChannel === 'function' && typeof m.getDMFromUserId === 'function'; },
+    Guild: function (m) { return typeof m.getGuild === 'function' && typeof m.getGuilds === 'function' && typeof m.getGuildCount === 'function'; },
+    Voice: function (m) { return typeof m.getVoiceStatesForChannel === 'function' && typeof m.getAllVoiceStates === 'function'; },
+    Read: function (m) { return typeof m.getMentionCount === 'function' && typeof m.hasUnread === 'function' && typeof m.lastMessageId === 'function'; },
+    GuildOrder: function (m) { return typeof m.getFlattenedGuildIds === 'function'; },
+    VoiceAct: function (m) { return typeof m.selectVoiceChannel === 'function'; },
+    DMAct: function (m) { return typeof m.openPrivateChannel === 'function'; }
+  };
+  function st(k) {
+    if (STORES[k]) return STORES[k];
+    var t = STORES['_t' + k] || 0; if (Date.now() - t < 5000) return null; // o Discord ainda está carregando: tenta de novo daqui a pouco
+    STORES['_t' + k] = Date.now();
+    var v = findMod(SHAPES[k]); if (v) STORES[k] = v; return v || null;
+  }
+  function go(path) { try { history.pushState(null, '', path); dispatchEvent(new PopStateEvent('popstate', { state: null })); } catch (e) { location.href = path; } }
+  function avatarOf(u, size) {
+    if (!u) return '';
+    try { if (u.getAvatarURL) return u.getAvatarURL(undefined, size || 64); } catch (e) {}
+    if (u.avatar) return 'https://cdn.discordapp.com/avatars/' + u.id + '/' + u.avatar + '.webp?size=' + (size || 64);
+    try { return 'https://cdn.discordapp.com/embed/avatars/' + Number((BigInt(u.id) >> 22n) % 6n) + '.png'; } catch (e) { return 'https://cdn.discordapp.com/embed/avatars/0.png'; }
+  }
+  function guildIcon(g) { return g && g.icon ? 'https://cdn.discordapp.com/icons/' + g.id + '/' + g.icon + '.webp?size=96' : ''; }
+  function initials(n) { return String(n || '?').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 3); }
+  function nameOf(u) { var R = st('Rel'); var nick = R && R.getNickname ? R.getNickname(u.id) : ''; return nick || u.globalName || u.global_name || u.username || '?'; }
+  var SVG = {
+    game: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 14h.01"/></svg>',
+    music: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+    tv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M8 2.5l4 3.5 4-3.5"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>',
+    voice: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+    add: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M19 8v6M16 11h6"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>'
+  };
+  // o que a pessoa está fazendo agora, em uma linha
+  function activityLine(id) {
+    var P = st('Presence'); if (!P) return null;
+    var acts = []; try { acts = P.getActivities(id) || []; } catch (e) {}
+    var pick = acts.find(function (a) { return a.type === 2; }) || acts.find(function (a) { return a.type === 0; }) || acts.find(function (a) { return a.type === 3 || a.type === 1; }) || acts.find(function (a) { return a.type === 4; });
+    if (!pick) return null;
+    if (pick.type === 2) return { k: 'music', t: (pick.details || pick.name) + (pick.state ? ' de ' + pick.state : '') };
+    if (pick.type === 0) return { k: 'game', t: 'Jogando ' + pick.name };
+    if (pick.type === 3) return { k: 'tv', t: 'Assistindo ' + (pick.details || pick.name) };
+    if (pick.type === 1) return { k: 'tv', t: 'Ao vivo: ' + (pick.details || pick.name) };
+    return { k: 'chat', t: (pick.emoji && pick.emoji.name && !pick.emoji.id ? pick.emoji.name + ' ' : '') + (pick.state || '') };
+  }
+  var HOME = { el: null, back: null, filter: 'online', hidden: false, lastRender: 0, timer: null, shown: false };
+  function onHomePath() { return /^\/channels\/@me\/?$/.test(location.pathname); }
+  function homeRect() {
+    var pg = document.querySelector('[class*="base_"] [class*="page_"]');
+    return pg ? pg.getBoundingClientRect() : null;
+  }
+  function homeTick() {
+    if (!CFG.home) { if (HOME.el) HOME.el.classList.remove('on'); if (HOME.back) HOME.back.classList.remove('on'); return; }
+    var want = onHomePath() && !!st('User');
+    if (!want) { HOME.hidden = false; }
+    var show = want && !HOME.hidden;
+    if (!HOME.el && show) buildHome();
+    if (!HOME.el) return;
+    var r = homeRect();
+    var vis = show && r && r.width > 200;
+    if (vis) {
+      var mg = 0;
+      HOME.el.style.left = (r.left + mg) + 'px'; HOME.el.style.top = (r.top + mg) + 'px'; HOME.el.style.width = (r.width - mg * 2) + 'px'; HOME.el.style.height = (r.height - mg * 2) + 'px';
+      if (!HOME.shown) { HOME.shown = true; HOME.el.classList.add('on', 'in'); renderHome(true); setTimeout(function () { HOME.el.classList.remove('in'); }, 1200); }
+    } else if (HOME.shown) { HOME.shown = false; HOME.el.classList.remove('on'); }
+    // botão para voltar ao Início quando você abriu a lista do Discord
+    if (HOME.back) {
+      var b = want && HOME.hidden && r;
+      HOME.back.classList.toggle('on', !!b);
+      if (b) { HOME.back.style.right = (innerWidth - r.right + 18) + 'px'; HOME.back.style.top = (r.top + 12) + 'px'; }
+    }
+  }
+  function buildHome() {
+    HOME.el = document.createElement('div'); HOME.el.id = 'cc-home'; HOME.el.innerHTML = '<div class="sc"></div>';
+    document.body.appendChild(HOME.el);
+    HOME.back = document.createElement('button'); HOME.back.id = 'cc-homeback'; HOME.back.innerHTML = SVG.home + 'Início do Concord';
+    HOME.back.onclick = function () { HOME.hidden = false; homeTick(); };
+    document.body.appendChild(HOME.back);
+    HOME.el.addEventListener('click', onHomeClick);
+    window.addEventListener('resize', homeTick);
+    setInterval(function () { if (HOME.shown) { var c = HOME.el.querySelector('.clock'); if (c) c.textContent = clockText(); } }, 15000);
+    // atualiza quando o Discord muda algo (alguém entra, sai, começa um jogo...)
+    ['Presence', 'Rel', 'Voice', 'Read'].forEach(function (k) { var S = st(k); if (S && S.addChangeListener) S.addChangeListener(function () { if (HOME.shown) { clearTimeout(HOME.timer); HOME.timer = setTimeout(function () { renderHome(false); }, 900); } }); });
+  }
+  function clockText() { var d = new Date(); return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); }
+  function greet() { var h = new Date().getHours(); return h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; }
+  function homeData() {
+    var U = st('User'), R = st('Rel'), P = st('Presence'), C = st('Channel'), G = st('Guild'), V = st('Voice'), RS = st('Read'), GO = st('GuildOrder');
+    var me = U.getCurrentUser();
+    var friends = (R ? R.getFriendIDs() : []).map(function (id) {
+      var u = U.getUser(id); if (!u) return null;
+      var status = P ? (P.getStatus(id) || 'offline') : 'offline';
+      return { id: id, u: u, name: nameOf(u), status: status, act: activityLine(id) };
+    }).filter(Boolean);
+    var order = { online: 0, idle: 1, dnd: 2, offline: 3 };
+    var ord = function (x) { return x in order ? order[x] : 3; };
+    friends.sort(function (a, b) { return ord(a.status) - ord(b.status) || (b.act ? 1 : 0) - (a.act ? 1 : 0) || a.name.localeCompare(b.name); });
+    // chamadas acontecendo agora (nos seus servidores e em conversas)
+    var calls = [];
+    if (V) {
+      var all = {}; try { all = V.getAllVoiceStates() || {}; } catch (e) {}
+      var byCh = {};
+      Object.keys(all).forEach(function (gid) { var m = all[gid] || {}; Object.keys(m).forEach(function (uid) { var vs = m[uid]; if (!vs || !vs.channelId) return; (byCh[vs.channelId] = byCh[vs.channelId] || { gid: gid === '@me' ? null : gid, users: [] }).users.push(uid); }); });
+      Object.keys(byCh).forEach(function (cid) {
+        var ch = C && C.getChannel(cid); var g = byCh[cid].gid && G && G.getGuild(byCh[cid].gid);
+        calls.push({ cid: cid, gid: byCh[cid].gid, name: ch ? (ch.name || 'Chamada') : 'Chamada', guild: g, users: byCh[cid].users, mine: byCh[cid].users.indexOf(me.id) >= 0 });
+      });
+      calls.sort(function (a, b) { return (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || b.users.length - a.users.length; });
+    }
+    // conversas recentes
+    var dms = [];
+    if (C && C.getSortedPrivateChannels) { try { dms = C.getSortedPrivateChannels().slice(0, 8); } catch (e) {} }
+    else if (C && C.getMutablePrivateChannels) { try { var mp = C.getMutablePrivateChannels(); dms = Object.keys(mp).map(function (k) { return mp[k]; }).sort(function (a, b) { return (b.lastMessageId || '0').length - (a.lastMessageId || '0').length || ((b.lastMessageId || '0') > (a.lastMessageId || '0') ? 1 : -1); }).slice(0, 8); } catch (e) {} }
+    dms = dms.map(function (c) {
+      var rid = (c.recipients || [])[0], u = rid && U.getUser(rid);
+      var nm = c.name || (u ? nameOf(u) : 'Conversa'); if (!c.name && (c.recipients || []).length > 1) nm = (c.recipients || []).map(function (id) { var x = U.getUser(id); return x ? nameOf(x) : ''; }).filter(Boolean).slice(0, 3).join(', ');
+      return { id: c.id, name: nm, u: u, group: (c.recipients || []).length > 1, ping: RS ? RS.getMentionCount(c.id) : 0, unread: RS ? RS.hasUnread(c.id) : false, status: u && P ? P.getStatus(u.id) : 'offline' };
+    });
+    // servidores na ordem da sua coluna
+    var gids = [];
+    try { gids = GO ? GO.getFlattenedGuildIds() : Object.keys(G.getGuilds()); } catch (e) { try { gids = Object.keys(G.getGuilds()); } catch (e2) {} }
+    var guilds = gids.map(function (id) { return G.getGuild(id); }).filter(Boolean);
+    return { me: me, friends: friends, calls: calls, dms: dms, guilds: guilds };
+  }
+  function renderHome(first) {
+    if (!HOME.el) return;
+    HOME.lastRender = Date.now();
+    var d; try { d = homeData(); } catch (e) { HOME.el.querySelector('.sc').innerHTML = '<div class="empty">Não consegui ler os dados do Discord agora. A lista normal continua no botão abaixo.</div>'; return; }
+    var on = d.friends.filter(function (f) { return f.status !== 'offline'; });
+    var playing = d.friends.filter(function (f) { return f.act && f.act.k === 'game'; }), listening = d.friends.filter(function (f) { return f.act && f.act.k === 'music'; });
+    var list = HOME.filter === 'online' ? on : HOME.filter === 'game' ? playing : HOME.filter === 'music' ? listening : d.friends;
+    var callsN = d.calls.length;
+    var sub = (on.length ? on.length + (on.length === 1 ? ' amigo online' : ' amigos online') : 'Nenhum amigo online agora') + (callsN ? ', ' + callsN + (callsN === 1 ? ' chamada acontecendo' : ' chamadas acontecendo') : '');
+    var h = '<div class="hero"><div class="me"><img alt="" src="' + esc(avatarOf(d.me, 128)) + '"></div><div class="tx"><h1>' + greet() + ', ' + esc(d.me.globalName || d.me.username) + '</h1><p>' + esc(sub) + '</p></div><div class="clock">' + clockText() + '</div></div>';
+    h += '<div class="acts"><button class="chip" data-h="add">' + SVG.add + 'Adicionar amigo</button><button class="chip" data-h="discord">' + SVG.list + 'Lista do Discord</button><button class="chip" data-h="look">' + IC.pal + 'Aparência</button></div>';
+    h += '<div class="grid"><div>';
+    h += '<div class="sec"><h2>Amigos <em>' + d.friends.length + '</em></h2><div class="filters">' +
+      [['online', 'Online', on.length], ['game', 'Jogando', playing.length], ['music', 'Ouvindo', listening.length], ['all', 'Todos', d.friends.length]].map(function (f) { return '<button class="chip' + (HOME.filter === f[0] ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + ' <small>' + f[2] + '</small></button>'; }).join('') + '</div>';
+    h += list.length ? '<div class="friends">' + list.slice(0, 60).map(function (f, i) {
+      return '<button class="fr" data-u="' + f.id + '" style="--i:' + Math.min(i, 20) + '"><span class="av"><img alt="" loading="lazy" src="' + esc(avatarOf(f.u, 64)) + '"><i class="' + f.status + '"></i></span><span class="t"><b>' + esc(f.name) + '</b><small>' + (f.act ? SVG[f.act.k] + '<span>' + esc(f.act.t) + '</span>' : '<span>' + ({ online: 'Online', idle: 'Ausente', dnd: 'Não perturbe', offline: 'Offline' }[f.status] || '') + '</span>') + '</small></span></button>';
+    }).join('') + '</div>' : '<div class="card"><div class="empty">' + (HOME.filter === 'online' ? 'Ninguém online agora.' : 'Ninguém aqui por enquanto.') + '</div></div>';
+    h += '</div></div><div>';
+    h += '<div class="sec"><h2>' + SVG.voice.replace('<svg', '<svg width="16" height="16"') + 'Acontecendo agora</h2>' + (d.calls.length ? d.calls.slice(0, 6).map(function (c) {
+      var ic = c.guild ? (guildIcon(c.guild) ? '<img class="gi" alt="" src="' + esc(guildIcon(c.guild)) + '">' : '<span class="gi">' + esc(initials(c.guild.name)) + '</span>') : '<span class="gi">' + SVG.chat.replace('<svg', '<svg width="16" height="16"') + '</span>';
+      var U = st('User');
+      return '<div class="vc"><div class="top">' + ic + '<div class="t"><b>' + esc(c.name) + '</b><small>' + esc(c.guild ? c.guild.name : 'Conversa') + ', ' + c.users.length + (c.users.length === 1 ? ' pessoa' : ' pessoas') + '</small></div>' +
+        (c.mine ? '<button class="chip on" data-c="' + c.cid + '" data-g="' + (c.gid || '') + '">Você está aqui</button>' : '<button class="join" data-j="' + c.cid + '" data-g="' + (c.gid || '') + '">Entrar</button>') + '</div>' +
+        '<div class="ppl">' + c.users.slice(0, 8).map(function (id) { var u = U.getUser(id); return u ? '<img alt="" title="' + esc(nameOf(u)) + '" src="' + esc(avatarOf(u, 48)) + '">' : ''; }).join('') + '</div></div>';
+    }).join('') : '<div class="card"><div class="empty">Nenhuma chamada agora nos seus servidores.</div></div>') + '</div>';
+    h += '<div class="sec"><h2>Conversas recentes</h2><div class="card">' + (d.dms.length ? d.dms.map(function (c) {
+      return '<button class="row" data-dm="' + c.id + '"><span class="av"><img alt="" loading="lazy" src="' + esc(c.u ? avatarOf(c.u, 64) : 'https://cdn.discordapp.com/embed/avatars/0.png') + '">' + (c.group ? '' : '<i class="' + c.status + '"></i>') + '</span><span class="t"><b>' + esc(c.name) + '</b><small><span>' + (c.unread ? 'Mensagens novas' : c.group ? 'Grupo' : 'Conversa') + '</span></small></span>' + (c.ping ? '<span class="badge">' + c.ping + '</span>' : '') + '</button>';
+    }).join('') : '<div class="empty">Sem conversas ainda.</div>') + '</div></div>';
+    h += '<div class="sec"><h2>Seus servidores <em>' + d.guilds.length + '</em></h2><div class="guilds">' + d.guilds.slice(0, 40).map(function (g) {
+      var RS = st('Read'), ic = guildIcon(g);
+      return '<button class="gd" data-g2="' + g.id + '" title="' + esc(g.name) + '">' + (ic ? '<img class="gi" alt="" loading="lazy" src="' + esc(ic) + '">' : '<span class="gi">' + esc(initials(g.name)) + '</span>') + '<span>' + esc(g.name) + '</span></button>';
+    }).join('') + '</div></div>';
+    h += '</div></div>';
+    var sc = HOME.el.querySelector('.sc'), top = sc.scrollTop; sc.innerHTML = h; sc.scrollTop = top;
+    if (first) { HOME.el.classList.remove('in'); void HOME.el.offsetWidth; HOME.el.classList.add('in'); }
+  }
+  function openDM(uid) {
+    var C = st('Channel'), cid = C && C.getDMFromUserId(uid);
+    if (cid) { go('/channels/@me/' + cid); return; }
+    var A = st('DMAct'); if (A) { try { A.openPrivateChannel(uid); return; } catch (e) {} }
+    toast('Não consegui abrir a conversa');
+  }
+  function onHomeClick(e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.f) { HOME.filter = b.dataset.f; renderHome(false); return; }
+    if (b.dataset.u) { openDM(b.dataset.u); return; }
+    if (b.dataset.dm) { go('/channels/@me/' + b.dataset.dm); return; }
+    if (b.dataset.g2) { go('/channels/' + b.dataset.g2); return; }
+    if (b.dataset.j) {
+      var A = st('VoiceAct');
+      if (A) { try { A.selectVoiceChannel(b.dataset.j); toast('Entrando na chamada'); return; } catch (e2) {} }
+      go('/channels/' + (b.dataset.g || '@me') + '/' + b.dataset.j); return;
+    }
+    if (b.dataset.c) { go('/channels/' + (b.dataset.g || '@me') + '/' + b.dataset.c); return; }
+    if (b.dataset.h === 'look') { togglePanel(true); return; }
+    if (b.dataset.h === 'discord' || b.dataset.h === 'add') {
+      HOME.hidden = true; homeTick();
+      if (b.dataset.h === 'add') setTimeout(function () { var t = [].slice.call(document.querySelectorAll('[class*="tabBar_"] [role="tab"], [class*="addFriend_"]')).pop(); if (t) t.click(); }, 150);
+    }
+  }
+
+  /* ================= volume das vozes acima de 100% =================
+     O Discord no navegador para em 100%. Aqui o som de cada pessoa passa por um amplificador (até 300%). */
+  var BOOST = { ctx: null, sink: '', els: [] };
+  function boostCtx() {
+    if (!BOOST.ctx) { BOOST.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (BOOST.sink && BOOST.ctx.setSinkId) BOOST.ctx.setSinkId(BOOST.sink).catch(function () {}); }
+    if (BOOST.ctx.state === 'suspended') BOOST.ctx.resume().catch(function () {});
+    return BOOST.ctx;
+  }
+  (function hookAudio() {
+    var P = HTMLMediaElement.prototype;
+    var dSrc = Object.getOwnPropertyDescriptor(P, 'srcObject'), dVol = Object.getOwnPropertyDescriptor(P, 'volume'), dMut = Object.getOwnPropertyDescriptor(P, 'muted');
+    if (!dSrc || !dVol || !dMut) return;
+    function gainFor(el) { return el.__ccWantMuted ? 0 : (el.__ccWantVol == null ? 1 : el.__ccWantVol) * (+CFG.boost || 1); }
+    function attach(el) {
+      if (el.__cc || !el.__ccStream || (+CFG.boost || 1) === 1) return;
+      try {
+        var ctx = boostCtx(), src = ctx.createMediaStreamSource(el.__ccStream), g = ctx.createGain();
+        g.gain.value = gainFor(el); src.connect(g); g.connect(ctx.destination);
+        el.__cc = { src: src, g: g };
+        dMut.set.call(el, true); // o som sai pelo amplificador; o elemento continua tocando (sem isso o Chrome não entrega o áudio)
+      } catch (e) { el.__cc = null; }
+    }
+    function detach(el) {
+      if (!el.__cc) return;
+      try { el.__cc.src.disconnect(); el.__cc.g.disconnect(); } catch (e) {}
+      el.__cc = null; dMut.set.call(el, !!el.__ccWantMuted); dVol.set.call(el, el.__ccWantVol == null ? 1 : el.__ccWantVol);
+    }
+    Object.defineProperty(P, 'srcObject', { configurable: true, enumerable: dSrc.enumerable, get: dSrc.get, set: function (v) {
+      dSrc.set.call(this, v);
+      try {
+        detach(this); this.__ccStream = null;
+        if (this.tagName === 'AUDIO' && v && typeof MediaStream !== 'undefined' && v instanceof MediaStream && v.getAudioTracks().length) {
+          this.__ccStream = v; if (BOOST.els.indexOf(this) < 0) BOOST.els.push(this); attach(this);
+        }
+      } catch (e) {}
+    } });
+    Object.defineProperty(P, 'volume', { configurable: true, enumerable: dVol.enumerable, get: function () { return this.__cc ? (this.__ccWantVol == null ? 1 : this.__ccWantVol) : dVol.get.call(this); }, set: function (v) {
+      this.__ccWantVol = v; if (this.__cc) this.__cc.g.gain.value = gainFor(this); else dVol.set.call(this, v);
+    } });
+    Object.defineProperty(P, 'muted', { configurable: true, enumerable: dMut.enumerable, get: function () { return this.__cc ? !!this.__ccWantMuted : dMut.get.call(this); }, set: function (v) {
+      this.__ccWantMuted = !!v; if (this.__cc) this.__cc.g.gain.value = gainFor(this); else dMut.set.call(this, v);
+    } });
+    if (P.setSinkId) { var sk = P.setSinkId; P.setSinkId = function (id) { BOOST.sink = id; if (BOOST.ctx && BOOST.ctx.setSinkId) BOOST.ctx.setSinkId(id).catch(function () {}); return sk.apply(this, arguments); }; }
+    window.__ccBoostApply = function () {
+      BOOST.els = BOOST.els.filter(function (el) { return el.isConnected || el.__ccStream; });
+      BOOST.els.forEach(function (el) { if ((+CFG.boost || 1) === 1) detach(el); else if (el.__cc) el.__cc.g.gain.value = gainFor(el); else attach(el); });
+    };
+    document.addEventListener('pointerdown', function () { if (BOOST.ctx && BOOST.ctx.state === 'suspended') BOOST.ctx.resume().catch(function () {}); }, true);
+  })();
+
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { aura(); mountWin(); if (CFG.style && CFG.bub) tagMine(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
+    setTimeout(function () { pend = false; place(); if (document.body) { aura(); mountWin(); tagMine(); homeTick(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
   function ready() {
