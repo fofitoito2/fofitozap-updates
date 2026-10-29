@@ -1026,3 +1026,28 @@ html.cc-style .leftTrayIcon_cb9592:hover, html.cc-style .rightTrayIcon_cb9592:ho
 #cc-ramodal .bt { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 #cc-ramodal .bt button { height: 40px; padding: 0 16px; border-radius: 11px; border: 0; font: 600 13.5px var(--cc-font), system-ui, sans-serif; cursor: pointer; background: rgba(255,255,255,.08); color: var(--text-1); }
 #cc-ramodal .bt .pri { background: var(--accent-2); color: var(--cc-aink); }
+
+/* ================= Tela estreita: celular, tablet em pé ou janela pequena =================
+   Uma coluna só. Faixa dos servidores no topo; embaixo a lista (canais/conversas e o seu perfil) ou a conversa. */
+html.cc-estreito .content__5e434 { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: 64px minmax(0, 1fr) auto !important;
+  grid-template-areas: "dock" "page" "page" !important; column-gap: 0 !important; padding: 0 8px 8px !important; }
+html.cc-estreito.cc-lista .content__5e434 { grid-template-areas: "dock" "list" "panels" !important; }
+html.cc-estreito:not(.cc-lista) .sidebarList__5e434, html.cc-estreito:not(.cc-lista) .panels__5e434 { display: none !important; }
+html.cc-estreito.cc-lista .page__5e434, html.cc-estreito.cc-lista #cc-home { display: none !important; }
+html.cc-estreito .guilds__5e434, html.cc-estreito .guilds__5e434 .scroller_ef3116 { max-width: calc(100vw - 16px) !important; }
+html.cc-estreito .bar_c38106 > .trailing_c38106 { display: none !important; }
+html.cc-estreito .container_c8ffbb { display: none !important; }
+html.cc-estreito .sidebarList__5e434 { margin-bottom: 8px !important; }
+html.cc-estreito .chat_f75fb0 > .subtitleContainer_f75fb0 { padding-left: 46px !important; }
+#cc-voltar { position: fixed; left: 14px; top: 76px; z-index: 1003; width: 40px; height: 40px; border-radius: 13px; border: 0; display: none; place-items: center; cursor: pointer; color: var(--text-1);
+  background: color-mix(in srgb, var(--cc-bg1) 75%, transparent); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 8px 20px -10px rgba(0,0,0,.6); }
+html.cc-estreito:not(.cc-lista) #cc-voltar { display: grid; }
+#cc-voltar svg { width: 20px; height: 20px; }
+html.cc-estreito #cc-panel { top: 8px; right: 8px; left: 8px; bottom: 8px; width: auto; max-width: none; }
+html.cc-estreito #cc-pf-float { display: none !important; }
+/* leve no celular: sem vidro desfocado (o mais caro de desenhar), bolhas paradas, menos sombra */
+html.cc-cel *, html.cc-cel *::before, html.cc-cel *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.cc-cel #cc-aura i { animation: none !important; }
+html.cc-cel .cc-pcw { transition: none; }
+html.cc-cel [data-ccplaca]::after { animation: none !important; }
+@media (pointer: coarse) { .cc-pc .pc-zoom { opacity: 1; } }

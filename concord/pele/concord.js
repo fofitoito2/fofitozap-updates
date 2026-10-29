@@ -137,7 +137,7 @@
   function wantMarks() {
     var w = { 'cc-on': true, 'cc-aura': CFG.mat === 'aura' || CFG.mat === 'wall', 'cc-solid': CFG.mat === 'solid', 'cc-glass': CFG.mat === 'acrylic', 'cc-mica': CFG.mat === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion,
       'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood), 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite, 'cc-hasbar': HASBAR,
-      'cc-lay': CFG.layout === 'palco', 'cc-homecfg': !!CFG.home };
+      'cc-lay': CFG.layout === 'palco', 'cc-homecfg': !!CFG.home, 'cc-cel': !!window.__ccCel };
     Object.keys(FLAGS).forEach(function (k) { w[k] = FLAGS[k]; });
     return w;
   }
@@ -2586,17 +2586,55 @@
   }
 
   window.__ccRa = { ligar: function (id, v) { raCall(String(id), !!v); }, estado: function () { var c = RA.call; return c ? { s: c.state, t0: !!c.t0, remotos: Object.keys(c.remote).length, yt: !!c.ytOn } : null; } };
+  /* ---------- tela estreita (celular, tablet em pé, janela pequena): uma coluna, lista ou conversa ----------
+     Trocar de servidor mostra a lista de canais; escolher canal ou conversa mostra a conversa; o botão voltar volta à lista. */
+  var CEL = { g: null, lista: false, btn: null };
+  function estreito() { return innerWidth < 760; }
+  function celTick() {
+    var on = estreito(); flag('cc-estreito', on);
+    if (!on) { flag('cc-lista', false); if (CEL.btn) CEL.btn.style.display = 'none'; return; }
+    var p = location.pathname.split('/'), g = p[2] || '', ch = p[3] || '';
+    if (g !== CEL.g) { CEL.lista = g !== '@me'; CEL.g = g; CEL.ch = ch; CEL.forcou = false; }
+    else if (ch !== CEL.ch) { CEL.ch = ch; CEL.forcou = false; if (ch) CEL.lista = false; }
+    if (g === '@me' && !ch && !CEL.forcou) CEL.lista = false;
+    flag('cc-lista', CEL.lista);
+    if (!CEL.btn) {
+      CEL.btn = document.createElement('button'); CEL.btn.id = 'cc-voltar'; CEL.btn.title = 'Voltar para a lista';
+      CEL.btn.innerHTML = sv('<path d="M15 5l-7 7 7 7"/>');
+      CEL.btn.addEventListener('click', function () { CEL.lista = true; CEL.forcou = true; flag('cc-lista', true); });
+      document.body.appendChild(CEL.btn);
+    }
+    CEL.btn.style.display = CEL.lista ? 'none' : '';
+  }
+  // na lista, tocar num canal ou conversa já abre a conversa (mesmo se for o mesmo canal de antes)
+  document.addEventListener('click', function (e) {
+    if (!estreito() || !CEL.lista) return;
+    var a = e.target.closest && e.target.closest('.sidebarList__5e434 a[href^="/channels/"], .sidebarList__5e434 [data-list-item-id^="channels___"], .sidebarList__5e434 .link__2ea32');
+    if (a) setTimeout(function () { CEL.lista = false; CEL.forcou = false; flag('cc-lista', false); celTick(); }, 60);
+  }, true);
+  window.addEventListener('resize', celTick);
+
+  // botão voltar do celular: fecha o que estiver por cima, depois volta para a lista
+  window.__ccVoltar = function () {
+    if (document.getElementById('cc-grande')) { fecharGrande(); return true; }
+    var mn = document.getElementById('cc-ramenu') || document.getElementById('cc-ramodal'); if (mn) { mn.remove(); return true; }
+    if (PANEL && PANEL.classList.contains('on')) { togglePanel(false); return true; }
+    var rc = document.getElementById('cc-rc'); if (rc && rc.classList.contains('on') && !rc.classList.contains('mini') && RA.call && RA.call.state !== 'ringing') { raMini(true); return true; }
+    if (POP.card) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true; }
+    if (estreito() && !CEL.lista) { CEL.lista = true; CEL.forcou = true; flag('cc-lista', true); return true; }
+    return false;
+  };
   /* ---------- começo ---------- */
   style('base', CC.css.base || ''); style('ours', CC.css.ours || ''); applyTheme(); edListen();
   loadFonts();
   var pend = false;
   var mo = new MutationObserver(function () {
     if (pend) return; pend = true;
-    setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); pfTick(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
+    setTimeout(function () { pend = false; place(); if (document.body) { splash(); aura(); mountWin(); tagMine(); pfTick(); celTick(); homeTick(); cleanAds(); splashCheck(); dmAside(); watchScreen(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, 250);
   });
   mo.observe(document, { childList: true, subtree: true });
   // troca de tela na hora (sem esperar o Discord mexer na página): o Início entra sem mostrar a lista de amigos antes
-  function onRoute() { if (!document.body) return; watchScreen(); homeTick(); requestAnimationFrame(homeTick); }
+  function onRoute() { if (!document.body) return; celTick(); watchScreen(); homeTick(); requestAnimationFrame(homeTick); }
   ['pushState', 'replaceState'].forEach(function (m) { var o = history[m]; history[m] = function () { var r = o.apply(this, arguments); setTimeout(onRoute, 0); return r; }; });
   window.addEventListener('popstate', function () { setTimeout(onRoute, 0); });
   function ready() {
