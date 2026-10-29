@@ -295,3 +295,7 @@ html.cc-anim #cc-home.in .fr { animation: cc-swap .5s var(--cc-out) both; animat
   color: var(--text-1); background: var(--cc-float); border: 1px solid color-mix(in srgb, var(--accent-2) 50%, transparent); box-shadow: 0 10px 26px -10px rgba(0,0,0,.6); cursor: pointer; }
 #cc-homeback.on { display: inline-flex; }
 #cc-homeback svg { width: 16px; height: 16px; color: var(--accent-2); }
+
+/* modo leve: nada de desfoque nem bolhas se mexendo */
+html.cc-lite *, html.cc-lite *::before, html.cc-lite *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.cc-lite #cc-aura i { animation: none !important; }
