@@ -131,12 +131,14 @@
       STY.adopted = list;
     } catch (e) {}
   }
+  var MAT_ANTES = '';
   function applyTheme() {
     var css = themeCSS();
     if (STY.adopted) STY.adopted[1].replaceSync(css); else style('theme', css);
     marks(); if (typeof PX !== 'undefined') parallax();
-    if (window.ccMat) window.ccMat(MAT() === 'acrylic' || MAT() === 'mica' ? MAT() : 'none').catch(function () {});
-    paintWall(); if (typeof assarAura === 'function') setTimeout(assarAura, 0);
+    var mt = MAT() === 'acrylic' || MAT() === 'mica' ? MAT() : 'none';
+    if (window.ccMat && mt !== MAT_ANTES) { MAT_ANTES = mt; window.ccMat(mt).catch(function () { MAT_ANTES = ''; }); } // o Windows só troca o material quando ele muda de verdade (antes: a cada ajuste)
+    paintWall(); if (typeof assarAura === 'function') setTimeout(function () { assarAura(); auraMov(); }, 0);
   }
 
   // o Discord reescreve as classes do <html> quando termina de carregar ou troca o tema: as nossas voltam sozinhas
@@ -145,7 +147,7 @@
   function wantMarks() {
     var w = { 'cc-on': true, 'cc-aura': MAT() === 'aura' || MAT() === 'wall', 'cc-solid': MAT() === 'solid', 'cc-glass': MAT() === 'acrylic', 'cc-mica': MAT() === 'mica', 'cc-anim': !!CFG.anim, 'cc-still': !CFG.motion || GR() !== 'alto',
       'cc-style': !!CFG.style, 'cc-bub': !!(CFG.style && CFG.bub), 'cc-dood': !!(CFG.style && CFG.dood) && GR() !== 'baixo' && GR() !== 'minimo', 'cc-clean': !!CFG.clean, 'cc-lite': !!CFG.lite || GR() === 'baixo' || GR() === 'minimo', 'cc-g-medio': GR() !== 'alto', 'cc-g-baixo': GR() === 'baixo' || GR() === 'minimo', 'cc-g-minimo': GR() === 'minimo', 'cc-hasbar': HASBAR,
-      'cc-lay': CFG.layout === 'palco', 'cc-homecfg': !!CFG.home, 'cc-cel': !!window.__ccCel };
+      'cc-lay': CFG.layout === 'palco', 'cc-auramov': true, 'cc-homecfg': !!CFG.home, 'cc-cel': !!window.__ccCel };
     Object.keys(FLAGS).forEach(function (k) { w[k] = FLAGS[k]; });
     return w;
   }
@@ -172,19 +174,23 @@
     if (!b64 || FONTS_LOADED.pc) return; FONTS_LOADED.pc = 1;
     try { var bin = atob(b64), buf = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); var f = new FontFace('Fonte do PC', buf); document.fonts.add(f); f.load().catch(function () {}); } catch (e) {}
   }
+  // as fontes vêm sob demanda (ccFonte): antes as 30 famílias iam inteiras dentro do __CC em cada página aberta (1,5 MB a mais de JS)
+  var FONT_LIST = CC.fontList || Object.keys(CC.fonts || {});
+  function temFonte(fam) { return FONT_LIST.indexOf(fam) >= 0 || !!(CC.fonts && CC.fonts[fam]); }
+  function addFace(fam, wt, b64) {
+    try { var bin = atob(b64), buf = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); var f = new FontFace(fam, buf, { weight: wt, style: 'normal', display: 'swap' }); document.fonts.add(f); f.load().catch(function () {}); } catch (e) {}
+  }
+  function loadFam(fam) {
+    if (!fam || FONTS_LOADED[fam] || !temFonte(fam)) return; FONTS_LOADED[fam] = 1;
+    var usa = function (m) { if (!m) { FONTS_LOADED[fam] = 0; return; } Object.keys(m).forEach(function (wt) { addFace(fam, wt, m[wt]); }); if (CC.fonts) delete CC.fonts[fam]; /* os bytes já viraram fonte: solta o texto */ };
+    if (CC.fonts && CC.fonts[fam]) usa(CC.fonts[fam]);
+    else if (window.ccFonte) { try { Promise.resolve(window.ccFonte(fam)).then(function (m) { usa(typeof m === 'string' ? JSON.parse(m) : m); }).catch(function () { FONTS_LOADED[fam] = 0; }); } catch (e) { FONTS_LOADED[fam] = 0; } }
+    else FONTS_LOADED[fam] = 0;
+  }
   function loadFonts(all) {
     if (all || CFG.font === 'Fonte do PC') loadCustomFont();
-    Object.keys(CC.fonts || {}).forEach(function (fam) {
-      if (FONTS_LOADED[fam] || (!all && fam !== CFG.font && fam !== 'Bricolage Grotesque')) return; FONTS_LOADED[fam] = 1;
-      Object.keys(CC.fonts[fam]).forEach(function (wt) {
-        try {
-          var bin = atob(CC.fonts[fam][wt]), buf = new Uint8Array(bin.length);
-          for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-          var f = new FontFace(fam, buf, { weight: wt, style: 'normal', display: 'swap' });
-          document.fonts.add(f); f.load().catch(function () {});
-        } catch (e) {}
-      });
-    });
+    loadFam('Bricolage Grotesque'); loadFam(CFG.font);
+    if (all) FONTS.forEach(function (f, i) { if (f) setTimeout(function () { loadFam(f); }, 60 * i); }); // o painel mostra cada fonte nela mesma: uma por vez, sem travar
   }
 
   /* ---------- fundo (bolhas) ---------- */
@@ -552,7 +558,10 @@
     if (/^\/(login|register)/.test(p)) return 'entrar';
     return 'outra';
   }
+  // a estrutura das telas (até dezenas de MB de texto) só é guardada sozinha se ligarem o modo estrutura; Ctrl+Shift+E guarda na hora
+  var AUTO_DUMP = false; try { AUTO_DUMP = !!LS && LS.getItem('concord.estrutura') === '1'; } catch (e) {}
   function dump(force) {
+    if (!force && !AUTO_DUMP) return;
     var k = screenKind();
     if (!window.ccDump || (DUMPED[k] && !force) || k === 'entrar' || document.hidden) return;
     DUMPED[k] = Date.now();
@@ -560,16 +569,17 @@
   }
   // janela sem foco: guarda a tela como fica (para achar o que aparece pela transparência)
   window.addEventListener('blur', function () {
+    if (!AUTO_DUMP) return;
     setTimeout(function () { if (document.hasFocus() || DUMPED.desfocado || !window.ccDump) return; DUMPED.desfocado = 1; try { window.ccDump('desfocado', skeleton()).catch(function () {}); } catch (e) {} }, 1200);
   });
   // estilos do próprio Discord (uma vez por versão do Discord): assim eu testo a pele com o Discord de verdade
-  function dumpCSS() {
-    if (!window.ccDump) return;
+  function dumpCSS(force) {
+    if (!window.ccDump || (!force && !AUTO_DUMP)) return;
     var sheets = [].slice.call(document.styleSheets).filter(function (sh) { return sh.href && /discord\.com\/assets\//.test(sh.href); });
     if (!sheets.length) return;
     var key = sheets.map(function (sh) { return sh.href.split('/').pop(); }).join(','), done = '';
     try { done = LS && LS.getItem('concord.cssdump'); } catch (e) {}
-    if (done === key + '|' + INFO.ver) return;
+    if (!force && done === key + '|' + INFO.ver) return;
     var out = ['/* ' + key + ' */'];
     sheets.forEach(function (sh) { try { out.push([].map.call(sh.cssRules, function (r) { return r.cssText; }).join('\n')); } catch (e) { out.push('/* sem acesso: ' + sh.href + ' */'); } });
     var html = '<!-- Concord ' + INFO.ver + ' estilos do Discord -->\n<style>\n' + out.join('\n') + '\n</style>';
@@ -584,9 +594,9 @@
     swapAnim(g !== og);
     if (themeKey() !== LAST_THEME) themeSwap();
     homeTick();
-    clearTimeout(dumpT); dumpT = setTimeout(function () { (window.requestIdleCallback || setTimeout)(function () { dump(false); }, { timeout: 8000 }); }, 5000);
+    if (AUTO_DUMP) clearTimeout(dumpT), dumpT = setTimeout(function () { (window.requestIdleCallback || setTimeout)(function () { dump(false); }, { timeout: 8000 }); }, 5000);
   }
-  document.addEventListener('keydown', function (e) { if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { e.preventDefault(); dump(true); } }, true);
+  document.addEventListener('keydown', function (e) { if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { e.preventDefault(); dump(true); dumpCSS(true); } }, true);
 
   var dragT = null;
   ['dragenter', 'dragover'].forEach(function (ev) { window.addEventListener(ev, function (e) {
@@ -604,6 +614,10 @@
   var DPI = 1, ZOOM_OK = false;
   function curZoom() { return Math.round(devicePixelRatio / DPI * 100); }
   var zoomT = null;
+  // tudo que reage ao tamanho da janela roda uma vez por quadro (antes cada parte rodava a cada evento de redimensionar)
+  var REDIM = [], REDIM_RAF = 0;
+  function aoRedimensionar(f) { REDIM.push(f); }
+  window.addEventListener('resize', function () { if (REDIM_RAF) return; REDIM_RAF = requestAnimationFrame(function () { REDIM_RAF = 0; REDIM.forEach(function (f) { try { f(); } catch (e) {} }); }); });
   window.addEventListener('resize', function () {
     if (!ZOOM_OK) return;
     clearTimeout(zoomT); zoomT = setTimeout(function () { try { LS && LS.setItem('concord.zoom', String(curZoom())); } catch (e) {} }, 700);
@@ -755,10 +769,16 @@
     HOME.back.onclick = function () { HOME.hidden = false; homeTick(); };
     document.body.appendChild(HOME.back);
     HOME.el.addEventListener('click', onHomeClick);
-    window.addEventListener('resize', homeTick);
+    aoRedimensionar(homeTick);
     setInterval(function () { if (HOME.shown) { var c = HOME.el.querySelector('.clock'); if (c) c.textContent = clockText(); } }, 15000);
     // atualiza quando o Discord muda algo (alguém entra, sai, começa um jogo...)
-    ['Presence', 'Rel', 'Voice', 'Read'].forEach(function (k) { var S = st(k); if (S && S.addChangeListener) S.addChangeListener(function () { if (HOME.shown) { clearTimeout(HOME.timer); HOME.timer = setTimeout(function () { renderHome(false); }, 900); } }); });
+    ['Presence', 'Rel', 'Voice', 'Read'].forEach(function (k) { var S = st(k); if (S && S.addChangeListener) S.addChangeListener(homeMudou); });
+  }
+  // o Discord avisa mudança de presença várias vezes por segundo: no máximo uma atualização a cada 2,5 s, e nada com a janela escondida
+  function homeMudou() {
+    if (!HOME.shown || HOME.timer) return;
+    var falta = Math.max(400, 2500 - (Date.now() - (HOME.lastRender || 0)));
+    HOME.timer = setTimeout(function () { HOME.timer = 0; if (!HOME.shown) return; if (document.hidden || !PAUSA.visivel) { HOME.sujo = true; return; } renderHome(false); }, falta);
   }
   function clockText() { var d = new Date(); return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); }
   function greet() { var h = new Date().getHours(); return h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; }
@@ -834,7 +854,7 @@
       return '<button class="gd" data-g2="' + g.id + '" title="' + esc(g.name) + '">' + (ic ? '<img class="gi" alt="" loading="lazy" src="' + esc(ic) + '">' : '<span class="gi">' + esc(initials(g.name)) + '</span>') + '<span>' + esc(g.name) + '</span></button>';
     }).join('') + '</div></div>';
     h += '</div></div>';
-    var sc = HOME.el.querySelector('.sc'), top = sc.scrollTop; sc.innerHTML = h; sc.scrollTop = top;
+    var sc = HOME.el.querySelector('.sc'), top = sc.scrollTop; if (h === HOME.html) return; HOME.html = h; sc.innerHTML = h; sc.scrollTop = top; // igual ao que já está: não refaz a tela
     if (first) { HOME.el.classList.remove('in'); void HOME.el.offsetWidth; HOME.el.classList.add('in'); }
   }
   function openDM(uid) {
@@ -986,9 +1006,39 @@
      3) Animações enfeite param com a janela sem foco ou parada há um tempo, e tudo para com a janela escondida. */
   var AURA = { k: '', url: '', blur: '', fazendo: false, ruido: null };
   function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  /* bolhas em movimento sem custar 60 quadros por segundo: elas andam ~10 px por segundo, então 12 passos por segundo
+     ficam iguais aos olhos. Antes a animação do CSS fazia a placa de vídeo redesenhar a tela e refazer o desfoque do vidro
+     60 vezes por segundo, para sempre. Mesmo caminho e tempo das bolhas de antes (cc-drift). */
+  var AM = { t: 0, ult: 0, timer: 0, pos: 0 }, AM_DUR = [48, 60, 66], AM_ATRASO = [0, 22, 38], AM_K = [[0, 0, 1], [9, 6, 1.12], [-7, 11, 0.94]];
+  var AM_RM = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function auraPasso() {
+    AM.timer = 0;
+    var A = document.getElementById('cc-aura'), h = document.documentElement; if (!A || !h) return;
+    var c = h.classList;
+    var parada = !c.contains('cc-aura') || A.classList.contains('wall') || (AM_RM && AM_RM.matches) || ['cc-still', 'cc-lite', 'cc-cel', 'cc-video', 'cc-g-medio', 'cc-auraimg'].some(function (k) { return c.contains(k); });
+    if (parada) { if (AM.pos) { AM.pos = 0; flag('cc-amcv', false); vidroTick(true); } AM.ult = 0; return; }
+    if (c.contains('cc-pausa') || document.hidden) { AM.ult = 0; return; } // pausada: fica onde está e continua dali
+    var agora = performance.now(); if (AM.ult) AM.t += Math.min(0.5, (agora - AM.ult) / 1000); AM.ult = agora;
+    var T = [];
+    for (var k = 0; k < 3; k++) {
+      var x = (AM.t + AM_ATRASO[k]) / AM_DUR[k], ciclo = Math.floor(x), f = x - ciclo; if (ciclo % 2) f = 1 - f;
+      var a = f < 0.5 ? AM_K[0] : AM_K[1], b = f < 0.5 ? AM_K[1] : AM_K[2], u = f < 0.5 ? f * 2 : (f - 0.5) * 2; u = 0.5 - 0.5 * Math.cos(Math.PI * u);
+      T.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]);
+    }
+    // as bolhas são só degradês suaves: desenhadas num quadro de 1/4 do tamanho e esticadas ficam iguais,
+    // e a placa de vídeo mexe numa imagem pequena em vez de três círculos do tamanho da tela
+    var cv = A.querySelector('canvas.cc-am');
+    if (!cv) { cv = document.createElement('canvas'); cv.className = 'cc-am'; A.insertBefore(cv, A.querySelector('b')); }
+    var W = Math.max(8, Math.round(innerWidth / 4)), H = Math.max(8, Math.round(innerHeight / 4));
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    desenharAura(cv.getContext('2d'), W, H, false, T);
+    if (!AM.pos) { AM.pos = 1; flag('cc-amcv', true); vidroTick(true); }
+    AM.timer = setTimeout(auraPasso, 80);
+  }
+  function auraMov() { if (!AM.timer) AM.timer = setTimeout(auraPasso, 0); }
   function auraAssavel() { return (MAT() === 'aura') && (!CFG.motion || GR() !== 'alto'); }
   function corRGB(c, a) { var d = document.createElement('canvas').getContext('2d'); d.fillStyle = c || '#000'; var f = d.fillStyle; if (a == null) return f; if (f[0] === '#') { var n = parseInt(f.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; } return f.replace(/rgba?\(([^)]+)\)/, function (m, x) { var p = x.split(',').slice(0, 3); return 'rgba(' + p.join(',') + ',' + a + ')'; }); }
-  function desenharAura(cx, W, H, comRuido) {
+  function desenharAura(cx, W, H, comRuido, mov) {
     var b0 = cssVar('--cc-bg0'), b1 = cssVar('--cc-bg1'), orbs = +cssVar('--cc-orbs') || 0.6;
     cx.fillStyle = b0; cx.fillRect(0, 0, W, H);
     // radial-gradient(140% 100% at 50% 0%, bg1, bg0)
@@ -997,7 +1047,7 @@
     var vmax = Math.max(W, H) / 100, r = 36 * vmax, cores = [cssVar('--cc-o1'), cssVar('--cc-o2'), cssVar('--cc-o3')];
     var centros = [[-22 * vmax + r, -28 * vmax + r], [W + 26 * vmax - r, 6 * vmax + r], [12 * vmax + r, H + 38 * vmax - r]];
     cx.globalAlpha = orbs;
-    centros.forEach(function (c, i) { var gg = cx.createRadialGradient(c[0], c[1], 0, c[0], c[1], r); gg.addColorStop(0, corRGB(cores[i], 1)); gg.addColorStop(1, corRGB(cores[i], 0)); cx.fillStyle = gg; cx.fillRect(c[0] - r, c[1] - r, 2 * r, 2 * r); });
+    centros.forEach(function (c, i) { var rr = r; if (mov && mov[i]) { c = [c[0] + mov[i][0] * vmax, c[1] + mov[i][1] * vmax]; rr = r * mov[i][2]; } var gg = cx.createRadialGradient(c[0], c[1], 0, c[0], c[1], rr); gg.addColorStop(0, corRGB(cores[i], 1)); gg.addColorStop(1, corRGB(cores[i], 0)); cx.fillStyle = gg; cx.fillRect(c[0] - rr, c[1] - rr, 2 * rr, 2 * rr); });
     cx.globalAlpha = 1;
     if (comRuido && AURA.ruido) { cx.globalCompositeOperation = 'overlay'; cx.globalAlpha = 0.55; cx.fillStyle = cx.createPattern(AURA.ruido, 'repeat'); cx.fillRect(0, 0, W, H); cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over'; }
   }
@@ -1030,7 +1080,8 @@
   function vidroTick(varrer) {
     var assado = document.documentElement.classList.contains('cc-auraimg') && AURA.blur && !CFG.lite;
     // acrílico e mica: atrás dos painéis só tem o vidro do Windows (a página é transparente), o desfoque deles não muda nada na tela
-    var semVidro = (MAT() === 'acrylic' || MAT() === 'mica') && !window.__ccCel;
+    var movendo = document.documentElement.classList.contains('cc-amcv');
+    var semVidro = ((MAT() === 'acrylic' || MAT() === 'mica') && !window.__ccCel) || movendo;
     flag('cc-vfsem', semVidro && !assado);
     if (!assado && !semVidro) { if (VF.els.length) vidroLimpar(); return; }
     if (varrer || Date.now() - VF.t > 15000) {
@@ -1067,6 +1118,9 @@
     var semFoco = !document.hasFocus() && Date.now() - PAUSA.t > 8000, parado = Date.now() - PAUSA.mexeu > 120000, escondido = document.hidden || !PAUSA.visivel;
     var call = document.documentElement.classList.contains('cc-video') || !!document.querySelector('#cc-sala, #cc-rc.on');
     flag('cc-pausa', escondido || ((semFoco || parado) && !call));
+    if (!escondido && HOME.sujo && HOME.shown) { HOME.sujo = false; renderHome(false); }
+    if (typeof fxAvisa === 'function') fxAvisa();
+    auraMov();
   }
   ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, function () { var era = Date.now() - PAUSA.mexeu > 120000; PAUSA.mexeu = Date.now(); if (era) pausaTick(); }, { passive: true, capture: true }); });
   window.addEventListener('blur', function () { PAUSA.t = Date.now(); setTimeout(pausaTick, 8100); });
@@ -1089,6 +1143,18 @@
     flag('cc-video', on);
   }
   setInterval(videoTick, 1500);
+  // conta para o Concord do PC como a página está: com animação mexendo? em chamada ou tocando som/vídeo?
+  // (ele usa isso para baixar a prioridade e ligar o modo de eficiência do Windows só quando não atrapalha nada)
+  var FX = { k: '' };
+  function fxAvisa() {
+    if (!window.ccFx || !document.documentElement) return;
+    var ocupada = document.documentElement.classList.contains('cc-video');
+    try { ocupada = ocupada || !!(RA.call || SL.on || meuCanal()); } catch (e) {}
+    if (!ocupada) { var ms = document.querySelectorAll('audio, video'); for (var i = 0; i < ms.length && !ocupada; i++) { var m = ms[i]; if (!m.paused && !m.muted && m.readyState >= 2) ocupada = true; } }
+    var acordada = !document.documentElement.classList.contains('cc-pausa'), k = acordada + '|' + ocupada;
+    if (k === FX.k) return; FX.k = k;
+    try { window.ccFx(acordada, ocupada).catch(function () { FX.k = ''; }); } catch (e) { FX.k = ''; }
+  }
 
   /* ---------- esconder Nitro, Loja, Missões, presente e baixar app ---------- */
   function cleanAds() {
@@ -1266,8 +1332,16 @@
   function snap() { return JSON.stringify(edLayers().map(strip)); }
   function commit(before) {
     if (before == null || before === snap()) return;
-    ED.undo.push({ k: 'st', dev: ED.dev, a: before, b: snap() }); if (ED.undo.length > 60) ED.undo.shift();
-    ED.redo = []; ED.dirty = true; edPaintSide(); edButtons();
+    pushUndo({ k: 'st', dev: ED.dev, a: before, b: snap() });
+    ED.dirty = true; edPaintSide(); edButtons();
+  }
+  // desfazer do pincel guarda cópias da tela inteira: no máximo ~160 MB delas (antes eram até 60 cópias de cada lado, podia passar de 1 GB)
+  function pxBytes(e) { return e.k === 'px' ? ((e.a && e.a.width * e.a.height) || 0) * 4 + ((e.b && e.b.width * e.b.height) || 0) * 4 : 0; }
+  function soltaCv(e) { if (e && e.k === 'px') { if (e.a && e.a.width) e.a.width = 0; if (e.b && e.b.width) e.b.width = 0; } }
+  function pushUndo(e) {
+    ED.undo.push(e); ED.redo.forEach(soltaCv); ED.redo = [];
+    var tot = 0; ED.undo.forEach(function (x) { tot += pxBytes(x); });
+    while (ED.undo.length > 60 || (tot > 160e6 && ED.undo.length > 1)) { var v = ED.undo.shift(); tot -= pxBytes(v); soltaCv(v); }
   }
   function copyCanvas(c) { var n = edNewCanvas(c.width, c.height); n.getContext('2d').drawImage(c, 0, 0); return n; }
   function edUndo(redo) {
@@ -1413,7 +1487,11 @@
   }
   function edClose(force) {
     if (!force && ED.dirty) { edAsk('Sair sem salvar?', 'As mudanças deste fundo ainda não foram salvas.', [['save', 'Salvar e sair', 'pri'], ['drop', 'Sair sem salvar'], ['', 'Continuar editando']], function (r) { if (r === 'save') edSave().then(function () { edClose(true); }); else if (r === 'drop') edClose(true); }); return; }
-    ED.open = false; ED.el.classList.remove('on'); flag('cc-edon', false); ED.cv = {}; ED.img = {}; ED.blob = {}; ED.undo = []; ED.redo = [];
+    ED.open = false; ED.el.classList.remove('on'); flag('cc-edon', false);
+    // devolve a memória das imagens e telas do editor na hora (não espera o coletor de lixo)
+    var vistos = []; Object.keys(ED.img).forEach(function (k) { var b = ED.img[k]; if (b && b.close && vistos.indexOf(b) < 0) { vistos.push(b); try { b.close(); } catch (e) {} } });
+    Object.keys(ED.cv).forEach(function (k) { if (ED.cv[k]) ED.cv[k].width = 0; }); ED.undo.forEach(soltaCv); ED.redo.forEach(soltaCv);
+    ED.cv = {}; ED.img = {}; ED.blob = {}; ED.undo = []; ED.redo = [];
   }
   function edSave() {
     var p = ED.p, out = { id: p.id, name: (ED.el.querySelector('.e-name').value || 'Meu fundo').slice(0, 40), at: Date.now(), devs: {}, renders: {} }, jobs = [];
@@ -1582,7 +1660,7 @@
       var s = ED.stroke, c = ED.cv[s.id];
       if (s.tool === 'brush' && c) { var x = c.getContext('2d'); x.save(); x.globalAlpha = ED.brush.op; if (ED.brush.soft) x.filter = 'blur(' + Math.max(1, ED.brush.size * 0.18) + 'px)'; x.drawImage(ED.tmp, 0, 0); x.restore(); }
       ED.stroke = null;
-      if (c) { ED.undo.push({ k: 'px', dev: ED.dev, id: s.id, a: s.before, b: copyCanvas(c) }); if (ED.undo.length > 60) ED.undo.shift(); ED.redo = []; ED.dirty = true; edButtons(); edPaintSide(); }
+      if (c) { pushUndo({ k: 'px', dev: ED.dev, id: s.id, a: s.before, b: copyCanvas(c) }); ED.dirty = true; edButtons(); edPaintSide(); }
       edDraw(); return;
     }
     var d = ED.drag; ED.drag = null; ED.guide = {};
@@ -1689,7 +1767,7 @@
     else if (a === 'center') { L.x = D.w / 2; L.y = D.h / 2; }
     else if (a === 'fit' || a === 'cover') { var b = bounds(L); if (b) { var r = Math.abs(b.w) / Math.abs(b.h), s = a === 'cover' ? Math.max(D.w / r, D.h) : Math.min(D.w / r, D.h); if (L.type === 'text') L.size *= s / Math.abs(b.h); else { L.h = s; L.w = s * r; } L.x = D.w / 2; L.y = D.h / 2; L.rot = 0; } }
     else if (a === 'ratio' && L.type === 'image') { var im = ED.img[L.id]; if (im) L.h = L.w * im.height / im.width; }
-    else if (a === 'clear' && L.type === 'paint') { var c = ED.cv[L.id], bc = copyCanvas(c); c.getContext('2d').clearRect(0, 0, c.width, c.height); ED.undo.push({ k: 'px', dev: ED.dev, id: L.id, a: bc, b: copyCanvas(c) }); ED.redo = []; ED.dirty = true; edButtons(); }
+    else if (a === 'clear' && L.type === 'paint') { var c = ED.cv[L.id], bc = copyCanvas(c); c.getContext('2d').clearRect(0, 0, c.width, c.height); pushUndo({ k: 'px', dev: ED.dev, id: L.id, a: bc, b: copyCanvas(c) }); ED.dirty = true; edButtons(); }
     else if (a === 'reset' && L.type === 'paint') { L.dx = 0; L.dy = 0; }
     commit(before); edDraw(); edPaintSide();
   }
@@ -1903,13 +1981,7 @@
     el.dataset.ccn = n.estilo || 'normal';
     if (n.animado) el.dataset.cca = '1'; else delete el.dataset.cca;
     el.style.setProperty('--n1', c[0]); el.style.setProperty('--n2', c[1] || c[0]); el.style.setProperty('--n3', c[2] || c[1] || c[0]);
-    if (n.fonte && CC.fonts && CC.fonts[n.fonte]) { loadFam(n.fonte); el.style.fontFamily = "'" + n.fonte + "', var(--cc-font), sans-serif"; } else el.style.removeProperty('font-family');
-  }
-  function loadFam(fam) {
-    if (FONTS_LOADED[fam] || !CC.fonts || !CC.fonts[fam]) return; FONTS_LOADED[fam] = 1;
-    Object.keys(CC.fonts[fam]).forEach(function (wt) {
-      try { var bin = atob(CC.fonts[fam][wt]), buf = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); var f = new FontFace(fam, buf, { weight: wt, style: 'normal', display: 'swap' }); document.fonts.add(f); f.load().catch(function () {}); } catch (e) {}
-    });
+    if (n.fonte && temFonte(n.fonte)) { loadFam(n.fonte); el.style.fontFamily = "'" + n.fonte + "', var(--cc-font), sans-serif"; } else el.style.removeProperty('font-family');
   }
   function insHTML(k) { var i = INS[k]; return i ? '<span class="pc-i" title="' + i[0] + '">' + sv(i[1]) + '<em>' + i[0] + '</em></span>' : ''; }
   var MOLDURAS = [['nenhuma', 'Nenhuma'], ['neon', 'Neon'], ['aurora', 'Aurora'], ['pixel', 'Pixel'], ['flores', 'Flores'], ['estrelas', 'Estrelas'], ['chamas', 'Chamas'], ['gelo', 'Gelo'], ['coracoes', 'Corações']];
@@ -2273,9 +2345,17 @@
   window.addEventListener('keydown', function (e) { var g = document.getElementById('cc-grande'); if (e.key !== 'Escape' || !g || !e.isTrusted && g._fechaDiscord) return; if (g._fechaDiscord) { var pl = document.getElementById('cc-vercc'); if (pl) pl.remove(); g.remove(); return; } e.stopPropagation(); fecharGrande(); }, true);
   // decide rápido o que mostrar quando um cartão do Discord abre (sem o do Discord piscar antes)
   var POP_RAF = 0;
-  new MutationObserver(function () {
+  // só olha o que acabou de entrar na página (antes procurava na página inteira a cada quadro em que o Discord mexia)
+  var POP_SEL = '.user-profile-popout, .user-profile-modal, .user-profile-modal-v2';
+  new MutationObserver(function (recs) {
     if (POP_RAF || !window.ccNet) return;
-    POP_RAF = requestAnimationFrame(function () { POP_RAF = 0; if (document.querySelector('.user-profile-popout:not([data-ccd]), .user-profile-modal:not([data-ccd]), .user-profile-modal-v2:not([data-ccd])')) popTick(true); });
+    for (var i = 0; i < recs.length; i++) {
+      var ad = recs[i].addedNodes;
+      for (var j = 0; j < ad.length; j++) {
+        var n = ad[j]; if (n.nodeType !== 1 || n.id && n.id.indexOf('cc-') === 0) continue;
+        if (n.matches(POP_SEL) || n.querySelector(POP_SEL)) { POP_RAF = requestAnimationFrame(function () { POP_RAF = 0; if (document.querySelector('.user-profile-popout:not([data-ccd]), .user-profile-modal:not([data-ccd]), .user-profile-modal-v2:not([data-ccd])')) popTick(true); }); return; }
+      }
+    }
   }).observe(document, { childList: true, subtree: true });
 
   // ---- o cartão Concord no lugar do cartão do Discord (o do Discord fica num botão) ----
@@ -2622,7 +2702,7 @@
     VIVOS = novos;
   }
   function pfTick() { if (!window.ccNet) return; flag('cc-pfon', true); vivosTick(); pintarNomes(false); pintarPlacas(); pintarTiles(); popTick(false); raBtns(); }
-  window.addEventListener('resize', function () { popPlace(); if (PF.draft) pfPreview(); });
+  aoRedimensionar(function () { popPlace(); if (PF.draft) pfPreview(); });
 
   /* ---------- chamada ReApps no Concord: voz, vídeo, tela e assistir junto, direto entre os aparelhos ----------
      Mesma tela e mesmo servidor do FofitoZap. Os recados passam pelo Concord (ccRtcSend / window.__ccRtc). */
@@ -3066,13 +3146,21 @@
   }
   function raDrag(el, whole) {
     if (el._drag) return; el._drag = 1; var stt = null;
-    el.addEventListener('pointerdown', function (e) { if (whole && !rcEl().classList.contains('mini')) return; if (e.target.closest('button')) return; var r = el.getBoundingClientRect(); stt = { x: e.clientX, y: e.clientY, l: r.left, t: r.top, moved: false, id: e.pointerId }; });
-    window.addEventListener('pointermove', function (e) {
+    // os ouvintes da janela só existem enquanto arrasta (antes ficavam para sempre, um par a cada janela de chamada criada)
+    var mv = function (e) {
       if (!stt || e.pointerId !== stt.id) return; var dx = e.clientX - stt.x, dy = e.clientY - stt.y;
       if (!stt.moved && Math.abs(dx) + Math.abs(dy) < 6) return; stt.moved = true;
       el.style.transition = 'none'; el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, stt.l + dx)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, stt.t + dy)) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
+    };
+    var up = function (e) {
+      if (stt && e.pointerId !== stt.id) return;
+      window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+      if (stt && stt.moved) { el.style.transition = ''; var cap = function (ev) { ev.stopPropagation(); }; el.addEventListener('click', cap, { capture: true, once: true }); setTimeout(function () { el.removeEventListener('click', cap, true); }, 50); } stt = null;
+    };
+    el.addEventListener('pointerdown', function (e) {
+      if (whole && !rcEl().classList.contains('mini')) return; if (e.target.closest('button')) return; var r = el.getBoundingClientRect(); stt = { x: e.clientX, y: e.clientY, l: r.left, t: r.top, moved: false, id: e.pointerId };
+      window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     });
-    window.addEventListener('pointerup', function (e) { if (stt && stt.moved) { el.style.transition = ''; var cap = function (ev) { ev.stopPropagation(); }; el.addEventListener('click', cap, { capture: true, once: true }); setTimeout(function () { el.removeEventListener('click', cap, true); }, 50); } stt = null; });
   }
 
   /* ---------- Sala ReApps: dentro da call de servidor, quem usa o Concord liga câmera, compartilha tela e assiste junto em alta.
@@ -3370,7 +3458,7 @@
     var a = e.target.closest && e.target.closest('.sidebarList__5e434 a[href^="/channels/"], .sidebarList__5e434 [data-list-item-id^="channels___"], .sidebarList__5e434 .link__2ea32');
     if (a) setTimeout(function () { CEL.lista = false; CEL.forcou = false; flag('cc-lista', false); celTick(); }, 60);
   }, true);
-  window.addEventListener('resize', celTick);
+  aoRedimensionar(celTick);
 
   /* configurações do Discord na tela estreita: o menu ocupa a tela toda; tocar num item abre a página dele, o voltar volta ao menu
      (antes o menu espremia a página num canto e cortava tudo) */
@@ -3436,8 +3524,21 @@
     });
   }
   window.__ccTempos = function () { var r = {}; Object.keys(TEMPOS).forEach(function (k) { if (k[0] === '_') return; var o = TEMPOS[k]; r[k] = { media: +(o.ms / o.n).toFixed(2), max: +o.max.toFixed(1), n: o.n }; }); return r; };
-  var mo = new MutationObserver(function () {
-    if (pend) return; pend = true;
+  // mudanças feitas pela própria pele não contam (antes cada tick mexia na tela e chamava outro tick, sem parar)
+  function nosso(n) { return n.nodeType !== 1 ? n.nodeType === 3 && n.parentNode && nosso(n.parentNode) : (n.id && n.id.lastIndexOf('cc-', 0) === 0) || (typeof n.className === 'string' && n.className.lastIndexOf('cc-', 0) === 0); }
+  function alheia(recs) {
+    for (var i = 0; i < recs.length; i++) {
+      var r = recs[i], t = r.target;
+      if (t.nodeType === 1 && t !== document.body && t.closest && t.closest('[id^="cc-"]')) continue;
+      var todos = r.addedNodes.length + r.removedNodes.length, nossos = 0;
+      for (var j = 0; j < r.addedNodes.length; j++) if (nosso(r.addedNodes[j])) nossos++;
+      for (j = 0; j < r.removedNodes.length; j++) if (nosso(r.removedNodes[j])) nossos++;
+      if (!todos || nossos < todos) return true;
+    }
+    return false;
+  }
+  var mo = new MutationObserver(function (recs) {
+    if (pend || !alheia(recs)) return; pend = true;
     setTimeout(function () { pend = false; place(); if (document.body && PAUSA.visivel && !document.hidden) { tickTudo(); } if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }, GR() === 'minimo' ? 900 : window.__ccCel ? 450 : 250); // no celular, menos vezes: o Discord mexe na página o tempo todo
   });
   mo.observe(document, { childList: true, subtree: true });
@@ -3455,7 +3556,7 @@
     setTimeout(function () { (window.requestIdleCallback || setTimeout)(dumpCSS, { timeout: 10000 }); }, 15000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
-  window.addEventListener('resize', function () { win('state'); });
+  var winT = 0; window.addEventListener('resize', function () { clearTimeout(winT); winT = setTimeout(function () { win('state'); }, 120); }); // pergunta ao Windows uma vez, não a cada pixel do arrasto
   window.__ccUpdateReady = function (v) {
     INFO.update = v; if (PANEL && PANEL.classList.contains('on')) paintPanel();
     if (!window.__ccCel) { toast('Versão nova do Concord pronta. Ela entra quando você fechar e abrir.'); return; }

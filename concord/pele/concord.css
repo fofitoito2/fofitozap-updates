@@ -19,6 +19,13 @@ html.cc-aura #cc-aura { display: block; }
 #cc-aura.wall i { display: none; }
 @keyframes cc-drift { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(9vmax, 6vmax) scale(1.12); } 100% { transform: translate(-7vmax, 11vmax) scale(.94); } }
 html.cc-still #cc-aura i { animation: none; }
+/* as bolhas andam pelo concord.js, 12 passos por segundo (ver auraPasso): a animação do CSS fica só de reserva */
+html.cc-auramov #cc-aura i { animation: none !important; }
+#cc-aura canvas.cc-am { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+html.cc-amcv #cc-aura canvas.cc-am { display: block; }
+html.cc-amcv #cc-aura i, html.cc-auraimg #cc-aura canvas.cc-am { display: none !important; }
+/* durante o movimento do canvas, esconde o ruído e o desfoque fica sem efeito (vidroTick cuida) */
+html.cc-amcv #cc-aura b { opacity: 0; }
 
 /* botões da janela (no lugar dos do Windows) */
 .cc-win.cc-win { display: flex !important; width: auto !important; align-items: center; gap: 2px; height: 100% !important; margin-left: 4px; padding-left: 8px; position: relative; flex: none; }
@@ -385,8 +392,10 @@ html.cc-home-on .page__5e434 > * { visibility: hidden !important; }
 #cc-home { background: radial-gradient(70% 60% at 85% 0%, color-mix(in srgb, var(--cc-o2) 55%, transparent), transparent 70%), radial-gradient(60% 50% at 0% 100%, color-mix(in srgb, var(--cc-o1) 55%, transparent), transparent 70%), var(--cc-float) !important; }
 #cc-home.on { animation: cc-fadein .35s var(--cc-out) backwards; }
 @keyframes cc-fadein { from { opacity: 0; } to { opacity: 1; } }
-#cc-home .sk { border-radius: 14px; background: linear-gradient(100deg, rgba(255,255,255,.05) 30%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 70%); background-size: 300% 100%; animation: cc-shine 1.4s ease-in-out infinite; }
-@keyframes cc-shine { from { background-position: 100% 0; } to { background-position: 0 0; } }
+/* brilho do esqueleto passando por transform (placa de vídeo), não por background-position (redesenhava cada cartão a cada quadro) */
+#cc-home .sk { position: relative; overflow: hidden; border-radius: 14px; background: rgba(255,255,255,.05); }
+#cc-home .sk::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.06) 50%, transparent 80%); transform: translateX(-100%); animation: cc-shine 1.4s ease-in-out infinite; }
+@keyframes cc-shine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 #cc-home .sk-av { width: 68px; height: 68px; border-radius: 50%; flex: none; }
 #cc-home .sk-l1 { height: 26px; width: 55%; margin-bottom: 10px; } #cc-home .sk-l2 { height: 14px; width: 35%; }
 #cc-home .sk-h { height: 16px; width: 120px; margin-bottom: 14px; }
@@ -1304,7 +1313,7 @@ html.cc-vfsem [data-cc-vf] { -webkit-backdrop-filter: none !important; backdrop-
 html.cc-g-medio [data-ccn], html.cc-g-medio [data-ccn]::before, html.cc-g-medio [data-ccn]::after,
 html.cc-g-medio [data-ccplaca]::before, html.cc-g-medio [data-ccplaca]::after,
 html.cc-g-medio .cc-pc .pc-ef, html.cc-g-medio .cc-pcw .pc-luz, html.cc-g-medio .cc-pcw .pc-mold *, html.cc-g-medio .cc-pc .pc-dec *,
-html.cc-g-medio #cc-pf-float.on, html.cc-g-medio #cc-home .sk, html.cc-g-medio #cc-salabtn.chama, html.cc-g-medio #cc-aura i { animation: none !important; }
+html.cc-g-medio #cc-pf-float.on, html.cc-g-medio #cc-home .sk::after, html.cc-g-medio #cc-salabtn.chama, html.cc-g-medio #cc-aura i { animation: none !important; }
 html.cc-g-medio *, html.cc-g-medio *::before, html.cc-g-medio *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html.cc-g-medio .tileChild__2f4f7, html.cc-g-medio #cc-home .fr, html.cc-g-medio #cc-home .row { transition: none !important; }
 /* Baixo: fundo sólido, sem animação, sem sombra, sem enfeites do Discord */
