@@ -1,0 +1,186 @@
+/* Pele do YouTube no celular (m.youtube.com). Só vale com html.ph-yt.
+   Se o YouTube mudar uma classe, a regra só deixa de valer e a página continua igual à original. */
+
+/* cores do YouTube trocadas pelas do tema (claro ou escuro, sempre fica a nossa) */
+html.ph-yt, html.ph-yt[dark], html.ph-yt[darker-dark-theme], html.ph-yt ytm-app, html.ph-yt [dark] {
+  --yt-spec-base-background: transparent !important;
+  --yt-spec-raised-background: rgba(var(--ph-wr), .96) !important;
+  --yt-spec-menu-background: rgba(var(--ph-wr), .97) !important;
+  --yt-spec-general-background-a: transparent !important;
+  --yt-spec-general-background-b: transparent !important;
+  --yt-spec-general-background-c: transparent !important;
+  --yt-spec-brand-background-solid: transparent !important;
+  --yt-spec-brand-background-primary: rgba(var(--ph-wr), .9) !important;
+  --yt-spec-brand-background-secondary: rgba(var(--ph-wr), .9) !important;
+  --yt-spec-additive-background: rgba(255, 255, 255, .08) !important;
+  --yt-spec-badge-chip-background: rgba(255, 255, 255, .1) !important;
+  --yt-spec-button-chip-background-hover: rgba(255, 255, 255, .16) !important;
+  --yt-spec-10-percent-layer: rgba(255, 255, 255, .1) !important;
+  --yt-spec-outline: rgba(255, 255, 255, .12) !important;
+  --yt-spec-text-primary: #f3f1f7 !important;
+  --yt-spec-text-secondary: rgba(243, 241, 247, .64) !important;
+  --yt-spec-text-disabled: rgba(243, 241, 247, .38) !important;
+  --yt-spec-icon-active-other: #f3f1f7 !important;
+  --yt-spec-icon-inactive: rgba(243, 241, 247, .7) !important;
+  --yt-spec-call-to-action: var(--ph-a1) !important;
+  --yt-spec-themed-blue: var(--ph-a1) !important;
+  --yt-spec-static-brand-red: var(--ph-a1) !important;
+  --yt-spec-brand-icon-active: var(--ph-a1) !important;
+  --yt-brand-youtube-red: var(--ph-a1) !important;
+  --yt-spec-static-overlay-background-brand: var(--ph-a1) !important;
+  --yt-spec-wordmark-text: #f3f1f7 !important;
+  color-scheme: dark;
+}
+
+/* letras: a fonte do Concord em tudo */
+html.ph-yt body, html.ph-yt body :is(div, span, a, button, input, textarea, h1, h2, h3, h4, p, li, yt-formatted-string) {
+  font-family: var(--ph-fonte) !important;
+  letter-spacing: 0 !important;
+}
+html.ph-yt body { background: transparent !important; color: var(--ph-texto); -webkit-tap-highlight-color: transparent; }
+html.ph-yt ::-webkit-scrollbar { width: 0; height: 0; }
+
+/* tudo transparente para a aura aparecer */
+html.ph-yt :is(ytm-app, #app, .page-container, ytm-browse, ytm-watch, ytm-search, ytm-single-column-browse-results-renderer,
+  ytm-rich-grid-renderer, ytm-section-list-renderer, ytm-item-section-renderer, ytm-single-column-watch-next-results-renderer,
+  ytm-reel-shelf-renderer, ytm-shelf-renderer, ytm-rich-section-renderer, .tab-content, .scbrr-tabs) { background: transparent !important; }
+
+/* barra de cima: vidro com a cor do tema */
+html.ph-yt :is(.mobile-topbar-header, ytm-mobile-topbar-renderer > header, #header-bar) {
+  background: linear-gradient(180deg, rgba(var(--ph-wr), .97), rgba(var(--ph-wr), .9)) !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .07) !important;
+}
+html.ph-yt.ph-bonito :is(.mobile-topbar-header, ytm-mobile-topbar-renderer > header) {
+  background: linear-gradient(180deg, rgba(var(--ph-wr), .82), rgba(var(--ph-wr), .62)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+}
+html.ph-yt .mobile-topbar-header-content { align-items: center; gap: 4px; }
+html.ph-yt #ph-hub:not(.ph-solto) { width: 40px; height: 40px; margin: 0 6px 0 2px; }
+html.ph-yt :is(ytm-searchbox, .searchbox-input-wrapper, .searchbox-input) { border-radius: 999px !important; }
+html.ph-yt .searchbox-input {
+  background: rgba(255, 255, 255, .08) !important; border: 0 !important; color: var(--ph-texto) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12) !important; padding-left: 16px !important;
+}
+html.ph-yt .searchbox-input:focus { box-shadow: inset 0 0 0 2px var(--ph-a1) !important; }
+
+/* barra de baixo: pílula flutuando ao alcance do dedão */
+html.ph-yt ytm-pivot-bar-renderer {
+  left: 10px !important; right: 10px !important; bottom: calc(8px + env(safe-area-inset-bottom)) !important; width: auto !important;
+  border-radius: 24px !important; overflow: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(var(--ph-wr), .96) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), 0 12px 32px rgba(0, 0, 0, .45) !important;
+  border: 0 !important;
+}
+html.ph-yt.ph-bonito ytm-pivot-bar-renderer {
+  background: linear-gradient(160deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .02)), rgba(var(--ph-wr), .7) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+}
+html.ph-yt ytm-pivot-bar-item-renderer { transition: transform .35s var(--ph-mola); }
+html.ph-yt ytm-pivot-bar-item-renderer:active { transform: scale(.9); }
+html.ph-yt .pivot-bar-item-title { font-weight: 600 !important; font-size: 11px !important; }
+html.ph-yt ytm-pivot-bar-item-renderer[data-ph-ativo] :is(.pivot-bar-item-title, c3-icon, yt-icon) { color: var(--ph-a1) !important; }
+html.ph-yt :is(ytm-app, #app) { padding-bottom: 10px; }
+
+/* chips do topo (Tudo, Música, Jogos...) */
+html.ph-yt :is(ytm-feed-filter-chip-bar-renderer, ytm-chip-cloud-renderer, .chip-bar-contents) { background: transparent !important; }
+html.ph-yt :is(ytm-chip-cloud-chip-renderer .chip-container, .ytChipShapeChip, chip-shape > div) {
+  border-radius: 999px !important; min-height: 34px; padding-left: 14px !important; padding-right: 14px !important;
+  background: rgba(255, 255, 255, .08) !important; color: var(--ph-texto) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1) !important; border: 0 !important;
+  font-weight: 600 !important; transition: transform .35s var(--ph-mola), background .2s ease;
+}
+html.ph-yt :is(ytm-chip-cloud-chip-renderer .chip-container, .ytChipShapeChip):active { transform: scale(.94); }
+html.ph-yt :is(ytm-chip-cloud-chip-renderer[selected] .chip-container, ytm-chip-cloud-chip-renderer .chip-container.selected, .ytChipShapeActive, .ytChipShapeChip[aria-selected="true"]) {
+  background: linear-gradient(120deg, var(--ph-a1), var(--ph-a2)) !important; color: #0b0c10 !important; box-shadow: none !important;
+}
+
+/* cartões de vídeo: miniaturas bem arredondadas */
+html.ph-yt :is(ytm-thumbnail-cover, .media-item-thumbnail-container, .video-thumbnail-container-large, .video-thumbnail-container-compact,
+  yt-thumbnail-view-model, .yt-thumbnail-view-model, .ytThumbnailViewModelImage, .yt-core-image, .video-thumbnail-img, ytm-shorts-lockup-view-model img,
+  .reel-item-endpoint, .shortsLockupViewModelHostThumbnailContainer, ytm-playlist-thumbnail) {
+  border-radius: 18px !important; overflow: hidden;
+}
+html.ph-yt :is(ytm-rich-item-renderer, ytm-video-with-context-renderer, ytm-compact-video-renderer) { transition: transform .35s var(--ph-mola); }
+html.ph-yt :is(ytm-rich-item-renderer, ytm-video-with-context-renderer):active { transform: scale(.98); }
+html.ph-yt :is(ytm-rich-item-renderer, ytm-video-with-context-renderer) :is(ytm-thumbnail-cover, .media-item-thumbnail-container, yt-thumbnail-view-model) {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .38), inset 0 0 0 1px rgba(255, 255, 255, .06) !important;
+}
+html.ph-yt :is(.media-item-headline, .yt-lockup-metadata-view-model__title, .yt-core-attributed-string--white-space-pre-wrap h3, .media-item-metadata h3) {
+  font-weight: 600 !important;
+}
+/* tempo do vídeo e barrinha de "já assistido" na cor do tema */
+html.ph-yt :is(ytm-thumbnail-overlay-time-status-renderer, .badge-shape-wiz--thumbnail-default, .yt-badge-shape--thumbnail-default) {
+  border-radius: 999px !important; background: rgba(0, 0, 0, .62) !important; font-weight: 600 !important;
+}
+html.ph-yt :is(ytm-thumbnail-overlay-resume-playback-renderer .thumbnail-overlay-resume-playback-progress, .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment, .thumbnail-overlay-resume-playback-progress) {
+  background: linear-gradient(90deg, var(--ph-a1), var(--ph-a2)) !important;
+}
+
+/* página do vídeo */
+html.ph-yt:not(.ph-telacheia):not(.ph-pip) ytm-watch :is(#player-container-id, .player-container) { border-radius: 0 0 22px 22px; overflow: hidden; }
+html.ph-yt :is(ytm-slim-video-metadata-section-renderer, ytm-slim-video-information-renderer, ytm-video-description-header-renderer) { background: transparent !important; }
+html.ph-yt :is(.slim-video-information-title, .slim-video-metadata-header h2, ytm-slim-video-information-renderer h2) {
+  font-weight: 700 !important; font-size: 18px !important; line-height: 1.28 !important;
+}
+html.ph-yt :is(ytm-comments-entry-point-header-renderer, ytm-video-description-header-renderer, .slim-video-information-show-more, ytm-structured-description-content-renderer) {
+  border-radius: 20px !important;
+}
+html.ph-yt :is(ytm-comments-entry-point-header-renderer, .comments-entry-point-header-content) {
+  background: rgba(255, 255, 255, .06) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08) !important;
+}
+
+/* botões do YouTube: pílulas */
+html.ph-yt :is(.yt-spec-button-shape-next, .yt-spec-button-view-model button, button.icon-button) { border-radius: 999px !important; }
+html.ph-yt :is(.yt-spec-button-shape-next--tonal, .yt-spec-button-shape-next--mono.yt-spec-button-shape-next--tonal) {
+  background: rgba(255, 255, 255, .08) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1) !important; color: var(--ph-texto) !important;
+}
+html.ph-yt :is(.yt-spec-button-shape-next--filled.yt-spec-button-shape-next--mono, .yt-spec-button-shape-next--call-to-action.yt-spec-button-shape-next--filled) {
+  background: linear-gradient(120deg, var(--ph-a1), var(--ph-a2)) !important; color: #0b0c10 !important;
+}
+html.ph-yt .yt-spec-button-shape-next { transition: transform .35s var(--ph-mola) !important; }
+html.ph-yt .yt-spec-button-shape-next:active { transform: scale(.92); }
+
+/* player: barra de progresso no gradiente do tema e tocar/pausar com mola */
+html.ph-yt :is(.ytProgressBarLineProgressBarPlayed, .ytm-progress-bar-played, .ytp-play-progress, .ytmProgressBarPlayed, .ytProgressBarLineProgressBarPlayedRefresh) {
+  background: linear-gradient(90deg, var(--ph-a1), var(--ph-a2)) !important;
+}
+html.ph-yt :is(.ytProgressBarPlayheadProgressBarPlayheadDot, .ytp-scrubber-button, .ytm-progress-bar-playhead-dot) {
+  background: var(--ph-a1) !important; box-shadow: 0 0 0 4px rgba(var(--ph-a1r), .25) !important;
+}
+html.ph-yt :is(.player-middle-controls button, .player-control-play-pause-icon, button.player-control-play-pause-icon) { transition: transform .4s var(--ph-mola) !important; }
+html.ph-yt :is(.player-middle-controls button, .player-control-play-pause-icon):active { transform: scale(.82); }
+
+/* folhas e menus do YouTube no nosso vidro */
+html.ph-yt :is(.bottom-sheet-layout, ytm-bottom-sheet-renderer .bottom-sheet-media-menu-item, bottom-sheet-layout, .bottom-sheet-renderer-container, yt-sheet-view-model, .menu-content) {
+  background: linear-gradient(160deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .01)), rgba(var(--ph-wr), .98) !important;
+  border-radius: 24px 24px 0 0 !important; color: var(--ph-texto) !important;
+}
+html.ph-yt :is(ytm-engagement-panel, .engagement-panel-container, ytm-engagement-panel-section-list-renderer) {
+  background: rgba(var(--ph-wr), .98) !important; border-radius: 24px 24px 0 0 !important;
+}
+html.ph-yt :is(.dialog-container, yt-dialog-view-model, .yt-dialog-view-model, ytm-dialog) { border-radius: 24px !important; }
+
+/* nossa fileira embaixo do player: PiP, velocidade e modo bolso */
+#ph-acoes {
+  display: flex; gap: 8px; padding: 10px 12px 2px; overflow-x: auto; scrollbar-width: none;
+  font-family: var(--ph-fonte);
+}
+#ph-acoes button {
+  all: unset; box-sizing: border-box; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 8px;
+  height: 44px; padding: 0 16px; border-radius: 999px; font: 600 14px var(--ph-fonte); color: var(--ph-texto);
+  background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+  transition: transform .35s var(--ph-mola), background .2s ease; -webkit-tap-highlight-color: transparent;
+}
+#ph-acoes button:active { transform: scale(.92); }
+#ph-acoes button.ph-on { background: linear-gradient(120deg, var(--ph-a1), var(--ph-a2)); color: #0b0c10; box-shadow: none; }
+#ph-acoes .ph-hub-mini { padding: 0 6px 0 4px; }
+#ph-acoes .ph-hub-mini svg { width: 30px; height: 30px; }
+html.ph-pip #ph-acoes, html.ph-telacheia #ph-acoes { display: none !important; }
+
+/* picture in picture: só o vídeo, preenchendo a janelinha */
+html.ph-yt.ph-pip :is(ytm-mobile-topbar-renderer, .mobile-topbar-header, ytm-pivot-bar-renderer, #ph-aura, .player-controls-content, #player-control-container,
+  .ytp-chrome-bottom, .ytm-autonav-bar, ytm-single-column-watch-next-results-renderer, .watch-below-the-player, ytm-engagement-panel) { display: none !important; }
+html.ph-yt.ph-pip ytm-watch :is(#player-container-id, .player-container, #player, #movie_player, .html5-video-player, .html5-video-container) {
+  position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; max-height: none !important;
+  margin: 0 !important; padding: 0 !important; transform: none !important; z-index: 2147483400 !important; background: #000 !important; border-radius: 0 !important;
+}
