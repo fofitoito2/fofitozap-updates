@@ -668,6 +668,7 @@
     Read: function (m) { return typeof m.getMentionCount === 'function' && typeof m.hasUnread === 'function' && typeof m.lastMessageId === 'function'; },
     GuildOrder: function (m) { return typeof m.getFlattenedGuildIds === 'function'; },
     VoiceAct: function (m) { return typeof m.selectVoiceChannel === 'function'; },
+    GuildCh: function (m) { return typeof m.getVocalChannelIds === 'function' && typeof m.getChannels === 'function'; },
     DMAct: function (m) { return typeof m.openPrivateChannel === 'function'; },
     Profile: function (m) { return typeof m.getUserProfile === 'function' && typeof m.getMutualGuilds === 'function'; },
     Note: function (m) { return typeof m.getNote === 'function' && typeof m.getUserProfile !== 'function'; }
@@ -2774,6 +2775,7 @@
   }
   function raBtns() {
     if (!window.ccRtcSend) return;
+    slTbBtn();
     var uid = raDmPeer(), tb = document.querySelector('.chat_f75fb0 .toolbar__9293f, .toolbar__9293f'), b = document.getElementById('cc-rabtn');
     var ok = uid && tb && perfilDe(uid);
     if (!ok) { if (b) b.remove(); return; }
@@ -3412,15 +3414,48 @@
   // botão da sala: aparece quando você está numa call de servidor com alguém que usa o Concord
   function slBtn() {
     var b = document.getElementById('cc-salabtn'), ch = meuCanal(), outros = ch ? membrosCanal(ch).filter(function (id) { return id !== meuId() && raOnline(id); }) : [];
-    if (!window.ccRtcSend || !ch || SL.on || (!outros.length && !CFG.salaSozinho)) { if (b) b.remove(); return; }
+    if (!window.ccRtcSend || !ch || SL.on) { if (b) b.remove(); return; }
     if (!b) { b = document.createElement('button'); b.id = 'cc-salabtn'; b.addEventListener('click', slEntrar); document.body.appendChild(b); }
     var la = Object.keys(SL.chamou).filter(function (id) { return outros.indexOf(id) >= 0; });
     b.classList.toggle('chama', la.length > 0);
-    b.innerHTML = RI.reapps + '<span>Sala ReApps<small>' + (la.length ? raName(la[0]).split(' ')[0] + (la.length > 1 ? ' e mais ' + (la.length - 1) : '') + ' na sala' : outros.length + (outros.length === 1 ? ' pessoa' : ' pessoas') + ' com Concord') + '</small></span>';
+    b.innerHTML = RI.reapps + '<span>Sala ReApps<small>' + (la.length ? raName(la[0]).split(' ')[0] + (la.length > 1 ? ' e mais ' + (la.length - 1) : '') + ' na sala' : outros.length ? outros.length + (outros.length === 1 ? ' pessoa' : ' pessoas') + ' com Concord' : 'Câmera, tela e assistir junto') + '</small></span>';
+  }
+  // botão da call ReApps no topo dos canais de servidor: escolhe a call de voz e já abre a sala com câmera e tela
+  function slGuild() { var m = /^\/channels\/(\d+)/.exec(location.pathname); return m ? m[1] : ''; }
+  function slVozes(g) {
+    var G = st('GuildCh'), C = st('Channel'), ids = [];
+    try { ids = (G && G.getVocalChannelIds(g)) || []; } catch (e) {}
+    return ids.map(function (id) { var c = C && C.getChannel(id); return c && c.type === 2 ? c : null; }).filter(Boolean).slice(0, 8);
+  }
+  function slTbBtn() {
+    if (typeof SL === 'undefined' || !SL) return;
+    var g = slGuild(), tb = g && document.querySelector('.chat_f75fb0 .toolbar__9293f, .toolbar__9293f'), b = document.getElementById('cc-salatb');
+    if (!tb) { if (b) b.remove(); return; }
+    if (!b || b.parentNode !== tb) {
+      if (b) b.remove(); b = document.createElement('button'); b.id = 'cc-salatb'; b.className = 'cc-rabtn'; b.innerHTML = RI.reapps; tb.insertBefore(b, tb.firstChild);
+      b.addEventListener('click', function (e) { e.stopPropagation(); slTbClick(b); });
+    }
+    b.classList.toggle('on', SL.on); b.title = SL.on ? 'Abrir a Sala ReApps' : 'Call ReApps: câmera, tela e assistir junto';
+  }
+  function slTbClick(btn) {
+    if (SL.on) { SL.mini = false; slPinta(); return; }
+    if (meuCanal()) { slEntrar(); return; }
+    var r = btn.getBoundingClientRect(), vz = slVozes(slGuild()), A = st('VoiceAct');
+    if (!vz.length || !A) { toast('Entre num canal de voz do servidor e toque aqui de novo'); return; }
+    raMenu(vz.map(function (c) {
+      var n = membrosCanal(c.id).length;
+      return { t: c.name, s: n ? n + (n === 1 ? ' pessoa' : ' pessoas') + ' na call' : 'Ninguém ainda, entra e abre a sala', i: RI.call, f: function () {
+        SL.auto = String(c.id); SL.autoAte = Date.now() + 15000;
+        try { A.selectVoiceChannel(c.id); toast('Entrando na call ReApps'); } catch (e) { toast('Não consegui entrar na call'); return; }
+        [500, 1200, 2500].forEach(function (t) { setTimeout(slTick, t); });
+      } };
+    }), r.right, r.bottom + 6);
   }
   function slTick() {
     var ch = meuCanal();
     if (ch !== SL.ch) { if (SL.on) { slSair(); toast('Você saiu da call: a Sala ReApps fechou'); } SL.ch = ch; SL.chamou = {}; RA.watchKey = ''; raWatch(); }
+    if (SL.auto) { if (ch === SL.auto && !SL.on) { SL.auto = ''; slEntrar(); } else if (Date.now() > SL.autoAte) SL.auto = ''; }
+    slTbBtn();
     if (SL.on) { var m = membrosCanal(SL.ch); Object.keys(SL.peers).forEach(function (uid) { if (m.indexOf(uid) < 0) slFecharPeer(uid); }); }
     slBtn();
   }
