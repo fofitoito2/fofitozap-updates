@@ -1222,6 +1222,9 @@ html.cc-fs #cc-salabtn { bottom: 110px; }
 #cc-sala .sl-v { display: grid; place-items: center; }
 #cc-sala .sl-av { width: 34%; max-width: 76px; aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--accent-2), 0 10px 26px -8px color-mix(in srgb, var(--accent-2) 70%, transparent); }
 #cc-sala .sl-q.sem .sl-v { position: absolute; }
+#cc-sala .sl-ini { display: grid; place-items: center; font-style: normal; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--accent-2), color-mix(in srgb, var(--accent-2) 40%, var(--cc-o2, #7b5cff))); }
+#cc-sala .sl-ppl .sl-ini { width: 28px; height: 28px; border-radius: 50%; margin-left: -7px; font-size: 12px; box-shadow: 0 0 0 2px var(--cc-bg0); }
+#cc-sala .sl-av.sl-ini { font-size: 22px; }
 #cc-sala .sl-q em { position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 3px 10px; border-radius: 999px; font-style: normal; font-size: 12px; font-weight: 600; background: rgba(10,8,14,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #cc-sala .sl-dock { display: flex; justify-content: center; gap: 8px; }
 #cc-sala .rcb { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.09); color: #fff; transition: background-color .15s, transform .2s var(--cc-spring); }
@@ -1230,16 +1233,28 @@ html.cc-fs #cc-salabtn { bottom: 110px; }
 #cc-sala .rcb:active { transform: scale(.94); }
 #cc-sala .rcb.on { background: #fff; color: #14121a; }
 #cc-sala .rcb.end { width: 66px; border-radius: 999px; background: #e5484d; }
-#cc-sala.mini { inset: auto 20px 96px auto; width: 300px; height: 190px; padding: 0; gap: 0; grid-template-rows: minmax(0, 1fr); cursor: pointer; }
-#cc-sala.mini > :not(.sl-main) { display: none !important; }
-#cc-sala.mini .sl-main { display: block; border-radius: 26px; }
-#cc-sala.mini:not(.temmain) .sl-main::after { content: 'Sala ReApps'; position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; color: var(--text-2); }
-#cc-sala.mini .sl-main .sl-vz { display: none; }
+#cc-sala.mini { inset: auto 20px 96px auto; width: 320px; height: 196px; padding: 6px; gap: 0; grid-template-rows: minmax(0, 1fr); cursor: pointer; border-radius: 22px; }
+#cc-sala.mini > .sl-dock { display: none !important; }
+/* sala pequena: com tela/vídeo mostra ele; sem, mostra as câmeras e as fotos de quem está na sala (antes ficava um quadro preto) */
+#cc-sala.mini > .sl-top { position: absolute; left: 12px; top: 12px; z-index: 3; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(10,8,14,.62); pointer-events: none; max-width: calc(100% - 24px); }
+#cc-sala.mini .sl-tt b { font-size: 12px; } #cc-sala.mini .sl-tt small, #cc-sala.mini .sl-ic, #cc-sala.mini .sl-ppl img { display: none; }
+#cc-sala.mini .sl-ppl em { margin-left: 0; font-size: 11.5px; color: var(--text-2); }
+#cc-sala.mini > .sl-top::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3ecf7a; box-shadow: 0 0 8px #3ecf7a; flex: none; }
+#cc-sala.mini.temmain .sl-strip { display: none; }
+#cc-sala.mini:not(.temmain) .sl-main { display: none !important; }
+#cc-sala.mini.temmain .sl-main { display: block; border-radius: 17px; }
+#cc-sala.mini, #cc-sala.mini:not(.temmain):not(:has(.sl-vz)) { grid-template-rows: minmax(0, 1fr) !important; }
+#cc-sala.mini:not(.temmain) .sl-strip { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)) !important; grid-auto-rows: minmax(0, 1fr) !important; gap: 6px; padding: 0; overflow: hidden !important; height: 100%; min-height: 0; }
+#cc-sala.mini .sl-q { width: auto; aspect-ratio: auto; min-height: 0; border-radius: 16px; }
+#cc-sala.mini .sl-q:hover { transform: none; }
+#cc-sala.mini .sl-q em { left: 6px; bottom: 6px; padding: 2px 8px; font-size: 10.5px; }
+#cc-sala.mini .sl-av { width: 42%; max-width: 64px; }
+#cc-sala.mini:not(.temmain) .sl-q:nth-child(n+5) { display: none; }
 html.cc-estreito #cc-sala:not(.mini) { inset: 0; border-radius: 0; padding: 10px; }
 html.cc-estreito #cc-sala .sl-ppl em { display: none; }
 html.cc-estreito #cc-sala.temmain .sl-q { width: 130px; }
 html.cc-estreito #cc-sala:not(.temmain):not(:has(.sl-vz)) .sl-strip { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); grid-auto-rows: minmax(120px, 1fr); }
-html.cc-estreito #cc-sala.mini { width: 220px; height: 140px; right: 12px; bottom: 80px; }
+html.cc-estreito #cc-sala.mini { width: 230px; height: 150px; right: 12px; bottom: 80px; }
 html.cc-estreito #cc-salabtn { right: 12px; bottom: 80px; }
 html.cc-cel #cc-sala, html.cc-cel #cc-salabtn { -webkit-backdrop-filter: none; backdrop-filter: none; }
 

@@ -30,7 +30,7 @@
     return g;
   }
   function MAT() { var g = GR(); return (g === 'baixo' || g === 'minimo') ? 'solid' : CFG.mat; }
-  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true, fluida: true, levevideo: true, celzoom: 0.86, graf: 'auto' };
+  var DEF = { preset: 'fofito', accent: '', mat: 'aura', op: 0.62, blur: 14, radius: 14, gap: 10, font: 'Bricolage Grotesque', anim: true, motion: false, orbs: 0.6, chatbar: true, small: true, v: 6, style: true, bub: true, dood: true, tint: 0.06, clean: true, home: true, boost: 1, lite: false, mine: {}, places: {}, parallax: false, tab: 'tema', layout: 'palco', sideW: 272, bg: true, fluida: true, levevideo: true, celzoom: 0.86, graf: 'auto', salaAuto: true };
   var CFG = {};
   try { CFG = JSON.parse((LS && LS.getItem('concord.cfg')) || '{}') || {}; } catch (e) { CFG = {}; }
   Object.keys(DEF).forEach(function (k) { if (CFG[k] === undefined) CFG[k] = DEF[k]; });
@@ -350,7 +350,7 @@
       h += '<h4>Gráficos</h4><div class="seg seg5">' + GRS.map(function (m) { return '<button data-gr="' + m[0] + '"' + ((CFG.graf || 'auto') === m[0] ? ' class="on"' : '') + '>' + m[1] + '</button>'; }).join('') + '</div>' +
         '<div class="note" style="margin-top:8px">' + ((CFG.graf || 'auto') === 'auto' ? 'Automático está usando o <b>' + { alto: 'Alto', medio: 'Médio', baixo: 'Baixo', minimo: 'Mínimo' }[GR()] + '</b> neste aparelho (PC no Alto, tablet no Médio, celular no Baixo). ' : '') + GDESC[GR()] + '</div>';
       h += '<h4>Telas</h4>' + toggle('home', 'Início do Concord', 'Tela inicial nova com amigos, chamadas, conversas e servidores') + toggle('clean', 'Esconder propaganda do Discord', 'Nitro, Loja, Missões, botão de presente e de baixar o app') + toggle('lite', 'Modo leve', 'Sem vidro desfocado e sem bolhas: o mais rápido possível') +
-        '<h4>Transmissões</h4>' + toggle('fluida', 'Transmissão fluida', 'Sua tela vai com até 60 quadros por segundo; se a internet ou o PC apertarem, cai a nitidez, não a fluidez') + toggle('levevideo', 'Leve com vídeo na tela', 'Enquanto tem transmissão ou câmera aberta, tira o vidro desfocado e as bolhas para o vídeo não travar') +
+        '<h4>Transmissões</h4>' + toggle('fluida', 'Transmissão fluida', 'Sua tela vai com até 60 quadros por segundo; se a internet ou o PC apertarem, cai a nitidez, não a fluidez') + toggle('levevideo', 'Leve com vídeo na tela', 'Enquanto tem transmissão ou câmera aberta, tira o vidro desfocado e as bolhas para o vídeo não travar') + toggle('salaAuto', 'Sala ReApps sozinha', 'Numa call de servidor com mais alguém do Concord, a sala abre pequena no canto, pronta para câmera e tela') +
         (window.__ccCel ? '<h4>Celular</h4>' + range('celzoom', 'Tamanho das coisas', 'Menor cabe mais na tela', 0.7, 1, 0.02, FMT.pct) : '') +
         '<h4>Janela</h4>' + toggle('bg', 'Continuar aberto ao fechar', 'Fechar a janela deixa o Concord no ícone perto do relógio: você segue nas calls e recebendo avisos') + '<div class="btns" style="justify-content:flex-start"><button class="btn" data-a="fechar">Sair do Concord de vez</button></div>';
     }
@@ -2731,7 +2731,7 @@
 
   window.__ccRtc = function (d) {
     if (!d) return;
-    if (d.t === 'net') { RA.on = !!d.on; if (d.on) { RA.watchKey = ''; raWatch(); } return; }
+    if (d.t === 'net') { RA.on = !!d.on; if (d.on) { RA.watchKey = ''; raWatch(); raIce(); } return; }
     if (d.t === 'me') { RA.me = d.id; return; }
     if (d.t === 'online') { RA.online = {}; (d.ids || []).forEach(function (n) { RA.online[n] = 1; }); raBtns(); return; }
     if (d.t === 'presence') { if (d.on) RA.online[d.id] = 1; else delete RA.online[d.id]; raBtns(); return; }
@@ -2752,6 +2752,13 @@
       case 'ice': if (c.pc && c.pc.remoteDescription) c.pc.addIceCandidate(m.c).catch(function () {}); else (c.iceQ = c.iceQ || []).push(m.c); break;
     }
   };
+  // STUN + TURN (o TURN passa a chamada por um servidor quando a internet de um dos dois não deixa conectar direto)
+  var ICE_T = 0;
+  function raIce() {
+    if (Date.now() - ICE_T < 6 * 3600e3) return; ICE_T = Date.now();
+    net('GET', '/concord/ice').then(function (d) { if (d && d.iceServers && d.iceServers.length) RA.ice = d.iceServers; }).catch(function () { ICE_T = 0; });
+  }
+  setInterval(function () { if (RA.on) raIce(); }, 3600e3);
   function raSigTo(to, dev, data) { if (window.ccRtcSend) window.ccRtcSend(JSON.stringify({ t: 'to', to: to, dev: dev || '', data: data })).catch(function () {}); }
   function raSig(c, data) { raSigTo(c.uid, c.peerDev, data); }
   // quem eu quero saber se está online: amigos e conversas privadas (o servidor só mostra quem também me tem)
@@ -3189,6 +3196,7 @@
   function slMsg(d) {
     var m = d.data || {}, uid = String(d.from), dev = d.fromDev || '';
     if (m.k === 's-oi') {
+      if (!SL.on && m.ch && m.ch === meuCanal() && slAutoPode(m.ch)) { RA.online[uid] = 1; slEntrar(true); }
       if (!SL.on || m.ch !== SL.ch) { if (m.ch && m.ch === meuCanal() && !SL.chamou[uid]) { SL.chamou[uid] = 1; toast(raName(uid).split(' ')[0] + ' abriu a Sala ReApps nesta call'); slBtn(); } return; }
       slPeer(uid, dev); if (!m.r) raSigTo(uid, dev, { k: 's-oi', ch: SL.ch, r: 1 }); return;
     }
@@ -3245,11 +3253,12 @@
   }
 
   /* entrar e sair */
-  function slEntrar() {
-    if (!window.ccRtcSend || !RA.on) { toast('A Sala ReApps precisa da conexão do Concord (entre com o Discord na aba Perfil)'); return; }
-    SL.ch = meuCanal(); if (!SL.ch) { toast('Entre numa call de servidor primeiro'); return; }
-    if (RA.call) { toast('Termine a chamada ReApps antes'); return; }
-    SL.on = true; SL.mini = false; RA.watchKey = ''; raWatch();
+  function slEntrar(auto) {
+    if (!window.ccRtcSend || !RA.on) { if (!auto) toast('A Sala ReApps precisa da conexão do Concord (entre com o Discord na aba Perfil)'); return; }
+    SL.ch = meuCanal(); if (!SL.ch) { if (!auto) toast('Entre numa call de servidor primeiro'); return; }
+    if (RA.call) { if (!auto) toast('Termine a chamada ReApps antes'); return; }
+    SL.on = true; SL.mini = !!auto; SL.saiu = ''; RA.watchKey = ''; raWatch();
+    if (auto) { var q = slOutros(); toast('Sala ReApps aberta' + (q.length ? ': ' + raName(q[0]).split(' ')[0] + (q.length > 1 ? ' e mais ' + (q.length - 1) : '') + ' também ' + (q.length > 1 ? 'estão' : 'está') + ' no Concord' : '')); }
     slOutros().forEach(function (id) { raSigTo(id, '', { k: 's-oi', ch: SL.ch }); });
     somCurto(660, 0.18); slPinta(); slBtn();
   }
@@ -3356,6 +3365,8 @@
     v.classList.toggle('esp', !!i.eu && i.papel === 'cam'); v.classList.toggle('fit', i.papel !== 'cam');
     return v;
   }
+  // foto de quem está na sala; sem foto, a inicial (antes aparecia o ícone de imagem quebrada)
+  function slAv(id, cls) { var u = raAvatar(id), n = raName(id); return u ? '<img class="' + cls + '" src="' + esc(u) + '" title="' + esc(n) + '" alt="">' : '<i class="' + cls + ' sl-ini" title="' + esc(n) + '">' + esc((n || '?').charAt(0).toUpperCase()) + '</i>'; }
   function slPinta() {
     if (!SL.on) return;
     var el = document.getElementById('cc-sala');
@@ -3367,7 +3378,7 @@
         var b = e.target.closest('[data-sl]'); if (!b) { if (SL.mini && !e.target.closest('video[controls]')) { SL.mini = false; slPinta(); } return; }
         e.stopPropagation(); var a = b.dataset.sl;
         if (a === 'mini') { SL.mini = !SL.mini; slPinta(); }
-        else if (a === 'cam') slCam(); else if (a === 'tela') slTela(); else if (a === 'ver') slAssistir(b); else if (a === 'sair') slSair();
+        else if (a === 'cam') slCam(); else if (a === 'tela') slTela(); else if (a === 'ver') slAssistir(b); else if (a === 'sair') { SL.saiu = SL.ch; slSair(); }
         else if (a === 'foco') { SL.foco = SL.foco === b.dataset.k ? '' : b.dataset.k; slPinta(); }
       });
       requestAnimationFrame(function () { el.classList.add('on'); });
@@ -3375,7 +3386,7 @@
     el.classList.toggle('mini', SL.mini);
     el.querySelector('.sl-tt small').textContent = nomeCanal(SL.ch);
     var gente = [meuId()].concat(Object.keys(SL.peers));
-    el.querySelector('.sl-ppl').innerHTML = gente.slice(0, 6).map(function (id) { return '<img src="' + esc(raAvatar(id)) + '" title="' + esc(raName(id)) + '" alt="">'; }).join('') + '<em>' + gente.length + (gente.length === 1 ? ' pessoa' : ' pessoas') + '</em>';
+    el.querySelector('.sl-ppl').innerHTML = gente.slice(0, 6).map(function (id) { return slAv(id, ''); }).join('') + '<em>' + gente.length + (gente.length === 1 ? ' pessoa' : ' pessoas') + '</em>';
     var it = slItens(), principal = null;
     if (SL.foco === 'yt' && SL.yt) principal = 'yt';
     else principal = it.find(function (x) { return x.k === SL.foco; }) || (SL.yt ? 'yt' : it.find(function (x) { return x.papel === 'tela' && !x.eu; }) || it.find(function (x) { return x.papel === 'filme'; }) || it.find(function (x) { return x.papel === 'tela'; }) || null);
@@ -3396,7 +3407,7 @@
       if (!box) {
         box = document.createElement('button'); box.className = 'sl-q'; box.dataset.k = c.k; box.dataset.sl = 'foco';
         box.innerHTML = '<span class="sl-v"></span><em></em>';
-        if (!c.v) box.querySelector('.sl-v').innerHTML = '<img class="sl-av" src="' + esc(raAvatar(c.uid)) + '" alt="">';
+        if (!c.v) box.querySelector('.sl-v').innerHTML = slAv(c.uid, 'sl-av');
       }
       if (c.v && box.querySelector('.sl-v').firstChild !== c.v) { var sv0 = box.querySelector('.sl-v'); sv0.innerHTML = ''; sv0.appendChild(c.v); c.v.play().catch(function () {}); }
       box.querySelector('em').textContent = (c.uid === meuId() ? 'Você' : raName(c.uid).split(' ')[0]) + (c.papel === 'tela' ? ' · tela' : c.papel === 'filme' ? ' · vídeo' : '');
@@ -3451,10 +3462,14 @@
       } };
     }), r.right, r.bottom + 6);
   }
+  function slAutoPode(ch) { return CFG.salaAuto !== false && !RA.call && SL.saiu !== ch && !SL.auto; }
   function slTick() {
     var ch = meuCanal();
-    if (ch !== SL.ch) { if (SL.on) { slSair(); toast('Você saiu da call: a Sala ReApps fechou'); } SL.ch = ch; SL.chamou = {}; RA.watchKey = ''; raWatch(); }
+    if (ch !== SL.ch) { if (SL.on) { slSair(); toast('Você saiu da call: a Sala ReApps fechou'); } SL.ch = ch; SL.saiu = ''; SL.chamou = {}; RA.watchKey = ''; raWatch(); }
     if (SL.auto) { if (ch === SL.auto && !SL.on) { SL.auto = ''; slEntrar(); } else if (Date.now() > SL.autoAte) SL.auto = ''; }
+    // a lista de quem eu vigio acompanha a call (o servidor só liga duas pessoas que se vigiam): sem isso quem entrava depois ficava até 1 min invisível
+    if (ch) raWatch();
+    if (ch && !SL.on && slAutoPode(ch) && slOutros().length) slEntrar(true);
     slTbBtn();
     if (SL.on) { var m = membrosCanal(SL.ch); Object.keys(SL.peers).forEach(function (uid) { if (m.indexOf(uid) < 0) slFecharPeer(uid); }); }
     slBtn();
